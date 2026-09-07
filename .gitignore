@@ -1,0 +1,14 @@
+/.agent-work/
+/node_modules/
+/.next/
+/out/
+/coverage/
+/test-results/
+/playwright-report/
+/.worktrees/
+/_Reff/
+.env*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+*.log

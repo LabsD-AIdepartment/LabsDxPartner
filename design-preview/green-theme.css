@@ -1,0 +1,141 @@
+/* Fresh green accents shared across the partner workspace. */
+#notifications { position: relative; overflow: visible; }
+.notification-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #ececea;
+  border-radius: 50%;
+  background: linear-gradient(120deg, #a3ef89, #68df60 35%, #32c96b);
+  color: #103d22;
+  font: 700 14px/1 'Inter', sans-serif;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 1px 2px #e9ffdaaa, 0 2px 5px #3ecd5633;
+  pointer-events: none;
+}
+.notification-count[hidden] { display: none; }
+.notification-item {
+  padding: 16px 0;
+  border-top: 1px solid #e0e7dc;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.bar {
+  background: repeating-linear-gradient(130deg, #a8cdb1 0px, #a8cdb1 1px, #eef7ed 1px, #eef7ed 5px);
+  box-shadow: inset 0 1px 0 #fff, 0 3px 7px #184d2512;
+}
+.bar.highlight {
+  color: #103d22;
+  background: linear-gradient(120deg, #a3ef89 0%, #68df60 35%, #32c96b 100%);
+  box-shadow: inset 1px 1px 2px #e9ffdaaa, inset -2px -1px 3px #229d493d, 0 5px 14px #3ecd5633;
+}
+.donut {
+  position: relative;
+  isolation: isolate;
+  box-shadow: inset 3px 3px 6px #e9ffe282, inset -3px -3px 7px #05432645, 0 8px 17px #267b3130, 0 0 22px #69dd7020;
+}
+.donut::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(140deg, #ffffff48, transparent 45%, #003b1e12);
+}
+.donut>div {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(145deg, #fff, #f5faf4);
+  box-shadow: 0 3px 9px #184e2b38, inset 0 1px 1px #fff;
+}
+.donut strong { color: #073d30; }
+.mix-legend .legend-dot.lime{background:#35bc64}
+.mix-legend .legend-dot.dark{background:#073d30}
+/* Retain the fresh green treatment on completed payout progress steps. */
+.payout-track span {
+  background: linear-gradient(90deg, #99e887, #2db963);
+  box-shadow: 0 1px 4px #2fb85c30, inset 0 1px 0 #c8ffbe;
+}
+.payout-track span:last-child {
+  background: #d8e5db;
+  box-shadow: inset 0 1px 2px #486e4821;
+}
+
+/* Content: preserve photo colors and use the overview's fresh earnings accent. */
+#clips .clip-art img { filter: none; }
+#clips .clip-art::after {
+  background: linear-gradient(transparent 55%, #171b1526);
+}
+#clips .clip-tile {
+  box-shadow: 0 3px 10px #184d2508;
+}
+#clips .clip-earnings {
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #85d77b;
+  border-radius: 12px;
+  background: linear-gradient(120deg, #a3ef89, #68df60 35%, #32c96b);
+  box-shadow: inset 0 1px 1px #e9ffdaaa, 0 3px 8px #3ecd561a;
+}
+#clips .clip-earnings strong { color: #103d22; }
+#clips .clip-earnings span { color: #214d2b; }
+#clips .search:focus-within {
+  background: #f1f8ed;
+  box-shadow: 0 0 0 2px #399b61;
+}
+@media (hover: hover) {
+  #clips .clip-tile:hover {
+    background: #fff;
+    border-color: #93c9a3;
+    box-shadow: 0 6px 18px #184d2514;
+  }
+  #payouts tbody tr:hover { background: #f1f8ee; }
+}
+
+/* Transactions: restrained green summary cards and clear paid badges. */
+#payouts .payment-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 26px 0;
+}
+#payouts .payment-stats > div {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #dce8d9;
+  border-radius: 19px;
+  background: linear-gradient(135deg, #f9fcf5, #edf6e8);
+  box-shadow: inset 0 1px 0 #fff, 0 3px 10px #184d2508;
+}
+#payouts .payment-stats > div::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: linear-gradient(120deg, #a3ef89, #68df60 35%, #32c96b);
+}
+#payouts .payment-stats > div:last-child {
+  background: linear-gradient(135deg, #f7fbf7, #e8f3ec);
+}
+#payouts .payment-stats > div:last-child::before {
+  background: linear-gradient(90deg, #318d60, #073d30);
+}
+#payouts .payment-stats strong { display: block; color: #073d30; }
+#payouts th { background: #edf3e9; color: #48604f; }
+#payouts td strong { color: #0d643c; }
+#payouts .status.paid {
+  color: #145531;
+  background: linear-gradient(120deg, #dbf5ce, #c5ecd4);
+  box-shadow: inset 0 1px 0 #f5ffef;
+}
+#payouts .status.pending { background: #eeeee5; color: #5b614c; }
+@media (max-width: 480px) {
+  #payouts .payment-stats { grid-template-columns: 1fr; gap: 12px; }
+  #payouts .payment-stats > div { padding: 20px; }
+}
