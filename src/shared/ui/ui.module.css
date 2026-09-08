@@ -131,9 +131,20 @@
   border-radius: 27px 0 0 27px;
   max-width: 560px;
 }
-.filter {
+.filterContainer {
+  container: filters / inline-size;
+  flex: 1 1 760px;
+  min-width: 0;
+  width: 100%;
+}
+.filterActions {
   display: flex;
-  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) repeat(2, 152px) auto;
   align-items: end;
   gap: 8px;
 }
@@ -153,10 +164,11 @@
   font: inherit;
   min-width: 0;
   max-width: 100%;
+  width: 100%;
   color-scheme: inherit;
 }
 .select {
-  width: 152px;
+  width: 100%;
 }
 .export {
   width: 152px;
@@ -187,9 +199,11 @@
     padding: 20px;
     border-radius: 22px;
   }
+}
+@container filters (max-width: 759px) {
   .filter {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
   }
   .filter .input,
@@ -200,6 +214,9 @@
   .filter .field {
     width: 100%;
   }
+  .filterActions {
+    grid-column: 1 / -1;
+  }
 }
 
 .imageFallback {
@@ -209,4 +226,10 @@
   background: var(--control);
   color: var(--muted);
   overflow: hidden;
+}
+
+@container filters (max-width: 319px) {
+  .filter {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

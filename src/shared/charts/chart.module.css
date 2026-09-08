@@ -74,6 +74,7 @@
 }
 .mix {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 24px;
   margin-top: 24px;
@@ -177,4 +178,21 @@
   overflow-wrap: anywhere;
   max-width: 100%;
   font-weight: 500;
+}
+
+.mix > :last-child {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+@container earning-mix (max-width: 360px) {
+  .mix {
+    gap: 16px;
+  }
+  .ring {
+    width: 120px;
+    flex-basis: 120px;
+  }
+  .mix p {
+    font-size: 18px;
+  }
 }

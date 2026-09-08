@@ -52,3 +52,27 @@ Next local implementation task: **F05 content library, clip detail and ad detail
 - Verification: .agent-work/20260908-overview-restore/evidence/tests-2.log has74/74 tests in10files; typecheck-final.log and build-final.log pass, with production fixture exclusion. New regressions preserve portrait/bars/mix/six cards, old-payload unknown slots and projection-to-total reconciliation. Existing filter and payment race tests still pass. Standalone E2E runner was not run.
 - Rendered source comparison and image hashes verified. Browser captures/layout.json/tablet.json record six-card composition at1440,767,390 CSS px with no horizontal overflow. A rapid resize in layout.json retained1440 for its intermediate sample; the separate tablet.json records settled767. Day/Dark inspected, actual portrait/cover images loaded. Native200% zoom and independent review still unproven.
 - No changes to original design-preview assets/source, no real auth/data/API/DB or deployment. F05 remains next after this correction; prior visual candidate is not owner-approved merely because code tests passed.
+
+## Responsive correction — 2026-09-08
+
+Owner requested responsive support while preserving the approved composition, imagery and necessary details. This batch changes presentation only; F05 remains unstarted.
+
+- The profile's zero padding now wins against the shared Card rule regardless of stylesheet order, restoring the full-width portrait. At intermediate widths the portrait has a bounded height instead of growing with all financial explanations.
+- The Overview content band uses its actual available width: three columns above 1079px, paired sales/payout below that, and stacked cards at 680px or below. The desktop portrait / sales+payout / trend / clips+ring composition remains intact. All six cards and all supplied imagery remain present on small screens.
+- FilterBar owns date/brand/export arrangement and a grouped action row. Its optional `actions: ReactNode` slot lets Overview provide refresh alongside reset; existing callers can omit it. Date inputs receive one full row below 320px of available space and two columns on ordinary phones. Brand and export retain equal widths. Controls remain at least 46px tall.
+- The small profile channel breakdown stacks rather than breaking money across lines. The ring adapts to its own card; clip arrows get enough track width. Header identity remains visible on phones, with wrapped header rows and bottom navigation.
+- Containers are limited to the filter and content bands. The export dialog and shell overlays remain outside them; financial authority, query scope, calculation, transport and auth behavior did not change.
+
+### Boundary disposition
+
+Change Mode, B3/B4: backward-compatible shared UI extension. Overview still owns filters, validation and refetch; FilterBar owns presentation and invokes supplied callbacks. Dependency remains feature → shared UI. FoundationGallery, which omits `actions`, was exercised at 280px. No B1/B2/B5–B10 boundary changes, data migration or deployment changes. Existing user authorization covers local implementation and verification. Roll back this presentation commit if controls or required imagery regress; no storage rollback is involved. READY FOR DECLARED SCOPE applies to this local responsive correction only.
+
+### Verification
+
+Evidence: `.agent-work/20260908-overview-responsive/evidence/`.
+
+- 74/74 tests in 10 files passed (`tests.log`); typecheck and final production build passed, including fixture exclusion (`typecheck.log`, `build-final.log`).
+- Browser DOM geometry at actual CSS widths 280, 375, 540, 700, 800, 1120, 1440 and 1920: no document or inspected main-content overflow, all six cards retained, all five main images loaded. `layout.json` records exact widths and control/card rectangles; the capture named `376-day` actually measured 375px. Day/Dark were sampled across the matrix, not every Cartesian combination. Fixed rail has no expanded/collapsed state.
+- Narrow-screen export opens and closes; Axtion filter shows both confirmed totals at ฿15,920; reset and Day/Dark toggle work. Adjustment and error/retry layouts were checked at 280px. FoundationGallery's existing FilterBar caller still fits at 280px without the optional action.
+- Screenshot capture can show stale/clipped compositor regions during viewport emulation; these screenshots alone are not pixel-perfect visual acceptance. DOM geometry and interaction evidence are recorded separately. Viewport restored to native after checks; one tab reused and returned to `/overview-preview`.
+- Native 200% browser zoom, independent implementation review, and owner visual acceptance remain open. No standalone E2E runner, real API/auth/database integration, deployment or F05 completion is claimed.

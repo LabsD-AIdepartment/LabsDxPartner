@@ -58,15 +58,17 @@ export function OverviewPage({
           onChange={setFilters}
           onReset={() => setFilters(initialFilters)}
           onExport={() => setExportOpen(true)}
+          actions={
+            <Button
+              icon
+              aria-label="อัปเดตข้อมูลภาพรวม"
+              disabled={!valid || query.isFetching}
+              onClick={() => void query.refetch()}
+            >
+              <RefreshCw size={18} aria-hidden />
+            </Button>
+          }
         />
-        <Button
-          icon
-          aria-label="อัปเดตข้อมูลภาพรวม"
-          disabled={!valid || query.isFetching}
-          onClick={() => void query.refetch()}
-        >
-          <RefreshCw size={18} aria-hidden />
-        </Button>
       </div>
       {!valid ? (
         <DataState
@@ -104,56 +106,58 @@ export function OverviewPage({
             )}
             {data.dataState !== 'unavailable' && (
               <>
-                <div className={styles.grid}>
-                  <EarningsSummary data={data} filters={filters} partner={partner} />
-                  <Card
-                    className={styles.sales}
-                    title="Sales in motion"
-                    description="ยอดขายที่เข้าเงื่อนไขคอมมิชชันในช่วงที่เลือก"
-                    action={<ArrowUpRight size={18} aria-hidden />}
-                  >
-                    <Money value={data.earnings.eligibleSales} className={styles.largeMoney} />
-                    {data.earnings.salesByBrand ? (
-                      <BarChart items={data.earnings.salesByBrand} />
-                    ) : (
-                      <DataState state="unavailable" message="ยังไม่มีข้อมูลยอดขายแยกตามแบรนด์" />
-                    )}
-                    <div className={styles.cardBottom}>
-                      <span>แยกตามแบรนด์</span>
-                      <span>Eligible sales</span>
-                    </div>
-                    <p className="small muted">ใช้เป็นฐานคำนวณรายได้ ไม่ใช่ยอดเงินที่จะได้รับ</p>
-                  </Card>
-                  <PayoutSummary data={data} />
-                  <Card
-                    className={styles.trend}
-                    title="Every clip counts"
-                    description="คอมมิชชันยืนยันตามวันที่เกิดรายได้ รวมรายการปรับปรุง"
-                  >
-                    <div className={styles.trendSummary}>
-                      <Money value={data.earnings.confirmed} />
-                      <span>
-                        <Video size={15} aria-hidden />
-                        {data.earnings.contentCount ?? '—'} คลิปที่สร้างรายได้
-                      </span>
-                    </div>
-                    <TrendChart points={data.earnings.trend} />
-                    <details>
-                      <summary>ดูตัวเลขรายวัน</summary>
-                      <div className={styles.daily}>
-                        {data.earnings.trend.map((point) => (
-                          <div key={point.date}>
-                            <span>{point.date}</span>
-                            <Money value={point.amount} />
-                          </div>
-                        ))}
+                <div className={styles.contentBands}>
+                  <div className={styles.grid}>
+                    <EarningsSummary data={data} filters={filters} partner={partner} />
+                    <Card
+                      className={styles.sales}
+                      title="Sales in motion"
+                      description="ยอดขายที่เข้าเงื่อนไขคอมมิชชันในช่วงที่เลือก"
+                      action={<ArrowUpRight size={18} aria-hidden />}
+                    >
+                      <Money value={data.earnings.eligibleSales} className={styles.largeMoney} />
+                      {data.earnings.salesByBrand ? (
+                        <BarChart items={data.earnings.salesByBrand} />
+                      ) : (
+                        <DataState state="unavailable" message="ยังไม่มีข้อมูลยอดขายแยกตามแบรนด์" />
+                      )}
+                      <div className={styles.cardBottom}>
+                        <span>แยกตามแบรนด์</span>
+                        <span>Eligible sales</span>
                       </div>
-                    </details>
-                  </Card>
-                </div>
-                <div className={styles.lower}>
-                  <TopContent data={data} filters={filters} />
-                  <EarningMix data={data} />
+                      <p className="small muted">ใช้เป็นฐานคำนวณรายได้ ไม่ใช่ยอดเงินที่จะได้รับ</p>
+                    </Card>
+                    <PayoutSummary data={data} />
+                    <Card
+                      className={styles.trend}
+                      title="Every clip counts"
+                      description="คอมมิชชันยืนยันตามวันที่เกิดรายได้ รวมรายการปรับปรุง"
+                    >
+                      <div className={styles.trendSummary}>
+                        <Money value={data.earnings.confirmed} />
+                        <span>
+                          <Video size={15} aria-hidden />
+                          {data.earnings.contentCount ?? '—'} คลิปที่สร้างรายได้
+                        </span>
+                      </div>
+                      <TrendChart points={data.earnings.trend} />
+                      <details>
+                        <summary>ดูตัวเลขรายวัน</summary>
+                        <div className={styles.daily}>
+                          {data.earnings.trend.map((point) => (
+                            <div key={point.date}>
+                              <span>{point.date}</span>
+                              <Money value={point.amount} />
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    </Card>
+                  </div>
+                  <div className={styles.lower}>
+                    <TopContent data={data} filters={filters} />
+                    <EarningMix data={data} />
+                  </div>
                 </div>
               </>
             )}
