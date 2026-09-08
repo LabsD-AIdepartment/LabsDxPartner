@@ -76,3 +76,11 @@ Evidence: `.agent-work/20260908-overview-responsive/evidence/`.
 - Narrow-screen export opens and closes; Axtion filter shows both confirmed totals at ฿15,920; reset and Day/Dark toggle work. Adjustment and error/retry layouts were checked at 280px. FoundationGallery's existing FilterBar caller still fits at 280px without the optional action.
 - Screenshot capture can show stale/clipped compositor regions during viewport emulation; these screenshots alone are not pixel-perfect visual acceptance. DOM geometry and interaction evidence are recorded separately. Viewport restored to native after checks; one tab reused and returned to `/overview-preview`.
 - Native 200% browser zoom, independent implementation review, and owner visual acceptance remain open. No standalone E2E runner, real API/auth/database integration, deployment or F05 completion is claimed.
+
+## Commission panel organization — 2026-09-08
+
+Owner requested a more orderly and space-efficient earnings pane at 1162px. Grouped the confirmed heading/caption/amount, aligned Organic and Brand ads in equal bordered cells with their rates, placed estimated amount beside its status, and grouped the source link with the adjustment note. All amounts, explanations, rates, links and imagery remain; no query/financial/public contract changed. This is a feature-local presentation change.
+
+Measured pane height at 1162px fell from 552.93px to 429.46px (22.3%). Removing the portrait image's contribution to intrinsic grid sizing lets the portrait match the pane without an empty strip below. Narrow channel cells reflow into label/value rows using the pane's own available width. Desktop six-card composition remains unchanged.
+
+Author verification: final 74/74 tests, typecheck and production build/fixture exclusion passed. Actual browser widths 280/375/1162 Day and 1440 Dark retain complete panel text, loaded images and no pane/document horizontal overflow. Evidence `.agent-work/20260908-earnings-layout/evidence/` includes `geometry.json`, screenshots and command logs. Screenshot compositor limitations and native-zoom/independent/owner acceptance debt remain as documented above. Browser returned to Day/native viewport in the same tab; no F05, upstream, auth, DB or deployment work.

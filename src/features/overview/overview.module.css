@@ -23,8 +23,8 @@
 }
 .heroMoney {
   display: block;
-  font-size: clamp(30px, 3.4vw, 48px);
-  margin: 8px 0 24px;
+  font-size: clamp(30px, 8cqi, 38px);
+  margin: 8px 0 0;
   letter-spacing: -1px;
 }
 .largeMoney {
@@ -35,9 +35,20 @@
 }
 .estimate {
   display: grid;
-  gap: 10px;
-  border-top: 1px solid var(--line);
-  padding-top: 20px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 6px 12px;
+  padding: 12px 0;
+  border-block: 1px solid var(--line);
+  font-size: 14px;
+}
+.estimate > span:nth-child(2) {
+  font-size: 24px;
+  text-align: right;
+}
+.estimate p {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 .scheduled {
   border-top: 1px solid var(--line);
@@ -176,6 +187,8 @@
   overflow: hidden;
 }
 .portrait > :first-child {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -219,7 +232,38 @@
   flex-shrink: 0;
 }
 .earningPane {
+  container: earnings-pane / inline-size;
+  display: grid;
+  align-content: start;
+  gap: 14px;
   padding: 24px;
+  min-width: 0;
+}
+.earningsTotal > p {
+  margin: 4px 0 0;
+}
+.earningsFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+.earningsFooter > a {
+  flex: 1 1 168px;
+  font-size: 14px;
+  justify-content: space-between;
+}
+.earningsFooter > p {
+  flex: 1 1 180px;
+  margin: 0;
+  font-size: 12px;
+}
+.otherIncome {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  font-size: 14px;
 }
 .cardLabel {
   display: flex;
@@ -235,18 +279,22 @@
 .breakdown {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-  border-top: 1px solid var(--line);
-  padding-top: 20px;
-  margin-bottom: 24px;
+  gap: 12px;
 }
 .breakdown > div {
   display: grid;
-  gap: 8px;
-  font-size: 14px;
+  align-content: start;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  font-size: 13px;
 }
 .breakdown > div > span:nth-child(2) {
-  font-size: 23px;
+  font-size: clamp(20px, 6cqi, 26px);
+}
+.breakdown small {
+  font-size: 12px;
 }
 .organicDot,
 .adsDot {
@@ -259,12 +307,6 @@
 }
 .adsDot {
   background: var(--text);
-}
-.estimate {
-  margin-bottom: 20px;
-}
-.estimate p {
-  margin: 0;
 }
 .welcome {
   display: flex;
@@ -365,9 +407,9 @@
     grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   }
   .portrait {
-    height: 420px;
-    min-height: 320px;
-    align-self: start;
+    height: 100%;
+    min-height: 360px;
+    align-self: stretch;
   }
   .sales {
     grid-column: 1;
@@ -438,5 +480,19 @@
   }
   .welcome {
     width: 100%;
+  }
+}
+
+@container earnings-pane (max-width: 270px) {
+  .breakdown {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .breakdown > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 4px 8px;
+  }
+  .breakdown small {
+    grid-column: 1 / -1;
   }
 }

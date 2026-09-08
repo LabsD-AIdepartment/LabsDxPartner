@@ -42,12 +42,14 @@ export function EarningsSummary({
         </div>
       </div>
       <div className={styles.earningPane}>
-        <div className={styles.cardLabel}>
-          <h2>คอมมิชชันของฉัน</h2>
-          <Wallet size={17} aria-hidden />
+        <div className={styles.earningsTotal}>
+          <div className={styles.cardLabel}>
+            <h2>คอมมิชชันของฉัน</h2>
+            <Wallet size={17} aria-hidden />
+          </div>
+          <p className="small muted">Total commission · ยืนยันแล้วในช่วงที่เลือก</p>
+          <Money value={data.earnings.confirmed} className={styles.heroMoney} />
         </div>
-        <p className="small muted">Total commission · ยืนยันแล้วในช่วงที่เลือก</p>
-        <Money value={data.earnings.confirmed} className={styles.heroMoney} />
         <div className={styles.breakdown}>
           <div>
             <span>
@@ -75,8 +77,8 @@ export function EarningsSummary({
           </div>
         </div>
         {channels && channels.other.minor !== '0' && (
-          <p className="small muted">
-            รายได้ประเภทอื่น <Money value={channels.other} />
+          <p className={styles.otherIncome}>
+            <span>รายได้ประเภทอื่น</span> <Money value={channels.other} />
           </p>
         )}
         <div className={styles.estimate}>
@@ -84,8 +86,12 @@ export function EarningsSummary({
           <Money value={data.earnings.estimated} />
           <p className="small muted">ยอดประมาณการอาจเปลี่ยนหลังตรวจสอบ ไม่ใช่ยอดพร้อมจ่าย</p>
         </div>
-        <LinkButton href={earningsHref('/content', data, filters)}>ดูที่มาของรายได้ ↗</LinkButton>
-        <p className="small muted">ยอดยืนยันอาจรวมรายการปรับปรุงหรือคืนสินค้า</p>
+        <div className={styles.earningsFooter}>
+          <p className="small muted">ยอดยืนยันอาจรวมรายการปรับปรุงหรือคืนสินค้า</p>
+          <LinkButton href={earningsHref('/content', data, filters)}>
+            ดูที่มาของรายได้ <span aria-hidden>↗</span>
+          </LinkButton>
+        </div>
       </div>
     </Card>
   );
