@@ -90,6 +90,7 @@ export function readyScenario() {
       confirmedUnpaid: money('2552000'),
       nextPayout: {
         statementId: 'statement-1',
+        period,
         scheduledAt: '2026-09-15T12:00:00+07:00',
         amount: money('2552000'),
       },

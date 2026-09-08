@@ -1,0 +1,42 @@
+# F04 — Overview frontend
+
+Implemented 2026-09-08 as a solo-authored local candidate. The product feature consumes an injected transport; `/overview-preview` supplies isolated synthetic responses for author verification. `/overview` remains behind the deny-only server gate until A03. This is not real partner financial access or full frontend acceptance.
+
+## Behavior and ownership
+
+- Overview requests one schema-validated response per partner/user/permission scope and normalized date/brand filter key. A response with the wrong earnings period is rejected; an older in-flight filter response cannot replace the current selection. Invalid or overlong date windows issue no request.
+- Confirmed and estimated earnings are separate. Eligible sales are labeled as the calculation base. Confirmed unpaid and next scheduled payment have their own obligation timestamp and payout period, independent of content filters. The cards explicitly explain that these balances are not additive.
+- The trend uses earned dates and includes signed adjustments. Expandable daily values retain exact satang precision. All displayed totals come from the transport; the product frontend does not sum financial rows or reconstruct payout balances.
+- Top content shows up to three supplied rows, original 9:16 covers, exact money and an explanation for already-included partner-only earnings. Earnings links carry generation/date/brand context; payout links carry only their independent obligation as-of. A change in settlement does not manufacture an earnings-generation conflict.
+- Loading, initial failure/retry, empty, partial, stale and unavailable states are represented. A failed refresh retains the last snapshot with an explicit warning. Unavailable responses hide financial cards rather than showing fabricated zeros. Export opens an honest availability notice; no file is fabricated.
+- Shared shell, Day/Dark tokens, cards, filters, money, chart, cover, dialog and query provider remain authoritative for their concerns. No new runtime, datastore, identity authority, upstream integration or dependency was introduced.
+
+## Contract compatibility and integration seam
+
+`nextPayout.period` is an additive nullable period, defaulting to null when older payloads omit it. Unknown periods display an explicit unknown label. Producers can add the field without breaking existing fixtures; real G04 producers must source it from the published statement, independently of the selected earnings window.
+
+`OverviewPage` receives `scope`, `transport`, `brands` and optional `initialFilters`. The connection phase must supply the approved period/brand options and an authorized API transport. The development fixture uses July–August 2026; this is not a product reporting-period policy. Financial aggregation lives exclusively in the dev transport as a synthetic upstream, using bigint minor units. The real implementation belongs to G02–G04.
+
+The new development alias is replaced with an unavailable module in production. Both the route gate and browser-bundle marker scan remain in effect. Rollback removes the new route/feature/harness/test files and restores the alias/schema changes; there is no external or database state to reverse.
+
+## Author verification
+
+Evidence directory: `.agent-work/20260908-overview/evidence/`.
+
+- `tests-closeout.log`: **71/71 tests in 10 files**. New coverage includes old payload compatibility, wrong-period rejection, exact large amounts, earned-date aggregation, partial attribution, signed refund adjustment, filter races, retry/unavailable, failed-refresh retention, payment updates retaining filters and payment during the initial request.
+- `typecheck-closeout.log`, `build-closeout.log`: type generation, TypeScript and production build pass; no development fixture markers in production browser bundles.
+- `production-http.json`: nine local production HTTP checks passed: login 200, all three preview routes 404 (including active-query attempt), and three partner routes redirect to login despite synthetic cookies. The final rebuild only followed dev-harness race/watermark and test changes; no production route or feature behavior changed after this HTTP check. Local 4188 verification server was stopped.
+- Browser: changing to Axtion yields ฿15,920 while unpaid stays ฿25,520; recording a synthetic payment changes unpaid to ฿15,520 and advances its timestamp while preserving the selected brand and earnings. Reversing the simulated payment restores ฿25,520. Rapid payment during loading was also exercised.
+- Browser: mobile partial explanation, unavailable without money/zero, empty without invented payout, stale watermark, loading, error/retry, expanded exact daily values and export disclosure were exercised. Day/Dark and desktop card hierarchy were inspected. `browser-layout.json` records 390/767/1440 CSS px with document width equal to viewport width; screenshots include mobile partial Dark and desktop Day/Dark.
+- Initial unit failures were missing jsdom ResizeObserver support, corrected in test setup. Browser checks discovered two dev-harness refresh races: stale query options and reuse of an initial in-flight request. The helper now runs after the query consumer and cancels obsolete requests before invalidation; both flows have regression tests. Original evidence logs are retained.
+
+## Open acceptance and next work
+
+- F05 and F06 must implement the linked destinations. The complete Overview → Transactions later-payment journey cannot be accepted before F06 exists. Current evidence verifies link context, independent timestamps and the Overview refresh, not a completed statement page. F05 must likewise prove Overview → clip → ad → back context persistence.
+- The F03 return-path sanitizer intentionally rejects query strings. A03/F08 must integrate typed reporting context without relaxing that sanitizer into arbitrary return URLs.
+- F08/A03 must connect revision notifications to invalidate Overview when either earnings generation or settlement revision changes, and verify the cross-page race. This batch proves manual/synthetic refresh, not live realtime latency. G04 supplies the real first-screen contract; R01 measures query/load behavior.
+- Sales has no invented brand chart and there is no invented profile/earning-mix data: the current contract does not supply these projections. The original visual prototype remains unchanged and separate from this functional candidate. Revisit presentation with the integrated F05–F07 journeys during F08.
+- Native 200% zoom, independent different-model code review, remote/protected-main/hosted CI and full F08 acceptance remain open. Two E2E specs were added (eight total); the standalone runner was not run. Browser validation used the prescribed in-app runtime.
+- During dev config restart, the existing browser tab became a `data:` error page. Browser URL policy then rejected navigation and closing that old tab. The app opened a replacement local preview tab; all later checks reused it, and its viewport was reset. The old error tab could not be closed through the supported tool; do not open more tabs to work around it.
+
+Next local implementation task: **F05 content library, clip detail and ad detail**, under the unchanged canonical plan. No agents, credentials, real OAuth, database migration, source-system access, merge, push or deployment occurred.

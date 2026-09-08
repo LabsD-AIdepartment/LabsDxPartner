@@ -4,7 +4,14 @@ import { ContentCard } from './content';
 export const Obligation = z.strictObject({
   asOf: Instant,
   confirmedUnpaid: Money,
-  nextPayout: z.strictObject({ statementId: Id, scheduledAt: Instant, amount: Money }).nullable(),
+  nextPayout: z
+    .strictObject({
+      statementId: Id,
+      scheduledAt: Instant,
+      amount: Money,
+      period: Period.nullable().default(null),
+    })
+    .nullable(),
 });
 export const Overview = Freshness.extend({
   earnings: z.strictObject({

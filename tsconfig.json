@@ -21,7 +21,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@foundation-gallery": ["./dev/FoundationGallery.tsx"],
-      "@access-preview": ["./dev/AccessPreview.tsx"]
+      "@access-preview": ["./dev/AccessPreview.tsx"],
+      "@overview-preview": ["./dev/OverviewPreview.tsx"]
     }
   },
   "include": [
