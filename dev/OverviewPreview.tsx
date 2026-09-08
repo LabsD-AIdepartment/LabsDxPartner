@@ -1,4 +1,5 @@
 'use client';
+import { readReportContext } from '@/shared/routing/report-context';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { PartnerShell } from '@/features/shell/PartnerShell';
@@ -11,7 +12,8 @@ import { readyScenario } from './scenarios/ready';
 import type { ScenarioName } from './scenarios';
 import styles from './access-preview.module.css';
 const scope = { userId: 'preview-user', partnerId: 'preview-partner', permissionRevision: '1' };
-export function OverviewPreview() {
+export function OverviewPreview({ search = '' }: { search?: string }) {
+  const report = readReportContext(new URLSearchParams(search));
   const [mode, setMode] = useState<ScenarioName | 'loading' | 'error'>('ready');
   const [paid, setPaid] = useState(false);
   const [notices, setNotices] = useState(() => readyScenario().notifications);
@@ -46,7 +48,7 @@ export function OverviewPreview() {
         active="overview"
         hrefs={{
           overview: '/overview-preview',
-          content: '/content',
+          content: '/content-preview',
           transactions: '/transactions',
         }}
         footerNote="ตัวอย่าง Overview · ข้อมูลจำลอง"
@@ -74,6 +76,13 @@ export function OverviewPreview() {
       >
         <ScopedQueryProvider key={mode} scope={scope}>
           <OverviewPage
+            key={search}
+            contentBasePath="/content-preview"
+            initialFilters={{
+              from: report.from,
+              toExclusive: report.toExclusive,
+              brand: report.brand,
+            }}
             transport={transport}
             scope={scope}
             brands={['Axtion', 'Tendrix', 'Rusiren', 'Melura', 'Zenova']}

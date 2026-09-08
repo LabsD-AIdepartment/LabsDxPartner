@@ -47,6 +47,8 @@ export function assertNoProductionFixtures(root) {
         'Foundation components',
         'Access journey preview',
         'Overview journey preview',
+        'Content journey preview',
+        'synthetic-content-request',
         'synthetic-overview-request',
         'จำลองอนุมัติสิทธิ์',
       ].some((marker) => text.includes(marker))

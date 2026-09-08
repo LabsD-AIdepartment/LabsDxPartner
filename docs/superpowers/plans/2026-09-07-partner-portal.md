@@ -107,12 +107,14 @@ Acceptance: selected period and next-payment context remain clear; retry/empty/s
 
 Files: `app/(partner)/content/{page.tsx,[contentId]/page.tsx,[contentId]/ads/[adId]/page.tsx}`; `src/features/content/{ContentList,ContentCard,ContentDetail,AdDetail,MetricDefinition}.tsx`; `tests/e2e/content.spec.ts`.
 
-- [ ] Use current six covers with 9:16 framing, responsive pagination/search/brand/date controls and honest removed-content placeholders.
-- [ ] Detail defaults to 3–4 useful numbers: eligible sales/orders, earned commission, earnings status. Additional Earnings/Performance sections show calculation basis, rate/terms version and source freshness on demand.
-- [ ] Show associated ad cards and minimal platform metrics with date/definition; platform-attributed conversions are visually separate from payable earnings. Partner-only source evidence renders no fabricated clip breakdown.
-- [ ] Hide spend/ROAS without capability. Distinguish unavailable from zero; reach is never summed across ads. One clip with many ads does not duplicate earnings.
+- [x] Use current six covers with 9:16 framing, a continuous grid with search/brand/date controls and honest removed-content placeholders. Owner correction 2026-09-08: no user-facing library pagination; append source cursor batches automatically in the same page.
+- [x] Detail defaults to 3–4 useful numbers: eligible sales/orders, earned commission, earnings status. Additional Earnings/Performance sections show calculation basis, rate/terms version and source freshness on demand.
+- [x] Show associated ad cards and minimal platform metrics with date/definition; platform-attributed conversions are visually separate from payable earnings. Partner-only source evidence renders no fabricated clip breakdown.
+- [x] Hide spend/ROAS without capability. Distinguish unavailable from zero; reach is never summed across ads. One clip with many ads does not duplicate earnings.
 
 Acceptance: click from Overview → clip → ad → back preserves context; unavailable metrics do not leave misleading zero charts; known earning rows reconcile; no ad-management controls.
+
+Local candidate implemented 2026-09-08. Verification and open owner/independent acceptance gates: `docs/implementation/content-frontend.md`. Real identity and data integration remain later phases.
 
 ### F06 — Transactions, statement detail and export experience
 

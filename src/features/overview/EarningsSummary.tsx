@@ -18,10 +18,12 @@ export function EarningsSummary({
   data,
   filters,
   partner,
+  contentBasePath = '/content',
 }: {
   data: OverviewValue;
   filters: FilterValue;
   partner?: PartnerPresentation;
+  contentBasePath?: string;
 }) {
   const channels = data.earnings.channelBreakdown;
   return (
@@ -88,7 +90,7 @@ export function EarningsSummary({
         </div>
         <div className={styles.earningsFooter}>
           <p className="small muted">ยอดยืนยันอาจรวมรายการปรับปรุงหรือคืนสินค้า</p>
-          <LinkButton href={earningsHref('/content', data, filters)}>
+          <LinkButton href={earningsHref(contentBasePath, data, filters)}>
             ดูที่มาของรายได้ <span aria-hidden>↗</span>
           </LinkButton>
         </div>

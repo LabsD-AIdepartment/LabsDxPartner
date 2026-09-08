@@ -7,12 +7,20 @@ import { CoverImage } from '@/shared/ui/CoverImage';
 import { DataState } from '@/shared/ui/DataState';
 import { earningsHref } from './model';
 import styles from './overview.module.css';
-export function TopContent({ data, filters }: { data: OverviewValue; filters: FilterValue }) {
+export function TopContent({
+  data,
+  filters,
+  contentBasePath = '/content',
+}: {
+  data: OverviewValue;
+  filters: FilterValue;
+  contentBasePath?: string;
+}) {
   return (
     <Card
       title="Small clips Real results"
       description="สูงสุด 3 คลิปตามรายได้ยืนยันในช่วงที่เลือก"
-      action={<Link href={earningsHref('/content', data, filters)}>ดูทั้งหมด ↗</Link>}
+      action={<Link href={earningsHref(contentBasePath, data, filters)}>ดูทั้งหมด ↗</Link>}
     >
       {data.earnings.topContent.length ? (
         <div className={styles.clips}>
@@ -20,7 +28,11 @@ export function TopContent({ data, filters }: { data: OverviewValue; filters: Fi
             <Link
               className={styles.clip}
               key={clip.id}
-              href={earningsHref('/content/' + encodeURIComponent(clip.id), data, filters)}
+              href={earningsHref(
+                contentBasePath + '/' + encodeURIComponent(clip.id),
+                data,
+                filters,
+              )}
             >
               <CoverImage
                 className={styles.cover}

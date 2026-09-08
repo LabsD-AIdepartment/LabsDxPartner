@@ -29,12 +29,14 @@ export function OverviewPage({
   brands,
   initialFilters = defaultOverviewFilters,
   partner,
+  contentBasePath,
 }: {
   scope: QueryScope;
   transport: OverviewTransport;
   brands: string[];
   initialFilters?: FilterValue;
   partner?: PartnerPresentation;
+  contentBasePath?: string;
 }) {
   const [filters, setFilters] = useState(initialFilters);
   const [exportOpen, setExportOpen] = useState(false);
@@ -108,7 +110,12 @@ export function OverviewPage({
               <>
                 <div className={styles.contentBands}>
                   <div className={styles.grid}>
-                    <EarningsSummary data={data} filters={filters} partner={partner} />
+                    <EarningsSummary
+                      data={data}
+                      filters={filters}
+                      partner={partner}
+                      contentBasePath={contentBasePath}
+                    />
                     <Card
                       className={styles.sales}
                       title="Sales in motion"
@@ -155,7 +162,7 @@ export function OverviewPage({
                     </Card>
                   </div>
                   <div className={styles.lower}>
-                    <TopContent data={data} filters={filters} />
+                    <TopContent data={data} filters={filters} contentBasePath={contentBasePath} />
                     <EarningMix data={data} />
                   </div>
                 </div>

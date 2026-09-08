@@ -1,0 +1,348 @@
+.page {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+  min-width: 0;
+}
+.page > a {
+  justify-self: start;
+}
+.filters {
+  margin: 28px 0 18px;
+}
+.search {
+  margin: 18px 0;
+  display: grid;
+  gap: 6px;
+  max-width: 520px;
+  font-size: 14px;
+}
+.search > div {
+  display: flex;
+  gap: 8px;
+}
+.search input {
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  min-height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: var(--control);
+  color: var(--text);
+  font: inherit;
+}
+.freshness {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 16px 0;
+}
+.libraryCard {
+  container: library / inline-size;
+}
+.library {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+@container library (max-width:919px) {
+  .library {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@container library (max-width:699px) {
+  .library {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container library (max-width:459px) {
+  .library {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.clipCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card-solid);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+.clipCard:hover {
+  border-color: var(--accent);
+}
+.clipCard > strong {
+  font-size: 15px;
+  font-weight: 550;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.coverWrap {
+  position: relative;
+  aspect-ratio: 9/16;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--control);
+}
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.brand {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  width: fit-content;
+  max-width: calc(100% - 20px);
+  background: #132219cc;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  padding: 4px 8px;
+  overflow-wrap: anywhere;
+}
+.meta,
+.removed {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.earned {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--green);
+  color: #103d22;
+}
+.earned > span:first-child {
+  font-size: 12px;
+}
+.earned > span:last-child {
+  font-size: 22px;
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 24px;
+  font-size: 13px;
+}
+.pagination button {
+  font-size: 14px;
+}
+.back {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.detailHero {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.65fr) minmax(0, 1.8fr);
+  gap: 28px;
+  align-items: start;
+}
+.detailCover {
+  aspect-ratio: 9/16;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--control);
+}
+.detailSummary {
+  min-width: 0;
+  container: clip-summary / inline-size;
+}
+.detailSummary h2 {
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.5;
+  margin: 6px 0 20px;
+  overflow-wrap: anywhere;
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.kpis > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  min-width: 0;
+}
+.kpis > div > span:first-child {
+  font-size: 13px;
+  color: var(--muted);
+}
+.kpis > div > :nth-child(2) {
+  font-size: clamp(24px, 6cqi, 34px);
+  font-weight: 500;
+}
+.kpis > div > .status {
+  font-size: 20px;
+}
+.kpis small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.disclosure > summary {
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 550;
+  min-height: 28px;
+}
+.disclosure[open] > summary {
+  margin-bottom: 20px;
+}
+.notice {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--badge);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+.metric {
+  border: 1px solid var(--line);
+  padding: 18px;
+  border-radius: 16px;
+  min-width: 0;
+}
+.metric h3 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.metric > strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  margin-bottom: 12px;
+}
+.metric p,
+.metric summary,
+.earningRows p,
+.earningRows summary {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.metric summary,
+.earningRows summary {
+  cursor: pointer;
+}
+.platform {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.platform > h3 {
+  font-size: 18px;
+}
+.platform > p {
+  font-size: 14px;
+  color: var(--muted);
+}
+.earningRows {
+  display: grid;
+  gap: 12px;
+}
+.earningRows article {
+  border: 1px solid var(--line);
+  padding: 16px;
+  border-radius: 14px;
+}
+.rowHeading {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.rowHeading > span {
+  font-size: 22px;
+}
+.adList {
+  display: grid;
+  gap: 12px;
+}
+.adList a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-decoration: none;
+}
+.adList a > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.adList p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+@container clip-summary (max-width:340px) {
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 750px) {
+  .detailHero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .detailCover {
+    width: min(100%, 300px);
+    justify-self: center;
+  }
+  .detailSummary h2 {
+    font-size: 24px;
+  }
+}
+@media (max-width: 360px) {
+  .search > div {
+    flex-wrap: wrap;
+  }
+  .search input {
+    flex-basis: 100%;
+  }
+  .search button {
+    width: 100%;
+  }
+  .pagination button {
+    padding: 10px;
+  }
+}

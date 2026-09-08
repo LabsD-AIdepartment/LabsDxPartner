@@ -64,6 +64,9 @@ export const ContentDetailResponse = envelope(
     eligibleSales: Money.nullable(),
     eligibleOrders: Count.nullable(),
     agreementVersion: Id.nullable(),
+    earningsStatus: z
+      .enum(['confirmed', 'estimated', 'mixed', 'unavailable'])
+      .default('unavailable'),
     metrics: z.array(Metric),
     adCount: Count,
     attribution: z.enum(['content', 'partner-only', 'unavailable']),

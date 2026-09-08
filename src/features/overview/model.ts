@@ -32,22 +32,9 @@ export async function loadOverview(
   return data;
 }
 export function earningsHref(path: string, data: OverviewValue, filters: FilterValue) {
-  return `${path}?${new URLSearchParams({ generation: data.earnings.generation, from: filters.from, toExclusive: filters.toExclusive, ...(filters.brand ? { brand: filters.brand } : {}) })}`;
+  return `${path}?${new URLSearchParams({ generation: data.earnings.generation, origin: 'overview', from: filters.from, toExclusive: filters.toExclusive, ...(filters.brand ? { brand: filters.brand } : {}) })}`;
 }
 export function obligationHref(data: OverviewValue, statementId?: string) {
   return `/transactions${statementId ? '/' + encodeURIComponent(statementId) : ''}?${new URLSearchParams({ obligationAsOf: data.obligation.asOf })}`;
 }
-export function timestamp(value: string | null) {
-  return value
-    ? new Intl.DateTimeFormat('th-TH', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-        timeZone: 'Asia/Bangkok',
-      }).format(new Date(value))
-    : 'ยังไม่มีข้อมูลจากต้นทาง';
-}
-export function dateLabel(value: string) {
-  return new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(
-    new Date(value),
-  );
-}
+export { timestamp, dateLabel } from '@/shared/ui/format-date';

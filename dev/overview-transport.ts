@@ -4,7 +4,7 @@ import type { OverviewTransport } from '@/features/overview/model';
 import { scenario, type ScenarioName } from './scenarios';
 import { money } from './scenarios/ready';
 /** Synthetic upstream aggregation. Never imported by the product Overview feature. */
-export function overviewFixture(filters: FilterValue, name: ScenarioName = 'ready', paid = false) {
+export function overviewRows(filters: FilterValue, name: ScenarioName = 'ready') {
   const s = scenario(name);
   const base = scenario('ready');
   const bySource = new Map(
@@ -25,6 +25,10 @@ export function overviewFixture(filters: FilterValue, name: ScenarioName = 'read
         line.earnedAt.slice(0, 10) < filters.toExclusive &&
         (!filters.brand || bySource.get(line.sourceRef)?.brand === filters.brand),
     );
+  return { s, rows, bySource };
+}
+export function overviewFixture(filters: FilterValue, name: ScenarioName = 'ready', paid = false) {
+  const { s, rows, bySource } = overviewRows(filters, name);
   const sum = (selected: typeof rows) =>
     money(selected.reduce((total, line) => total + BigInt(line.amount.minor), 0n).toString());
   const confirmed = rows.filter((line) => line.status !== 'estimated');
