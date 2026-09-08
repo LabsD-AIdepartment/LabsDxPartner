@@ -41,9 +41,13 @@ export function assertNoProductionFixtures(root) {
   for (const file of walk(root).filter((p) => p.endsWith('.js'))) {
     const text = readFileSync(file, 'utf8');
     if (
-      ['synthetic-foundation-request', 'synthetic-sale-', 'Foundation components'].some((marker) =>
-        text.includes(marker),
-      )
+      [
+        'synthetic-foundation-request',
+        'synthetic-sale-',
+        'Foundation components',
+        'Access journey preview',
+        'จำลองอนุมัติสิทธิ์',
+      ].some((marker) => text.includes(marker))
     )
       throw new Error('Development fixture leaked into production: ' + file);
   }

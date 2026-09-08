@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "es2022"
-    ],
+    "lib": ["dom", "dom.iterable", "es2022"],
     "strict": true,
     "allowJs": true,
     "skipLibCheck": true,
@@ -23,12 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@foundation-gallery": [
-        "./dev/FoundationGallery.tsx"
-      ]
+      "@/*": ["./src/*"],
+      "@foundation-gallery": ["./dev/FoundationGallery.tsx"],
+      "@access-preview": ["./dev/AccessPreview.tsx"]
     }
   },
   "include": [
@@ -45,10 +38,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    ".agent-work",
-    "design-preview",
-    "_Reff"
-  ]
+  "exclude": ["node_modules", ".agent-work", "design-preview", "_Reff"]
 }

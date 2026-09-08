@@ -1,0 +1,28 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--badge);
+  color: var(--text);
+  font-size: 13px;
+}
+.toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.toolbar select {
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card-solid);
+  color: var(--text);
+  max-width: 100%;
+}
+.content {
+  margin-top: 32px;
+}
