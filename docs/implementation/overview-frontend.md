@@ -1,5 +1,7 @@
 # F04 — Overview frontend
 
+> Visual acceptance correction (2026-09-08): the owner rejected the original F04 removal of approved imagery/charts. The original receipt below is historical for presentation; the restoration receipt at the end supersedes its omission rationale. Extra necessary information may lengthen the page; approved elements must remain.
+
 Implemented 2026-09-08 as a solo-authored local candidate. The product feature consumes an injected transport; `/overview-preview` supplies isolated synthetic responses for author verification. `/overview` remains behind the deny-only server gate until A03. This is not real partner financial access or full frontend acceptance.
 
 ## Behavior and ownership
@@ -40,3 +42,13 @@ Evidence directory: `.agent-work/20260908-overview/evidence/`.
 - During dev config restart, the existing browser tab became a `data:` error page. Browser URL policy then rejected navigation and closing that old tab. The app opened a replacement local preview tab; all later checks reused it, and its viewport was reset. The old error tab could not be closed through the supported tool; do not open more tabs to work around it.
 
 Next local implementation task: **F05 content library, clip detail and ad detail**, under the unchanged canonical plan. No agents, credentials, real OAuth, database migration, source-system access, merge, push or deployment occurred.
+
+## Approved composition restored — 2026-09-08
+
+- Restored the original portrait and identity overlay with byte-identical existing assets, header avatar/notifications, welcome, Organic/Brand ads values and rate labels, brand bars, trend total/clip count, payout progress rail and the earning-mix card. Desktop remains portrait left spanning two rows; sales/payout above the wide trend; top content and mix side by side. Tablet/mobile reflow retains all six cards.
+- Existing F04 estimate, exact daily values, partial mapping, timestamps, independent payment balances and explanations remain visible or accessible exactly as before. The owner explicitly accepts additional length when useful; restoration is not a mandate to hide information in accordions or shrink content.
+- Added nullable default-null salesByBrand, channelBreakdown (with nullable per-channel rates) and contentCount to the earnings snapshot. Older responses keep the visual slots with missing-data labels; they never synthesize a breakdown. Financial projection ownership remains upstream. Profile is presentation input; dev supplies the approved sample only.
+- Compared the approved design-preview/app.js data with F01 fixtures: original Organic10% / Brand ads3% yields eligible sales550000 THB, Axtion232000 THB and confirmed37360 THB. Corrected the synthetic fixture's accidental all10% rate/base while preserving commission/payout amounts. These are not real agreement terms. Dev projection sums reconcile for ready, empty, partial and adjustment scenarios; product UI only consumes them.
+- Verification: .agent-work/20260908-overview-restore/evidence/tests-2.log has74/74 tests in10files; typecheck-final.log and build-final.log pass, with production fixture exclusion. New regressions preserve portrait/bars/mix/six cards, old-payload unknown slots and projection-to-total reconciliation. Existing filter and payment race tests still pass. Standalone E2E runner was not run.
+- Rendered source comparison and image hashes verified. Browser captures/layout.json/tablet.json record six-card composition at1440,767,390 CSS px with no horizontal overflow. A rapid resize in layout.json retained1440 for its intermediate sample; the separate tablet.json records settled767. Day/Dark inspected, actual portrait/cover images loaded. Native200% zoom and independent review still unproven.
+- No changes to original design-preview assets/source, no real auth/data/API/DB or deployment. F05 remains next after this correction; prior visual candidate is not owner-approved merely because code tests passed.

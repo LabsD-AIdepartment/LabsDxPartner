@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Freshness, Id, Instant, Money, Period, Count } from './common';
 import { ContentCard } from './content';
+import { Rate } from './earnings';
 export const Obligation = z.strictObject({
   asOf: Instant,
   confirmedUnpaid: Money,
@@ -22,6 +23,22 @@ export const Overview = Freshness.extend({
     eligibleSales: Money,
     unassignedAmount: Money,
     excludedCount: Count,
+    salesByBrand: z
+      .array(z.strictObject({ label: z.string(), value: Money }))
+      .max(100)
+      .nullable()
+      .default(null),
+    channelBreakdown: z
+      .strictObject({
+        organic: Money,
+        brandAds: Money,
+        other: Money,
+        organicRatePpm: Rate.nullable().default(null),
+        brandAdsRatePpm: Rate.nullable().default(null),
+      })
+      .nullable()
+      .default(null),
+    contentCount: Count.nullable().default(null),
     trend: z.array(z.strictObject({ date: z.iso.date(), amount: Money })).max(366),
     topContent: z.array(ContentCard).max(3),
   }),

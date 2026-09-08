@@ -28,6 +28,43 @@ export function overviewFixture(filters: FilterValue, name: ScenarioName = 'read
   const sum = (selected: typeof rows) =>
     money(selected.reduce((total, line) => total + BigInt(line.amount.minor), 0n).toString());
   const confirmed = rows.filter((line) => line.status !== 'estimated');
+  // Explicit synthetic channel mapping, not a product-side attribution guess.
+  const organicSources = new Set(['synthetic-sale-1', 'synthetic-sale-3', 'synthetic-sale-5']);
+  const channelRate = (organic: boolean) => {
+    const rates = new Set(
+      rows
+        .filter(
+          (line) => line.kind === 'commission' && organicSources.has(line.sourceRef) === organic,
+        )
+        .map((line) => line.ratePpm),
+    );
+    return rates.size === 1 ? [...rates][0] : null;
+  };
+  const brandSales = [
+    ...new Set(
+      rows
+        .map((line) => bySource.get(line.sourceRef)?.brand)
+        .filter((x): x is string => Boolean(x)),
+    ),
+  ]
+    .map((label) => ({
+      label,
+      value: money(
+        rows
+          .filter(
+            (line) => line.kind === 'commission' && bySource.get(line.sourceRef)?.brand === label,
+          )
+          .reduce((n, line) => n + BigInt(line.eligibleBase?.minor ?? '0'), 0n)
+          .toString(),
+      ),
+    }))
+    .sort((a, b) =>
+      BigInt(a.value.minor) > BigInt(b.value.minor)
+        ? -1
+        : BigInt(a.value.minor) < BigInt(b.value.minor)
+          ? 1
+          : a.label.localeCompare(b.label),
+    );
   const dates = new Map<string, bigint>();
   for (const line of confirmed) {
     const date = line.earnedAt.slice(0, 10);
@@ -60,6 +97,15 @@ export function overviewFixture(filters: FilterValue, name: ScenarioName = 'read
         timezone: 'Asia/Bangkok',
       },
       confirmed: sum(confirmed),
+      salesByBrand: brandSales,
+      channelBreakdown: {
+        organic: sum(confirmed.filter((line) => organicSources.has(line.sourceRef))),
+        brandAds: sum(confirmed.filter((line) => !organicSources.has(line.sourceRef))),
+        other: money('0'),
+        organicRatePpm: channelRate(true),
+        brandAdsRatePpm: channelRate(false),
+      },
+      contentCount: new Set(confirmed.map((line) => line.contentId).filter(Boolean)).size,
       estimated: sum(rows.filter((line) => line.status === 'estimated')),
       eligibleSales: money(
         rows

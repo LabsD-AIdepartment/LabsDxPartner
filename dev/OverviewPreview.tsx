@@ -6,12 +6,15 @@ import { OverviewPage } from '@/features/overview/OverviewPage';
 import { ScopedQueryProvider } from '@/shared/query/provider';
 import { Button } from '@/shared/ui/Button';
 import { createOverviewTransport } from './overview-transport';
+import { NotificationButton } from '@/features/shell/NotificationButton';
+import { readyScenario } from './scenarios/ready';
 import type { ScenarioName } from './scenarios';
 import styles from './access-preview.module.css';
 const scope = { userId: 'preview-user', partnerId: 'preview-partner', permissionRevision: '1' };
 export function OverviewPreview() {
   const [mode, setMode] = useState<ScenarioName | 'loading' | 'error'>('ready');
   const [paid, setPaid] = useState(false);
+  const [notices, setNotices] = useState(() => readyScenario().notifications);
   const transport = useMemo(() => createOverviewTransport(mode, paid), [mode, paid]);
   return (
     <>
@@ -47,12 +50,40 @@ export function OverviewPreview() {
           transactions: '/transactions',
         }}
         footerNote="ตัวอย่าง Overview · ข้อมูลจำลอง"
+        avatar="/media/celebrity-avatar.png"
+        notifications={
+          <NotificationButton
+            data={notices}
+            onSeen={(id) =>
+              setNotices((current) => {
+                const items = current.items.map((item) =>
+                  item.id === id ? { ...item, seen: true } : item,
+                );
+                return {
+                  ...current,
+                  items,
+                  unseenCount: items.filter((item) => !item.seen).length,
+                };
+              })
+            }
+            onOpenStatement={() => {
+              window.location.href = '/transactions';
+            }}
+          />
+        }
       >
         <ScopedQueryProvider key={mode} scope={scope}>
           <OverviewPage
             transport={transport}
             scope={scope}
             brands={['Axtion', 'Tendrix', 'Rusiren', 'Melura', 'Zenova']}
+            partner={{
+              name: 'มดดำ คชาภา',
+              greeting: 'คุณมดดำ',
+              role: 'Celebrity partner',
+              portrait: '/media/celebrity-thumbnail.png',
+              avatar: '/media/celebrity-avatar.png',
+            }}
           />
           <RefreshOnPayment paid={paid} />
         </ScopedQueryProvider>

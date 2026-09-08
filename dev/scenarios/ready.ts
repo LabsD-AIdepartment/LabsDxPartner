@@ -57,8 +57,11 @@ export function readyScenario() {
     earnedAt: item.publishedAt,
     contentId: item.id,
     kind: 'commission' as const,
-    eligibleBase: money((BigInt(amounts[i]) * 10n).toString()),
-    ratePpm: 100000,
+    // Preserve the approved sample: Organic 10%, Brand ads 3% (design-preview/app.js).
+    eligibleBase: money(
+      ((BigInt(amounts[i]) * 1000000n) / BigInt(i % 2 === 0 ? 100000 : 30000)).toString(),
+    ),
+    ratePpm: i % 2 === 0 ? 100000 : 30000,
     amount: money(amounts[i]),
     status: 'confirmed' as const,
     reason: null,
@@ -79,7 +82,7 @@ export function readyScenario() {
       period,
       estimated: money('0'),
       confirmed: money('3736000'),
-      eligibleSales: money('37360000'),
+      eligibleSales: money('55000000'),
       unassignedAmount: money('0'),
       excludedCount: 0,
       trend: items.map((x) => ({ date: x.publishedAt.slice(0, 10), amount: x.earned })).reverse(),

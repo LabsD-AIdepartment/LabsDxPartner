@@ -35,6 +35,20 @@ export function PayoutSummary({ data }: { data: OverviewValue }) {
       <p className={styles.label}>
         ยอดนี้ไม่เปลี่ยนตามตัวกรองคอนเทนต์ และไม่ต้องนำไปบวกกับคอมมิชชันด้านซ้าย
       </p>
+      <div
+        className={styles.payoutTrack}
+        data-confirmed={BigInt(obligation.confirmedUnpaid.minor) > 0n}
+        aria-hidden
+      >
+        <i />
+        <i />
+        <i />
+      </div>
+      <div className={styles.payoutSteps}>
+        <span>บันทึกยอด</span>
+        <span>ยืนยันยอด</span>
+        <span>โอนเงิน</span>
+      </div>
       <a href={obligationHref(data)}>ดูรายการจ่ายทั้งหมด</a>
     </Card>
   );

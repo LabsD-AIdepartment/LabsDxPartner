@@ -3,14 +3,14 @@ test('content filters do not rewrite payout; later settlement keeps selected fil
   page,
 }) => {
   await page.goto('/overview-preview');
-  await expect(page.getByText('฿37,360', { exact: true })).toBeVisible();
+  await expect(page.getByText('฿37,360', { exact: true }).first()).toBeVisible();
   await page.getByLabel('แบรนด์').selectOption('Axtion');
-  await expect(page.getByText('฿15,920', { exact: true })).toBeVisible();
+  await expect(page.getByText('฿15,920', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('฿25,520', { exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: 'จำลองบันทึกจ่าย 10,000 บาท' }).click();
   await expect(page.getByText('฿15,520', { exact: true }).first()).toBeVisible();
   await expect(page.getByLabel('แบรนด์')).toHaveValue('Axtion');
-  await expect(page.getByText('฿15,920', { exact: true })).toBeVisible();
+  await expect(page.getByText('฿15,920', { exact: true }).first()).toBeVisible();
   expect(
     await page.getByRole('link', { name: 'ดูรอบจ่ายนี้ ↗' }).getAttribute('href'),
   ).not.toContain('generation');

@@ -22,12 +22,14 @@ export function PartnerShell({
   hrefs = partnerHrefs,
   notifications = null,
   footerNote,
+  avatar,
 }: {
   active: Menu;
   children: ReactNode;
   hrefs?: Record<Menu, string>;
   notifications?: ReactNode;
   footerNote?: ReactNode;
+  avatar?: string;
 }) {
   const [title, accent, subtitle] = headings[active];
   return (
@@ -39,6 +41,7 @@ export function PartnerShell({
       subtitle={subtitle}
       notifications={notifications}
       footerNote={footerNote}
+      avatar={avatar}
     >
       {children}
     </AppShell>

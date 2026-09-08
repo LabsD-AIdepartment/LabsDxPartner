@@ -29,6 +29,44 @@ const renderPage = (transport: Parameters<typeof OverviewPage>[0]['transport']) 
     </ScopedQueryProvider>,
   );
 describe('Overview contract and snapshot semantics', () => {
+  it('brand and channel projections reconcile with the selected earnings snapshot', () => {
+    for (const name of ['ready', 'partial', 'adjustments', 'empty'] as const) {
+      const data = overviewFixture(filters, name);
+      expect(
+        data.earnings.salesByBrand!.reduce((n, b) => n + BigInt(b.value.minor), 0n).toString(),
+      ).toBe(data.earnings.eligibleSales.minor);
+      const channels = data.earnings.channelBreakdown!;
+      expect(
+        (
+          BigInt(channels.organic.minor) +
+          BigInt(channels.brandAds.minor) +
+          BigInt(channels.other.minor)
+        ).toString(),
+      ).toBe(data.earnings.confirmed.minor);
+    }
+  });
+  it('old payloads retain visual slots without inventing missing breakdowns', async () => {
+    const current = overviewFixture(filters);
+    const { salesByBrand, channelBreakdown, contentCount, ...oldEarnings } = current.earnings;
+    const old = Overview.parse({ ...current, earnings: oldEarnings });
+    expect(old.earnings.channelBreakdown).toBeNull();
+    renderPage(async () => old);
+    expect(await screen.findByText('ยังไม่มีข้อมูลยอดขายแยกตามแบรนด์')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Your earning mix' })).toBeVisible();
+    expect(screen.getByRole('article', { name: 'โปรไฟล์และคอมมิชชัน' })).toBeVisible();
+    expect(screen.queryByText('80%')).toBeNull();
+  });
+  it('preserves approved portrait, bar chart, earning mix and six-card composition', async () => {
+    render(<OverviewPreview />);
+    await screen.findAllByText('฿37,360');
+    expect(screen.getByRole('img', { name: 'ภาพโปรไฟล์ มดดำ คชาภา' })).toHaveAttribute(
+      'src',
+      '/media/celebrity-thumbnail.png',
+    );
+    expect(screen.getByRole('img', { name: /Axtion: ฿232,000/ })).toBeVisible();
+    expect(screen.getByRole('img', { name: 'Organic 80%' })).toBeVisible();
+    expect(screen.getAllByRole('article')).toHaveLength(6);
+  });
   it('optional payout period preserves older wire compatibility', () => {
     const data = overviewFixture(filters);
     const { period, ...old } = data.obligation.nextPayout!;
@@ -41,8 +79,11 @@ describe('Overview contract and snapshot semantics', () => {
     const all = overviewFixture(filters);
     const axtion = overviewFixture({ ...filters, brand: 'Axtion' });
     expect(all.earnings.confirmed.minor).toBe('3736000');
+    expect(all.earnings.eligibleSales.minor).toBe('55000000');
+    expect(all.earnings.channelBreakdown?.organicRatePpm).toBe(100000);
+    expect(all.earnings.channelBreakdown?.brandAdsRatePpm).toBe(30000);
     expect(axtion.earnings.confirmed.minor).toBe('1592000');
-    expect(axtion.earnings.eligibleSales.minor).toBe('15920000');
+    expect(axtion.earnings.eligibleSales.minor).toBe('23200000');
     expect(axtion.obligation).toEqual(all.obligation);
     expect(all.earnings.trend.at(-1)?.date).toBe('2026-08-30');
     expect(all.earnings.topContent[0].publishedAt.slice(0, 10)).toBe('2026-08-28');
@@ -92,21 +133,21 @@ describe('Overview loading, errors and exact display', () => {
       .mockResolvedValueOnce(overviewFixture(filters))
       .mockRejectedValue(new Error('down'));
     renderPage(transport);
-    await screen.findByText('฿37,360');
+    (await screen.findAllByText('฿37,360'))[0];
     fireEvent.click(screen.getByRole('button', { name: 'อัปเดตข้อมูลภาพรวม' }));
     expect(await screen.findByText('อัปเดตไม่สำเร็จ กำลังแสดงข้อมูลครั้งล่าสุด')).toBeVisible();
-    expect(screen.getByText('฿37,360')).toBeVisible();
+    expect(screen.getAllByText('฿37,360')[0]).toBeVisible();
     expect(screen.getByRole('button', { name: 'ลองอีกครั้ง' })).toBeVisible();
   });
   it('payment refresh uses the latest transport without resetting the selected brand', async () => {
     render(<OverviewPreview />);
-    await screen.findByText('฿37,360');
+    (await screen.findAllByText('฿37,360'))[0];
     fireEvent.change(screen.getByLabelText('แบรนด์'), { target: { value: 'Axtion' } });
-    await screen.findByText('฿15,920');
+    (await screen.findAllByText('฿15,920'))[0];
     fireEvent.click(screen.getByRole('button', { name: 'จำลองบันทึกจ่าย 10,000 บาท' }));
     await waitFor(() => expect(screen.getAllByText('฿15,520')).toHaveLength(2));
     expect(screen.getByLabelText('แบรนด์')).toHaveValue('Axtion');
-    expect(screen.getByText('฿15,920')).toBeVisible();
+    expect(screen.getAllByText('฿15,920')[0]).toBeVisible();
     expect(overviewFixture(filters, 'empty', true).obligation.confirmedUnpaid.minor).toBe('0');
   });
   it('shows loading then exact confirmed and estimated values from the same response', async () => {
@@ -122,7 +163,7 @@ describe('Overview loading, errors and exact display', () => {
     data.earnings.estimated.minor = '900719925474099301';
     finish(data);
     expect(await screen.findByText('฿9,007,199,254,740,993.01')).toBeVisible();
-    expect(screen.getByText('฿37,360')).toBeVisible();
+    expect(screen.getAllByText('฿37,360')[0]).toBeVisible();
   });
   it('retries a failed first response and unavailable never presents old amounts as zero', async () => {
     const transport = vi
@@ -147,7 +188,7 @@ describe('Overview loading, errors and exact display', () => {
     fireEvent.change(screen.getByLabelText('แบรนด์'), { target: { value: 'Axtion' } });
     await waitFor(() => expect(pending.has('Axtion')).toBe(true));
     pending.get('Axtion')!(overviewFixture({ ...filters, brand: 'Axtion' }));
-    expect(await screen.findByText('฿15,920')).toBeVisible();
+    expect((await screen.findAllByText('฿15,920'))[0]).toBeVisible();
     pending.get('all')!(overviewFixture(filters));
     await waitFor(() => expect(screen.queryByText('฿37,360')).toBeNull());
     fireEvent.change(screen.getByLabelText('เริ่มวันที่'), { target: { value: '2026-09-02' } });
