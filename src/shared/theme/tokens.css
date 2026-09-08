@@ -1,0 +1,122 @@
+:root {
+  color-scheme: light;
+  --canvas: #ececea;
+  --card: #f9f9f7;
+  --card-solid: #f9f9f7;
+  --text: #272925;
+  --muted: #5f6558;
+  --line: #e4e5df;
+  --border: #ffffff8c;
+  --control: #f5f5f2;
+  --hover: #e5e9df;
+  --accent: #62695b;
+  --green: linear-gradient(120deg, #a3ef89, #68df60 35%, #32c96b);
+  --primary: #272925;
+  --primary-text: #fff;
+  --badge: #e5e9d7;
+  --badge-text: #596442;
+  --profile: #fafbf6dc;
+  --payout: linear-gradient(135deg, #f9faf4, #f1f3ea);
+  --chart-dot: #32432d;
+  --ring-track: #315d4c;
+  --ring-text: #084c3c;
+  font-family: 'DM Sans Variable', 'Noto Sans Thai Variable', sans-serif;
+  background: var(--canvas);
+  color: var(--text);
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --canvas: #030806;
+  --card: linear-gradient(145deg, #0b130e, #080e0b 65%);
+  --card-solid: #090f0c;
+  --text: #eff7f0;
+  --muted: #a4b8aa;
+  --line: #2b3d32;
+  --border: #2a4133;
+  --control: #0c1410;
+  --hover: #17251c;
+  --accent: #7ee5a1;
+  --primary: linear-gradient(120deg, #9aef82, #31cf6e);
+  --primary-text: #083b20;
+  --badge: #181d13;
+  --badge-text: #d5dfaf;
+  --profile: #09110d;
+  --payout: linear-gradient(135deg, #0d1a12, #08100b);
+  --chart-dot: #a2d39b;
+  --ring-track: #244d3d;
+  --ring-text: #bbf3cb;
+  background:
+    radial-gradient(ellipse at 5% 0%, #071c1280, transparent 42%),
+    radial-gradient(ellipse at 95% 70%, #05170e50, transparent 42%), var(--canvas);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+button,
+input,
+select {
+  font-size: 16px;
+}
+button svg {
+  flex-shrink: 0;
+}
+a {
+  color: inherit;
+}
+img {
+  max-width: 100%;
+}
+h1,
+h2,
+h3,
+p {
+  overflow-wrap: anywhere;
+}
+:focus-visible {
+  outline: 3px solid #32c96b;
+  outline-offset: 4px;
+}
+.standalone {
+  max-width: 900px;
+  padding: 64px 24px;
+  margin: auto;
+}
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 14px;
+}
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 20;
+  padding: 12px;
+  background: var(--card-solid);
+  transform: translateY(-160%);
+}
+.skip-link:focus {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

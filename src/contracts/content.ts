@@ -1,0 +1,73 @@
+import { z } from 'zod';
+import { Id, Count, Instant, Money, Period, envelope, page } from './common';
+export const Metric = z
+  .strictObject({
+    key: z.enum([
+      'eligible_orders',
+      'eligible_sales',
+      'impressions',
+      'link_clicks',
+      'video_views',
+      'reach',
+      'platform_orders',
+      'platform_value',
+      'spend',
+      'roas',
+    ]),
+    value: z.number().finite().nonnegative().nullable(),
+    unit: z.enum(['count', 'THB', 'ratio']),
+    definition: z.string().min(1),
+    source: Id,
+    period: Period,
+    dataThrough: Instant.nullable(),
+    unavailableReason: z.string().min(1).nullable(),
+    additive: z.boolean(),
+  })
+  .refine(
+    (v) => v.value !== null || v.unavailableReason !== null,
+    'Unknown metric requires a reason',
+  )
+  .refine((v) => v.key !== 'reach' || !v.additive, 'Reach is non-additive');
+export const ContentCard = z
+  .strictObject({
+    id: Id,
+    title: z.string().min(1),
+    brand: Id,
+    publishedAt: Instant,
+    cover: z.string().startsWith('/media/').nullable(),
+    coverPosition: z.string().max(40),
+    removed: z.boolean(),
+    views: Count.nullable(),
+    earned: Money.nullable(),
+    unavailableReason: z.string().nullable(),
+  })
+  .refine(
+    (v) => v.earned !== null || v.unavailableReason !== null,
+    'Unknown earnings need a reason',
+  );
+export const Ad = z.strictObject({
+  id: Id,
+  contentId: Id,
+  title: z.string().min(1),
+  status: z.enum(['active', 'paused', 'removed', 'unknown']),
+  asOf: Instant,
+  metrics: z.array(Metric),
+});
+export const ContentListResponse = envelope(page(ContentCard));
+export const ContentDetailResponse = envelope(
+  z.strictObject({
+    content: ContentCard,
+    sourceUrl: z
+      .url()
+      .refine((v) => v.startsWith('https://'))
+      .nullable(),
+    eligibleSales: Money.nullable(),
+    eligibleOrders: Count.nullable(),
+    agreementVersion: Id.nullable(),
+    metrics: z.array(Metric),
+    adCount: Count,
+    attribution: z.enum(['content', 'partner-only', 'unavailable']),
+  }),
+);
+export const AdListResponse = envelope(page(Ad));
+export const AdDetailResponse = envelope(Ad);

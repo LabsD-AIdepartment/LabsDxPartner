@@ -1,0 +1,21 @@
+name: Partner foundation checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run verify:no-demo
+      - run: npm run build

@@ -1,0 +1,180 @@
+.chart {
+  width: 100%;
+  min-width: 0;
+  margin-top: 22px;
+}
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.chart text {
+  font:
+    14px 'DM Sans Variable',
+    'Noto Sans Thai Variable',
+    sans-serif;
+  fill: var(--muted);
+}
+.chart .callout {
+  fill: #21421c;
+  font-size: 14px;
+}
+.bars {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  height: 178px;
+  margin-top: 22px;
+}
+.barItem {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+.bar {
+  min-height: 4px;
+  border-radius: 7px 7px 0 0;
+  background: repeating-linear-gradient(
+    125deg,
+    transparent,
+    transparent 3px,
+    #4a9c6455 3px,
+    #4a9c6455 4px
+  );
+  border: 1px solid #4a9c6433;
+  position: relative;
+}
+.featured {
+  background: var(--green);
+  box-shadow:
+    inset 1px 1px 3px #ffffff99,
+    0 6px 18px #32c96b1c;
+}
+.barLabel {
+  font-size: 14px;
+  text-align: center;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.barValue {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  color: #103d22;
+  font-weight: 700;
+}
+.mix {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 24px;
+}
+.ring {
+  width: 140px;
+  flex: 0 0 140px;
+  position: relative;
+}
+.ring svg {
+  width: 100%;
+  display: block;
+  filter: drop-shadow(0 4px 8px #32c96b25);
+}
+.center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--ring-text);
+}
+.center small {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.legend {
+  font-size: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: var(--muted);
+  margin-top: 16px;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  background: #32c96b;
+}
+.mix p {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.5;
+}
+.axisCaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 12px;
+}
+@media (max-width: 600px) {
+  .mix {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .ring {
+    width: 120px;
+    flex-basis: 120px;
+  }
+  .mix p {
+    font-size: 18px;
+  }
+  .chart text {
+    font-size: 14px;
+  }
+  .barLabel {
+    font-size: 14px;
+  }
+  .axisCaption {
+    font-size: 14px;
+    flex-wrap: wrap;
+  }
+  .bars {
+    gap: 6px;
+  }
+}
+
+.lastValue {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: 14px;
+  margin: 4px 0;
+}
+.lastValue strong {
+  background: #c5fa5f;
+  color: #21421c;
+  padding: 2px 8px;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  font-weight: 500;
+}

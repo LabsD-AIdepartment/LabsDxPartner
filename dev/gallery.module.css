@@ -1,0 +1,374 @@
+.tools {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin: 32px 0 20px;
+}
+.welcome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.spark {
+  color: #91bf62;
+}
+.bento {
+  display: grid;
+  grid-template-columns: 0.88fr 1.1fr 0.94fr;
+  grid-template-rows: auto auto;
+  gap: 14px;
+}
+.profile {
+  grid-row: span 2;
+  padding: 0;
+  overflow: hidden;
+  background: var(--profile);
+}
+.portrait {
+  width: 100%;
+  height: 300px;
+  position: relative;
+  background: #f4a1b3;
+  overflow: hidden;
+}
+.portrait > img {
+  object-position: 50% 20%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.identity {
+  position: absolute;
+  bottom: 16px;
+  left: 20px;
+  right: 20px;
+  padding: 10px 14px;
+  background: var(--card-solid);
+  border-radius: 18px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.identity img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.identity strong {
+  font-size: 16px;
+  display: block;
+  line-height: 1.4;
+}
+.identity span {
+  font-size: 14px;
+  color: var(--muted);
+}
+.profileBody {
+  padding: 24px;
+}
+.profileBody h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.figure {
+  font-size: 38px;
+  font-weight: 500;
+  letter-spacing: -1px;
+  display: block;
+  margin: 14px 0 8px;
+}
+.profileFigure {
+  font-size: 46px;
+}
+.divider {
+  height: 1px;
+  background: var(--line);
+  margin: 22px 0;
+}
+.breakdown {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.breakdown p {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+.breakdown strong {
+  font-weight: 500;
+  font-size: 24px;
+}
+.payout {
+  background: var(--payout);
+}
+.payout .figure {
+  margin-top: 16px;
+}
+.payout button {
+  width: 100%;
+  justify-content: space-between;
+  margin-top: 28px;
+}
+.progress {
+  display: flex;
+  gap: 4px;
+  margin-top: 25px;
+}
+.progress i {
+  height: 3px;
+  background: var(--green);
+  flex: 1;
+}
+.progress i:last-child {
+  background: var(--line);
+}
+.progressLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.trend {
+  grid-column: 2/4;
+}
+.inline {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.lower {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+.clipRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+  width: 100%;
+  background: none;
+  color: inherit;
+  border-width: 0 0 1px;
+  text-align: left;
+  cursor: pointer;
+}
+.clipRow:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.clipRow img,
+.clipRow > [role='img'] {
+  width: 48px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.clipText {
+  flex: 1;
+  min-width: 0;
+}
+.clipText p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.clipText small {
+  font-size: 14px;
+  color: var(--muted);
+}
+.clipRow strong {
+  font-size: 20px;
+  font-weight: 500;
+}
+.scenarioPanel {
+  margin-top: 32px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+.scenarioControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0 18px;
+}
+.scenarioControls select {
+  background: var(--control);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 14px;
+  min-height: 46px;
+  font: inherit;
+}
+.stateGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.library {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+.cover {
+  aspect-ratio: 9/16;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+.tileTitle {
+  font-size: 16px;
+  min-height: 3em;
+  margin: 12px 0;
+}
+.earnPanel {
+  background: var(--green);
+  border-radius: 12px;
+  padding: 12px;
+  color: #103d22;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 16px;
+}
+.galleryLabel {
+  font-size: 14px;
+  color: var(--muted);
+}
+.detailImage {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  object-position: 50% 30%;
+  border-radius: 16px;
+}
+.statuses {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+@media (max-width: 1100px) {
+  .bento {
+    grid-template-columns: 1fr 1fr;
+  }
+  .profile {
+    grid-column: 1/-1;
+    grid-row: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .portrait {
+    height: 100%;
+    min-height: 300px;
+  }
+  .trend {
+    grid-column: 1/-1;
+  }
+  .lower {
+    grid-template-columns: 1fr 1fr;
+  }
+  .profileBody {
+    padding: 24px;
+  }
+  .figure {
+    font-size: 34px;
+  }
+}
+@media (max-width: 700px) {
+  .bento {
+    grid-template-columns: 1fr;
+  }
+  .profile {
+    display: block;
+  }
+  .portrait {
+    height: 280px;
+    min-height: 0;
+  }
+  .trend {
+    grid-column: 1;
+  }
+  .lower {
+    grid-template-columns: 1fr;
+  }
+  .tools {
+    gap: 16px;
+  }
+  .figure {
+    font-size: 34px;
+  }
+  .profileFigure {
+    font-size: 42px;
+  }
+  .stateGrid {
+    grid-template-columns: 1fr;
+  }
+  .clipRow strong {
+    font-size: 18px;
+  }
+  .clipText p {
+    font-size: 14px;
+  }
+  .library {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .library article {
+    padding: 12px;
+  }
+  .earnPanel {
+    flex-wrap: wrap;
+    font-size: 14px;
+  }
+  .tileTitle {
+    font-size: 14px;
+  }
+  .identity {
+    left: 16px;
+    right: 16px;
+  }
+}
+@media (max-width: 350px) {
+  .library {
+    grid-template-columns: 1fr;
+  }
+  .figure {
+    font-size: 30px;
+  }
+  .profileFigure {
+    font-size: 36px;
+  }
+  .breakdown {
+    flex-wrap: wrap;
+  }
+}
+
+.stress {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.stress .cover {
+  width: 90px;
+  flex-shrink: 0;
+}
+.stress > span:last-child {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 28px;
+}
