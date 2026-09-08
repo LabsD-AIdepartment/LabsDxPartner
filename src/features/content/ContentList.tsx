@@ -59,11 +59,7 @@ export function ContentList(
           }
         />
       </div>
-      <Card
-        className={styles.libraryCard}
-        title="Your content library"
-        description="คลิปและคอมมิชชันในช่วงที่เลือก เปิดคลิปเพื่อดูที่มาของตัวเลข"
-      >
+      <Card className={styles.libraryCard} title="Your content library">
         <form
           className={styles.search}
           onSubmit={(e) => {
@@ -71,10 +67,10 @@ export function ContentList(
             onChange(changeReportFilters(c, { q: search.trim() }));
           }}
         >
-          <label htmlFor="content-search">ค้นหาคลิปหรือแบรนด์</label>
           <div>
             <input
               id="content-search"
+              aria-label="ค้นหาคลิปหรือแบรนด์"
               type="search"
               maxLength={160}
               value={search}
@@ -101,7 +97,7 @@ export function ContentList(
           />
         )}
         {data && !query.error && (
-          <DataEnvelope data={data}>
+          <DataEnvelope data={data} showFreshness={false}>
             <p className={styles.meta}>
               {data.data.totalCount === null ? 'รายการคลิป' : `${data.data.totalCount} คลิป`} ·
               รายได้ตามวันที่เกิดรายการ ไม่ใช่ยอดตลอดอายุคลิป

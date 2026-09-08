@@ -38,6 +38,7 @@ export function ContentState({
 export function DataEnvelope({
   data,
   children,
+  showFreshness = true,
 }: {
   data: {
     dataState: 'ready' | 'partial' | 'stale' | 'unavailable';
@@ -47,15 +48,18 @@ export function DataEnvelope({
     period: { from: string; toExclusive: string };
   };
   children: ReactNode;
+  showFreshness?: boolean;
 }) {
   return (
     <>
-      <div className={styles.freshness}>
-        <span>
-          ช่วงรายได้ {dateLabel(data.period.from)} – ก่อน {dateLabel(data.period.toExclusive)}
-        </span>
-        <span>ข้อมูลถึง {timestamp(data.dataThrough)}</span>
-      </div>
+      {showFreshness && (
+        <div className={styles.freshness}>
+          <span>
+            ช่วงรายได้ {dateLabel(data.period.from)} – ก่อน {dateLabel(data.period.toExclusive)}
+          </span>
+          <span>ข้อมูลถึง {timestamp(data.dataThrough)}</span>
+        </div>
+      )}
       {data.dataState !== 'ready' && (
         <DataState state={data.dataState} message={data.reasons.join(' · ') || undefined} />
       )}

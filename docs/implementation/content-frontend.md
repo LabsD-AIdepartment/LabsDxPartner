@@ -45,3 +45,7 @@ Evidence: `.agent-work/20260908-f05/evidence/` (ignored project-local artifacts)
 F05 is an implemented local candidate, not independently reviewed or owner-approved. F06 is next: transactions, statement bridge/detail, export states and later-payment cross-page acceptance. F07/F08, native zoom, real identity/source/API performance and release gates remain open. No realtime latency or SQL/query-performance claim is made here.
 
 Rollback: revert the F05 product commit; no schema migration or data rollback is needed. The prior contract remains readable and the approved design-preview project is unchanged.
+
+## Owner cleanup — 2026-09-08
+
+Removed the library subtitle, visible search-field label, selected-period summary and data-through row at the owner's four marked locations. Search retains its accessible name via aria-label; filtering, continuous six-cover grid and exceptional data-state warnings remain functional. Detail pages retain their metadata. Scoped check:17/17 content tests and typecheck passed; rendered1162px page has six clips, no requested texts/metadata row and no horizontal overflow. Evidence `.agent-work/20260908-content-cleanup/evidence/`; no production build rerun for this presentation-only cleanup.
