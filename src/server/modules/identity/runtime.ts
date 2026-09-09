@@ -8,11 +8,13 @@ import { identityBindingDigest, readIdentityConfig } from './provider-config';
 import { principalResolver } from './resolve-principal';
 import { createIdentityMethods } from './methods';
 import { transactionIdentity } from './transaction-auth';
+import { createOAuthBoundary } from './oauth-boundary';
 
 type Runtime = {
   auth: ReturnType<typeof createIdentity>;
   assertBinding: () => Promise<void>;
   methods: ReturnType<typeof createIdentityMethods>;
+  handle: (request: Request) => Promise<Response>;
 };
 let current: Runtime | undefined;
 export function getIdentityRuntime(): Runtime | null {
@@ -21,9 +23,11 @@ export function getIdentityRuntime(): Runtime | null {
   const config = readIdentityConfig(process.env);
   const sql = postgres(config.DATABASE_URL, { max: 10, idle_timeout: 20, connect_timeout: 5 });
   const db = drizzle(sql);
+  const flows = createOAuthBoundary(sql, config.BETTER_AUTH_URL);
   const auth = createIdentity(
     config,
-    drizzleAdapter(db, { provider: 'pg', schema: authSchema, transaction: true }),
+    flows.database(drizzleAdapter(db, { provider: 'pg', schema: authSchema, transaction: true })),
+    flows.hooks,
   );
   const assertBinding = async () => {
     const rows = await db
@@ -37,6 +41,7 @@ export function getIdentityRuntime(): Runtime | null {
   current = {
     auth,
     assertBinding,
+    handle: (request) => flows.handle(request, auth.handler),
     methods: createIdentityMethods(
       sql,
       principalResolver(auth, assertBinding),

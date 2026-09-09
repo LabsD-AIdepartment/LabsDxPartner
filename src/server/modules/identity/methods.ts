@@ -6,6 +6,7 @@ import { Provider } from '@/contracts/session';
 import type { createIdentity } from './auth';
 import type { ResolvePrincipal } from './resolve-principal';
 import { FRESH_SESSION_SECONDS } from './policy';
+import { revokeIdentitySessions } from './revocation';
 
 const Revision = z.string().regex(/^[a-f0-9]{64}$/);
 const Unlink = z.strictObject({ accountId: Id, expectedRevision: Revision, idempotencyKey: Id });
@@ -104,6 +105,9 @@ export function createIdentityMethods(
         if (revision(current) !== command.expectedRevision)
           throw new IdentityMethodFailure('conflict');
         if (current.length < 2) throw new IdentityMethodFailure('last_method');
+        const [binding] = await tx`select account_id from portal_identity.accounts
+          where id = ${selected.id} AND user_id = ${userId}`;
+        if (!binding) throw new IdentityMethodFailure('not_found');
 
         // Crucially the MAINTAINED native API runs on this transaction's adapter.
         // A separate pool here would commit deletion before audit/revocation could fail.
@@ -115,8 +119,10 @@ export function createIdentityMethods(
           remaining.some((method) => method.id === selected.id)
         )
           throw new Error('Native identity mutation did not remove the selected method');
-        const revoked =
-          await tx`delete from portal_identity.sessions where user_id = ${userId} returning id`;
+        const revoked = await revokeIdentitySessions(tx, userId, {
+          provider: selected.provider,
+          subject: binding.account_id,
+        });
         const result = Receipt.parse({
           requestId: randomUUID(),
           accountId: selected.id,

@@ -10,11 +10,13 @@
 
 **Authority:** [Architecture and data rules](../../design/partner-portal-architecture.md), [approved visual direction](../../design/phase-1-theme-design-system.md), [reduced scope and existing-system evidence](../../research/2026-09-07-partner-portal-reuse-scope.md). The larger original business proposal is historical; use these documents for execution.
 
-**Date/status:** 2026-09-07; implementation candidate, independent review recorded separately. There is currently a local vanilla preview, no Git repository and no production authentication. Proposed target paths below are to be created; commands below become available in F00. No application implementation occurred while writing this plan.
+**Original plan date:** 2026-09-07. The original no-Git/prototype-only baseline is historical. As of2026-09-09 F00–F08 have local candidates, A01/A02 and G01 have partial services; actual provider/data/release acceptance remains open. Individual receipts and `.agent-work/context/HANDOFF.md` identify current evidence and unfinished changes. Older unchecked boxes are acceptance requirements, not a current implementation inventory.
 
 **Revision 2026-09-08:** [stack-fit decision](../../design/stack-fit-decision.md) removes any requirement to match Sale Dashboard's technology. Next.js remains selected on product-fit grounds after comparing Vite/Fastify, Vite/Hono, SvelteKit and Laravel. Automatic-refresh behavior is now explicit; [new review receipt](../../reviews/2026-09-08-stack-fit-review.md) applies to this revision. The original three-round review remains historical evidence for its exact candidate.
 
 ## 1. Scope and delivery order
+
+**Whole-system review2026-09-09:** [Full20-task practicality review](../../reviews/2026-09-09-practicality-review.md) covers completed and pending work, business fit and architecture. Immediate sequencing now prioritizes G01 plus I01 source-contract discovery alongside native provider proof, before further generic financial/auth expansion. Preserve approved frontend and exact-money/access controls. Self-service linking deferral and optional-insight pilot scope are recommendations requiring explicit resolution, not removed requirements or waived release gates. Source/payment authority and real input grain determine which adapters/writers are actually needed; do not implement all listed source adapters by default. No application deletion or production exposure follows from this review.
 
 | Phase | Deliverable visible to owner | Tasks | Exit gate |
 |---|---|---|---|
@@ -185,6 +187,8 @@ Acceptance: two-partner adversarial matrix covers session route, direct object I
 
 Local preparation 2026-09-09: membership/invitation services and transactional native unlink wrapper implemented; 34 isolated PostgreSQL tests pass. See `docs/implementation/membership-access.md` and `docs/implementation/identity-methods.md`. Explicit linking, callback/session-issuance fencing, recovery, HTTP wiring and real-provider acceptance remain open; these partial service checks do not close A02.
 
+Subsequent local preparation2026-09-09: guarded native callbacks/linking and revocation fencing now pass48 isolated PostgreSQL tests including14 new callback cases. [Callback receipt](../../implementation/oauth-callback-boundary.md) records the test-lifecycle repair, rollback/concurrency evidence and limitations. Actual provider proof, recovery, housekeeping and account HTTP/frontend wiring remain open; A02 is not complete.
+
 ### A03 — Connect frontend to real sessions
 
 Files: `src/features/login/`, `src/features/account/`, `src/shared/query/`, `app/(partner)/layout.tsx`; `tests/e2e/authenticated-journeys.spec.ts`.
@@ -292,7 +296,7 @@ Acceptance: independent reviewer sees failure-mode evidence and measured limits.
 
 Files: `docs/implementation/release-checklist.md`; `docs/runbooks/deployment.md`; CI/deployment configuration only when target is authorized.
 
-- [ ] Record protected-main candidate SHA, dependency lockfile, migration list, build digest, web/import artifact pairing, test evidence and separate-model review. Current directory has no Git baseline; F00 must have resolved that first.
+- [ ] Record protected-main candidate SHA, dependency lockfile, migration list, build digest, web/import artifact pairing, test evidence and separate-model review. A local Git baseline exists; remote/protected-main and release-artifact evidence remain separate requirements.
 - [ ] Confirm domain/provider callback inventory, all three auth providers, business agreement input, source freshness and support owner. Establish feature flags for partner exposure, import scheduler and period publication independently.
 - [ ] Prepare deployment with exposure/import/publication OFF, exact target binding and reversible verification; obtain explicit authorization for production migration/deploy/exposure and costs. Never treat this plan review as that approval.
 - [ ] After authorized deploy, verify actual deployment ID+SHA+digest, health, isolated smoke and migration ledger; only then enable one invited pilot cohort under the agreed exposure decision. No automatic payment execution.

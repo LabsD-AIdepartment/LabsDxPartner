@@ -26,6 +26,8 @@ const users: string[] = [];
 const states: string[] = [];
 beforeAll(async () => {
   sql = await connectTestDatabase();
+  // Isolated test-only limiter state must not leak from a preceding429 test/run.
+  await sql`delete from portal_identity.rate_limits`;
   auth = createIdentity(
     config,
     drizzleAdapter(drizzle(sql), { provider: 'pg', schema: authSchema, transaction: true }),

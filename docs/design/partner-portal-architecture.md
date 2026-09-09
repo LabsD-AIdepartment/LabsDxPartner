@@ -4,6 +4,8 @@ Date: 2026-09-07. Scope: small invitation-based partner portal over existing Lab
 
 Revised 2026-09-08: [independent stack-fit decision](stack-fit-decision.md) replaces all reasoning based on matching Sale Dashboard. The chosen technologies remain after comparing alternatives against this portal's requirements. Added explicit automatic-refresh contract; prior review receipts apply only to their frozen files.
 
+Whole-system review2026-09-09: [Practicality review](../reviews/2026-09-09-practicality-review.md) assesses all20 tasks and current code. Retain the modular monolith; select one actual source grain and authoritative payment path before adding adapters or financial writers. The row-level approved-period parser does not yet cover the previously allowed approved-summary/file path. Provisioning private storage is conditional on existing authorized source capability. Self-service account-lifecycle and optional metric sequencing remain explicit scope decisions, not automatic removals. This review has not independently accepted the unfinished auth experiment or production behavior.
+
 ## 1. Outcome and scope
 
 A partner signs in with Google, LINE or Apple; sees their own earnings, content and payment periods; opens a number to understand its source/calculation; downloads an authorized statement; asks the existing Labs D contact about a specific reference. Three main menus stay Overview / My content / Transactions. Profile holds agreement summary, connected identities, support and sign-out. Staff have a small separately authorized operations surface for invitations/mapping, period publication and recording existing payment evidence.

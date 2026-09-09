@@ -4,11 +4,18 @@ import { safeReturnTo } from '@/shared/routing/partner-paths';
 import { mapProfile } from './profile-map';
 import { providerNamespace, type IdentityConfig } from './provider-config';
 import { FRESH_SESSION_SECONDS } from './policy';
+import type { GenericEndpointContext } from '@better-auth/core';
+
+export type IdentityFlowHooks = {
+  before: (ctx: GenericEndpointContext) => Promise<void>;
+  validateUserInfo: NonNullable<NonNullable<BetterAuthOptions['user']>['validateUserInfo']>;
+};
 
 /** Construction is injectable for adapter tests; production runtime supplies only the Postgres adapter. */
 export function identityOptions(
   config: IdentityConfig,
   database: NonNullable<BetterAuthOptions['database']>,
+  flows?: IdentityFlowHooks,
 ) {
   return {
     appName: 'Labs D x Partner',
@@ -20,7 +27,10 @@ export function identityOptions(
     logger: { disabled: true },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
-        if (ctx.path !== '/sign-in/social' && ctx.path !== '/link-social') return;
+        if (ctx.path !== '/sign-in/social' && ctx.path !== '/link-social') {
+          await flows?.before(ctx);
+          return;
+        }
         for (const field of ['callbackURL', 'errorCallbackURL', 'newUserCallbackURL'] as const) {
           const value: unknown = ctx.body?.[field];
           if (
@@ -33,11 +43,16 @@ export function identityOptions(
           }
         }
         if (ctx.body) ctx.body.callbackURL ??= '/access/pending';
+        await flows?.before(ctx);
       }),
     },
     trustedOrigins: [config.BETTER_AUTH_URL, 'https://appleid.apple.com'],
     emailAndPassword: { enabled: false },
-    user: { changeEmail: { enabled: false }, deleteUser: { enabled: false } },
+    user: {
+      changeEmail: { enabled: false },
+      deleteUser: { enabled: false },
+      validateUserInfo: flows?.validateUserInfo,
+    },
     socialProviders: {
       google: {
         clientId: config.GOOGLE_CLIENT_ID,
@@ -76,7 +91,7 @@ export function identityOptions(
       accountLinking: {
         enabled: true,
         disableImplicitLinking: true,
-        trustedProviders: [],
+        trustedProviders: flows ? ['google', 'line', 'apple'] : [],
         allowDifferentEmails: true,
         allowUnlinkingAll: false,
         updateUserInfoOnLink: false,
@@ -95,12 +110,15 @@ export function identityOptions(
       storage: 'database',
       window: 60,
       max: 60,
-      customRules: { '/sign-in/social': { window: 60, max: 10 } },
+      customRules: {
+        '/sign-in/social': { window: 60, max: 10 },
+        '/link-social': { window: 60, max: 10 },
+      },
     },
-    // Raw HTTP unlink bypasses the application transaction. Keep both routes
-    // disabled until guarded host wiring and callback/session fencing are accepted.
+    // Raw HTTP unlink bypasses the atomic application service and stays disabled.
+    // Linking is allowed only when the guarded callback boundary is installed.
     disabledPaths: [
-      '/link-social',
+      ...(flows ? [] : ['/link-social']),
       '/unlink-account',
       '/get-access-token',
       '/refresh-token',
@@ -121,6 +139,7 @@ export function identityOptions(
 export function createIdentity(
   config: IdentityConfig,
   database: NonNullable<BetterAuthOptions['database']>,
+  flows?: IdentityFlowHooks,
 ) {
-  return betterAuth(identityOptions(config, database));
+  return betterAuth(identityOptions(config, database, flows));
 }

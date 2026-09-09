@@ -107,4 +107,35 @@ export const methodAudit = identity.table(
     index('method_audit_actor_time_idx').on(t.actorId, t.createdAt),
   ],
 );
+// Application-owned OAuth intent/fence projections; SQL migrations own checks.
+// Keep these outside authSchema so the auth library cannot mutate them implicitly.
+export const mutationClock = identity.table('mutation_clock', {
+  id: text('id').primaryKey(),
+  revision: bigint('revision', { mode: 'bigint' }).notNull(),
+});
+export const userFence = identity.table('user_fences', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  revision: bigint('revision', { mode: 'bigint' }).notNull(),
+});
+export const subjectFence = identity.table('subject_fences', {
+  subjectDigest: text('subject_digest').primaryKey(),
+  revision: bigint('revision', { mode: 'bigint' }).notNull(),
+});
+export const oauthIntent = identity.table(
+  'oauth_intents',
+  {
+    id: text('id').primaryKey(),
+    provider: text('provider').notNull(),
+    purpose: text('purpose').notNull(),
+    actorId: text('actor_id'),
+    sessionId: text('session_id'),
+    startRevision: bigint('start_revision', { mode: 'bigint' }).notNull(),
+    expiresAt: date('expires_at').notNull(),
+    consumedAt: date('consumed_at'),
+    createdAt: date('created_at').defaultNow().notNull(),
+  },
+  (t) => [index('oauth_intents_expiry_idx').on(t.expiresAt)],
+);
 export const authSchema = { user, session, account, verification, rateLimit };

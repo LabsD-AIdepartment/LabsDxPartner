@@ -6,6 +6,7 @@ import { InviteRequest } from '@/contracts/operations';
 import { Session, type SessionValue } from '@/contracts/session';
 import type { ResolvePrincipal } from '@/server/modules/identity/resolve-principal';
 import { FRESH_SESSION_SECONDS } from '@/server/modules/identity/policy';
+import { revokeIdentitySessions } from '@/server/modules/identity/revocation';
 
 const PartnerCapability = z.enum([
   'view_earnings',
@@ -300,8 +301,7 @@ export function createPartnerAccess(sql: Sql, resolvePrincipal: ResolvePrincipal
           where partner_id = ${command.partnerId} AND user_id = ${command.userId} AND permission_revision = ${command.expectedRevision}::bigint
           returning id,permission_revision::text as revision`;
         if (!member) throw new AccessFailure('conflict');
-        const revoked =
-          await tx`delete from portal_identity.sessions where user_id = ${command.userId} returning id`;
+        const revoked = await revokeIdentitySessions(tx, command.userId);
         const result = { membershipId: String(member.id), revision: String(member.revision) };
         await audit(
           tx,
