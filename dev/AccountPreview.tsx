@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { LinkButton } from '@/shared/ui/LinkButton';
 import { AppShell } from '@/features/shell/AppShell';
 import { AccountPage } from '@/features/account/AccountPage';
 import { ScopedQueryProvider } from '@/shared/query/provider';
@@ -47,7 +48,11 @@ export function AccountPreview() {
           <AccountPage
             scope={accountScope}
             transport={transport}
-            onLogout={() => router.push('/login')}
+            onLogout={() => router.push('/access-preview')}
+            reauthHref="/access-preview"
+            credentials={
+              <LinkButton href="/access-preview">ทดลองตั้งบัญชีและเปลี่ยนรหัสผ่านของคุณ</LinkButton>
+            }
           />
         </ScopedQueryProvider>
       </AppShell>

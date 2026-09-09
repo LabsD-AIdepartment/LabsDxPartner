@@ -138,7 +138,7 @@ export function PartnerApplication({
         : 'view_earnings';
   const canView = screen.kind === 'account' || member?.capabilities.includes(capability);
   return (
-    <PartnerShell active={active} accountHref="/account">
+    <PartnerShell active={screen.kind === 'account' ? null : active} accountHref="/account">
       <div className={forms.row}>
         <div>
           {session.displayName}

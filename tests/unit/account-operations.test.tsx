@@ -38,10 +38,14 @@ const readOps = (transport: OpsTransport) =>
   loadOps(transport, { scope: opsScope, view: 'periods', cursor: null, signal: signal() });
 describe('F07 account identity and recovery', () => {
   it('refuses a foreign user or agreement before exposing account details', async () => {
-    for (const key of ['user', 'agreement']) {
+    for (const key of ['user', 'agreement', 'partner', 'revision']) {
       const v = accountFixture();
       if (key === 'user') v.data.userId = 'other';
-      else v.data.agreement!.partnerId = 'other';
+      else if (key === 'agreement') v.data.agreement!.partnerId = 'other';
+      else if (key === 'partner') {
+        v.partnerId = 'other';
+        v.data.agreement = null;
+      } else v.permissionRevision = '2';
       await expect(
         loadAccount(
           { ...createAccountTransport('ready'), read: async () => v },
@@ -51,39 +55,49 @@ describe('F07 account identity and recovery', () => {
       ).rejects.toThrow();
     }
   });
-  it('prevents final-method removal in both UI and adapter', async () => {
-    const transport = createAccountTransport('single-method');
+  it('shows username, agreement and recovery without social-method controls', async () => {
     render(
       <ScopedQueryProvider scope={accountScope}>
-        <AccountPage scope={accountScope} transport={transport} onLogout={vi.fn()} />
+        <AccountPage
+          scope={accountScope}
+          transport={createAccountTransport('ready')}
+          onLogout={vi.fn()}
+        />
       </ScopedQueryProvider>,
     );
-    expect(await screen.findByRole('button', { name: 'ยกเลิกการเชื่อม Google' })).toBeDisabled();
-    const result = await actOnAccount(transport, {
-      scope: accountScope,
-      expectedRevision: '1',
-      idempotencyKey: 'last',
-      command: { action: 'unlink', provider: 'google' },
-      signal: signal(),
-    });
-    expect(result.status).toBe('last-method');
-    expect((await loadAccount(transport, accountScope, signal())).data.providers).toHaveLength(1);
+    await screen.findByText('ชื่อผู้ใช้: partner.demo');
+    expect(screen.getByText('ข้อตกลงของคุณ')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'ลืมรหัสผ่านหรือเข้าใช้งานไม่ได้' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Google|Apple|เชื่อมบัญชี/)).not.toBeInTheDocument();
   });
-  it.each([
-    ['conflict', 'conflict'],
-    ['reauth', 'requires-reauth'],
-    ['recovery', 'recovery-required'],
-  ] as const)('keeps providers unchanged for %s', async (mode, status) => {
-    const t = createAccountTransport(mode);
+  it('explains verified recovery without creating a link or mutating the account', async () => {
+    const t = createAccountTransport('ready');
+    const before = await loadAccount(t, accountScope, signal());
     const response = await actOnAccount(t, {
       scope: accountScope,
       expectedRevision: '1',
-      idempotencyKey: 'a',
-      command: { action: 'link', provider: 'apple' },
+      idempotencyKey: 'recover',
+      command: { action: 'recover' },
       signal: signal(),
     });
-    expect(response.status).toBe(status);
-    expect((await loadAccount(t, accountScope, signal())).data.providers).toHaveLength(2);
+    expect(response.status).toBe('recovery-required');
+    expect(response.message).toContain('ยังไม่มีการส่งลิงก์');
+    expect(await loadAccount(t, accountScope, signal())).toEqual(before);
+  });
+  it('rejects obsolete social commands before any transport call', async () => {
+    const t = { read: vi.fn(), act: vi.fn() };
+    await expect(
+      actOnAccount(t, {
+        scope: accountScope,
+        expectedRevision: '1',
+        idempotencyKey: 'old',
+        command: { action: 'link', provider: 'google' } as never,
+        signal: signal(),
+      }),
+    ).rejects.toThrow();
+    expect(t.act).not.toHaveBeenCalled();
   });
   it('rejects changed permission scope and reused keys with different commands', async () => {
     const t = createAccountTransport('ready'),
@@ -91,14 +105,12 @@ describe('F07 account identity and recovery', () => {
         scope: accountScope,
         expectedRevision: '1',
         idempotencyKey: 'one',
-        command: { action: 'link' as const, provider: 'apple' as const },
+        command: { action: 'logout' as const },
         signal: signal(),
       };
     const response = await t.act(r);
     expect(await t.act(r)).toEqual(response);
-    await expect(
-      t.act({ ...r, command: { action: 'unlink', provider: 'google' } }),
-    ).rejects.toThrow('คำสั่งอื่น');
+    await expect(t.act({ ...r, command: { action: 'recover' } })).rejects.toThrow('คำสั่งอื่น');
     await expect(
       t.act({ ...r, scope: { ...accountScope, permissionRevision: '2' } }),
     ).rejects.toThrow();

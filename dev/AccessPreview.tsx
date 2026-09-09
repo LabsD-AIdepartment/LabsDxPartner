@@ -9,7 +9,9 @@ import type { Menu } from '@/features/shell/Navigation';
 import { NotificationButton } from '@/features/shell/NotificationButton';
 import { readyScenario } from './scenarios/ready';
 import { PartnerShell } from '@/features/shell/PartnerShell';
-import { Card } from '@/shared/ui/Card';
+import { AccountPage } from '@/features/account/AccountPage';
+import { CredentialAccount } from '@/features/partner-application/CredentialAccount';
+import { createAccountTransport } from './account-transport';
 import { Text } from '@/shared/ui/Text';
 import { Button } from '@/shared/ui/Button';
 import { ScopedQueryProvider } from '@/shared/query/provider';
@@ -163,12 +165,13 @@ function MockPartnerPages({
   const [notices, setNotices] = useState(() => readyScenario().notifications);
   const transport = useMemo(
     () => ({
+      account: createAccountTransport('ready', username),
       overview: createOverviewTransport('ready'),
       content: createContentTransport('ready'),
       transactions: createTransactionTransport('ready', false),
       documents: createSampleDocuments('ready', false, 'ready'),
     }),
-    [],
+    [username],
   );
   const contentProps = {
     scope,
@@ -188,7 +191,7 @@ function MockPartnerPages({
   };
   return (
     <PartnerShell
-      active={active}
+      active={menu === 'account' ? null : active}
       accountHref="/access-preview/account"
       hrefs={routes}
       notifications={
@@ -210,14 +213,15 @@ function MockPartnerPages({
     >
       <ScopedQueryProvider scope={scope}>
         {menu === 'account' ? (
-          <Card title="บัญชีของคุณ">
-            <Text>ชื่อผู้ใช้: {username}</Text>
-            <Text>ดาราพาร์ทเนอร์ · ดีลตัวอย่าง Labs D</Text>
-            <Text tone="muted">
-              บัญชีนี้อยู่เฉพาะในตัวอย่างที่เปิดอยู่ รีโหลดแล้วข้อมูลบัญชีจะหาย
-            </Text>
-            <Button onClick={logout}>ออกจากระบบ</Button>
-          </Card>
+          <AccountPage
+            scope={scope}
+            transport={transport.account}
+            onLogout={logout}
+            reauthHref="/login"
+            credentials={
+              <CredentialAccount name={username} showIdentity={false} onChanged={logout} />
+            }
+          />
         ) : active === 'overview' ? (
           <OverviewPage
             transport={transport.overview}

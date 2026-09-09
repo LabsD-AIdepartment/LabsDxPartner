@@ -212,7 +212,7 @@ export function readyScenario() {
       userId: 'user-1',
       displayName: 'มดดำ คชาภา',
       agreement,
-      providers: [{ provider: 'google', canUnlink: false }],
+      username: 'partner.demo',
       supportUrl: null,
     }),
     notifications: Notifications.parse({

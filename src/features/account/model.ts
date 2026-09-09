@@ -23,11 +23,11 @@ export async function loadAccount(
   const value = AccountResponse.parse(raw);
   if (
     value.data.userId !== scope.userId ||
+    value.partnerId !== scope.partnerId ||
+    value.permissionRevision !== scope.permissionRevision ||
     (value.data.agreement && value.data.agreement.partnerId !== scope.partnerId)
   )
     throw new Error('ข้อมูลบัญชีไม่ตรงกับพาร์ทเนอร์ที่เลือก');
-  if (new Set(value.data.providers.map((p) => p.provider)).size !== value.data.providers.length)
-    throw new Error('ข้อมูลวิธีเข้าสู่ระบบซ้ำกัน');
   return value;
 }
 export async function actOnAccount(

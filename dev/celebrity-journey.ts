@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ActivateAccount } from '@/contracts/invitations';
-import { ResetPassword } from '@/contracts/passwords';
+import { ResetPassword, ChangePassword } from '@/contracts/passwords';
 import { CredentialLogin } from '@/contracts/credentials';
 import { CredentialError, type credentialRequest } from '@/features/login/credential-client';
 
@@ -57,6 +57,18 @@ export function createCelebrityJourney(now = () => Date.now()) {
         membershipId: 'preview-member',
         status: 'active',
       };
+    } else if (path === '/api/access/passwords/change') {
+      const value = ChangePassword.parse(input);
+      const candidate = account;
+      if (!authenticated || !candidate) throw new CredentialError('UNAUTHENTICATED');
+      if ((await digest(value.currentPassword)) !== candidate.digest || account !== candidate)
+        throw new CredentialError('INVALID_PASSWORD');
+      const nextDigest = await digest(value.password);
+      if (!authenticated || account !== candidate) throw new CredentialError('UNAUTHENTICATED');
+      account = { username: candidate.username, digest: nextDigest };
+      authenticated = false;
+      reset = null;
+      result = { status: 'requires-login' };
     } else if (path === '/api/access/passwords/inspect') {
       const { token } = z.object({ token: z.string() }).parse(input);
       const current = assertReset(token);

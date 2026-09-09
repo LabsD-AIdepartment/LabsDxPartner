@@ -25,7 +25,7 @@ export function PartnerShell({
   avatar,
   accountHref,
 }: {
-  active: Menu;
+  active: Menu | null;
   children: ReactNode;
   hrefs?: Record<Menu, string>;
   notifications?: ReactNode;
@@ -33,7 +33,10 @@ export function PartnerShell({
   avatar?: string;
   accountHref?: string;
 }) {
-  const [title, accent, subtitle] = headings[active];
+  const [title, accent, subtitle] =
+    active === null
+      ? ['Your account', 'Your partnership', 'บัญชี ข้อตกลง และความช่วยเหลือของคุณ']
+      : headings[active];
   return (
     <AppShell
       active={active}

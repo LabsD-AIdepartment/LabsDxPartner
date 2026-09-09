@@ -11,12 +11,13 @@ import { ConfirmAction } from '@/shared/ui/ConfirmAction';
 import { dateLabel } from '@/shared/ui/format-date';
 import { actOnAccount, loadAccount, type AccountTransport, type Action } from './model';
 import styles from '@/shared/ui/forms.module.css';
-const providers = { google: 'Google', line: 'LINE', apple: 'Apple' } as const;
+import type { ReactNode } from 'react';
 type Props = {
   scope: QueryScope;
   transport: AccountTransport;
   onLogout: () => void;
   reauthHref?: string;
+  credentials?: ReactNode;
 };
 export function AccountPage(props: Props) {
   return <AccountContent key={JSON.stringify(scopeKey(props.scope))} {...props} />;
@@ -26,6 +27,7 @@ function AccountContent({
   transport,
   onLogout,
   reauthHref = '/login?next=%2Faccount',
+  credentials,
 }: Props) {
   const client = useQueryClient();
   const [action, setAction] = useState<Action | null>(null),
@@ -53,7 +55,7 @@ function AccountContent({
               <Card title="บัญชีของคุณ">
                 <Text variant="sectionTitle">{data.displayName}</Text>
                 <Text variant="caption" tone="muted">
-                  ข้อมูลบัญชีและช่องทางเข้าสู่ระบบของคุณ
+                  ชื่อผู้ใช้: {data.username}
                 </Text>
               </Card>
               <Card title="ข้อตกลงของคุณ">
@@ -91,46 +93,14 @@ function AccountContent({
                   </Text>
                 )}
               </Card>
-              <Card
-                title="วิธีเข้าสู่ระบบ"
-                description="เพิ่มช่องทางสำรองสำหรับเข้าสู่บัญชีเดียวกัน"
-              >
-                {Object.entries(providers).map(([key, label]) => {
-                  const provider = key as keyof typeof providers;
-                  const linked = data.providers.find((p) => p.provider === provider);
-                  const last = data.providers.length === 1;
-                  return (
-                    <div className={styles.row} key={key}>
-                      <div>
-                        <Text variant="label">{label}</Text>
-                        <Text variant="caption" tone="muted">
-                          {linked ? 'เชื่อมแล้ว' : 'ยังไม่เชื่อม'}
-                          {linked && last ? ' · ต้องเหลืออย่างน้อยหนึ่งวิธี' : ''}
-                        </Text>
-                      </div>
-                      <Button
-                        disabled={
-                          q.data!.dataState !== 'ready' || (!!linked && (!linked.canUnlink || last))
-                        }
-                        onClick={() => {
-                          setMessage('');
-                          setNeedsAuth(false);
-                          setAction({ action: linked ? 'unlink' : 'link', provider });
-                        }}
-                      >
-                        {linked ? 'ยกเลิกการเชื่อม' : 'เชื่อมบัญชี'} {label}
-                      </Button>
-                    </div>
-                  );
-                })}
-                <Button onClick={() => setAction({ action: 'recover' })}>
-                  เข้าใช้งานวิธีเดิมไม่ได้
-                </Button>
-              </Card>
+              {credentials}
               <Card title="ความช่วยเหลือ">
                 <Text>
                   ติดต่อผู้ดูแล Labs D ผ่านช่องทางที่ใช้อยู่ หากต้องตรวจสอบบัญชีหรือข้อตกลง
                 </Text>
+                <Button onClick={() => setAction({ action: 'recover' })}>
+                  ลืมรหัสผ่านหรือเข้าใช้งานไม่ได้
+                </Button>
                 {data.supportUrl && (
                   <LinkButton href={data.supportUrl} target="_blank" rel="noopener noreferrer">
                     ติดต่อผู้ดูแล
@@ -141,13 +111,7 @@ function AccountContent({
               {action && (
                 <ConfirmAction
                   key={`${scope.userId}:${scope.partnerId}:${scope.permissionRevision}:${q.data.revision}:${JSON.stringify(action)}`}
-                  title={
-                    action.action === 'logout'
-                      ? 'ออกจากระบบ'
-                      : action.action === 'recover'
-                        ? 'กู้คืนการเข้าใช้งาน'
-                        : 'จัดการวิธีเข้าสู่ระบบ'
-                  }
+                  title={action.action === 'logout' ? 'ออกจากระบบ' : 'กู้คืนการเข้าใช้งาน'}
                   onClose={clearReview}
                   onConfirm={async (signal, idempotencyKey) => {
                     const result = await actOnAccount(transport, {
@@ -179,11 +143,7 @@ function AccountContent({
                   <Text>
                     {action.action === 'logout'
                       ? 'ออกจากบัญชีนี้และล้างข้อมูลที่แสดงบนเครื่องนี้'
-                      : action.action === 'recover'
-                        ? 'ใช้วิธีเข้าสู่ระบบอื่นที่เชื่อมไว้ หรือติดต่อผู้ดูแลเพื่อพิสูจน์ความเป็นเจ้าของบัญชี'
-                        : 'provider' in action
-                          ? `${action.action === 'link' ? 'เชื่อม' : 'ยกเลิกการเชื่อม'} ${providers[action.provider]} โดยต้องยืนยันตัวตนก่อน`
-                          : ''}
+                      : 'ติดต่อผู้ดูแล Labs D ที่ประสานงานกับคุณ เมื่อยืนยันเจ้าของบัญชีแล้ว ทีมจะส่งลิงก์ให้ตั้งรหัสผ่านใหม่ด้วยตัวเอง'}
                   </Text>
                 </ConfirmAction>
               )}
