@@ -31,8 +31,13 @@ const cmds = {
   // A fresh graph checks the complete program; no files or diagnostics are excluded.
   typecheck: ['typescript/bin/tsc', '--noEmit', '--incremental', 'false'],
   test: ['vitest/vitest.mjs', 'run'],
+  'test:integration': ['vitest/vitest.mjs', 'run', '--config', 'vitest.integration.config.ts'],
   'test:e2e': ['@playwright/test/cli.js', 'test'],
 };
+if (command === 'db:migrate:test') {
+  const result = spawnSync(process.execPath, [resolve(root, 'scripts/migrate-test.mjs')], { cwd: root, env, stdio: 'inherit' });
+  process.exit(result.status ?? 1);
+}
 if (command === 'verify:no-demo' || command === 'build') {
   const checked = spawnSync(process.execPath, [resolve(root, 'scripts/verify-no-demo.mjs')], {
     cwd: root,

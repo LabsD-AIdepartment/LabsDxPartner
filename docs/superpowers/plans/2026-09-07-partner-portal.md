@@ -169,6 +169,8 @@ Files: `src/server/modules/identity/{auth,provider-config,profile-map}.ts`; `app
 
 Acceptance: controlled accounts genuinely log in through all three providers; cancellation, wrong-state, callback replay and invalid-token failures are rejected. Missing provider credentials are an external dependency, not a completed mock substitute; independent frontend work can already be complete.
 
+Local preparation 2026-09-09: pinned auth/Drizzle schema/native handler, off-by-default gate and isolated Postgres tests implemented. Actual three-provider and browser acceptance remains open; see `docs/implementation/provider-acceptance.md`.
+
 ### A02 — Membership, invitations, identity linking and recovery
 
 Files: `src/server/modules/{identity,partners}/`; `db/schema/partners.ts`; `app/api/v1/partner/session/route.ts`; `app/api/v1/ops/invites/route.ts`; `tests/integration/access-control.test.ts`.
@@ -206,6 +208,8 @@ Start after F08 in parallel with A01–A03 for agreement/source documentation an
 - [ ] Create isolated test DB bindings and collision-free migrations; inspect target before execution. Never edit an applied migration or infer production migration approval.
 
 Acceptance: finance/source owner can explain every input and total for the selected period. Unknown financial rules block that pilot's publication, not unrelated frontend work. Pilot contract is signed off as business input before the importer can publish confirmed money.
+
+Preparation worksheet: `docs/implementation/pilot-data-contract.md` (2026-09-09). Real partner/agreement/period/source-owner approval still required; no synthetic rule promoted.
 
 ### G02 — Idempotent import and exact earnings generation
 
