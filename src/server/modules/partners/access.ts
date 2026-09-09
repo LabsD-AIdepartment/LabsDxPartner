@@ -3,39 +3,18 @@ import type { Sql, TransactionSql } from 'postgres';
 import { z } from 'zod';
 import { Id } from '@/contracts/common';
 import { InviteRequest } from '@/contracts/operations';
+import { ActivationInviteRequest } from '@/contracts/invitations';
 import { Session, type SessionValue } from '@/contracts/session';
 import type { ResolvePrincipal } from '@/server/modules/identity/resolve-principal';
 import { FRESH_SESSION_SECONDS } from '@/server/modules/identity/policy';
 import { revokeIdentitySessions } from '@/server/modules/identity/revocation';
 
-const PartnerCapability = z.enum([
-  'view_earnings',
-  'view_content',
-  'view_statements',
-  'view_ad_spend',
-]);
+import {
+  PartnerCapability,
+  MembershipChange,
+  PermissionRevision as Revision,
+} from '@/contracts/access';
 type Capability = z.infer<typeof PartnerCapability>;
-const EvidenceRef = Id.regex(/^[A-Za-z0-9][A-Za-z0-9_.:-]*$/);
-const Revision = z
-  .string()
-  .regex(/^[1-9]\d*$/)
-  .max(19)
-  .refine((v) => /^[1-9]\d*$/.test(v) && v.length <= 19 && BigInt(v) <= 9223372036854775807n);
-const MembershipChange = z
-  .strictObject({
-    partnerId: Id,
-    userId: Id,
-    expectedRevision: Revision,
-    status: z.enum(['active', 'suspended']),
-    verifiedContactRef: EvidenceRef,
-    capabilities: z
-      .array(PartnerCapability)
-      .max(4)
-      .refine((v) => new Set(v).size === v.length)
-      .transform((v) => v.sort()),
-    idempotencyKey: Id,
-  })
-  .refine((v) => v.status !== 'active' || v.capabilities.length > 0);
 const InviteClaim = z.strictObject({
   token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   idempotencyKey: Id,
@@ -245,6 +224,45 @@ export function createPartnerAccess(sql: Sql, resolvePrincipal: ResolvePrincipal
         return { ...result, token, replayed: false };
       });
     },
+    async issueActivationInvite(headers: Headers, input: unknown) {
+      const command = parse(ActivationInviteRequest, input),
+        requestHash = hash(JSON.stringify(['activation-invite', command]));
+      return transaction(headers, true, async (tx, actor) => {
+        await staff(tx, actor);
+        await activePartner(tx, command.partnerId);
+        const prior = await replay(tx, actor, command.idempotencyKey, requestHash, InviteResult);
+        if (prior) return { ...prior, token: null, replayed: true };
+        const [time] = await tx`select ${command.expiresAt}::timestamptz > clock_timestamp()
+          AND ${command.expiresAt}::timestamptz <= clock_timestamp() + interval '7 days' as valid`;
+        if (!time.valid) throw new AccessFailure('invalid_input');
+        const replaced = await tx`update portal_access.invites set revoked_at=clock_timestamp()
+          where partner_id=${command.partnerId} AND verified_contact_ref=${command.verifiedContactRef}
+          AND claimed_at IS NULL AND revoked_at IS NULL returning id`;
+        const token = randomBytes(32).toString('base64url'),
+          id = randomUUID();
+        await tx`insert into portal_access.invites(id,partner_id,token_hash,expires_at,created_by,recipient_name,verified_contact_ref,capabilities)
+          values (${id},${command.partnerId},${hash(token)},${command.expiresAt},${actor.userId},${command.recipientName},${command.verifiedContactRef},${tx.array(command.capabilities)}::text[])`;
+        const result = { id, partnerId: command.partnerId };
+        await audit(
+          tx,
+          actor,
+          'activation-invite',
+          command.partnerId,
+          id,
+          command.idempotencyKey,
+          requestHash,
+          result,
+          {
+            expiresAt: command.expiresAt,
+            recipientName: command.recipientName,
+            verifiedContactRef: command.verifiedContactRef,
+            capabilities: command.capabilities,
+            replacedInviteIds: replaced.map((row) => row.id),
+          },
+        );
+        return { ...result, token, replayed: false };
+      });
+    },
     async claimInvite(headers: Headers, input: unknown) {
       const command = parse(InviteClaim, input),
         tokenHash = hash(command.token);
@@ -254,7 +272,7 @@ export function createPartnerAccess(sql: Sql, resolvePrincipal: ResolvePrincipal
         if (prior) return { ...prior, replayed: true };
         const [invite] =
           await tx`update portal_access.invites set claimed_at = clock_timestamp(),claimed_by = ${actor.userId}
-          where token_hash = ${tokenHash} AND claimed_at IS NULL AND revoked_at IS NULL AND expires_at > clock_timestamp()
+          where token_hash = ${tokenHash} AND verified_contact_ref IS NULL AND claimed_at IS NULL AND revoked_at IS NULL AND expires_at > clock_timestamp()
           returning id,partner_id`;
         if (!invite) throw new AccessFailure('invalid_invite');
         await activePartner(tx, invite.partner_id);

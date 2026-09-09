@@ -1,11 +1,15 @@
-import type { createIdentity } from './auth';
-
 export type Principal = { userId: string; sessionId: string };
 export type ResolvePrincipal = (headers: Headers) => Promise<Principal | null>;
 
 /** Only maintained-library verified sessions may enter authorization services. */
 export function principalResolver(
-  auth: ReturnType<typeof createIdentity>,
+  auth: {
+    api: {
+      getSession(input: {
+        headers: Headers;
+      }): Promise<{ user: { id: string }; session: { id: string } } | null>;
+    };
+  },
   assertBinding: () => Promise<void>,
 ): ResolvePrincipal {
   return async (headers) => {

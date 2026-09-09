@@ -100,6 +100,9 @@ export const invites = access.table(
     revokedAt: date('revoked_at'),
     claimedAt: date('claimed_at'),
     claimedBy: text('claimed_by').references(() => user.id),
+    recipientName: text('recipient_name'),
+    verifiedContactRef: text('verified_contact_ref'),
+    capabilities: text('capabilities').array(),
   },
   (t) => [
     index('invites_partner_idx').on(t.partnerId, t.createdAt, t.id),
