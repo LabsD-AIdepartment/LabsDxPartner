@@ -6,6 +6,28 @@ const scope = { userId: 'user-1', partnerId: 'partner-1', permissionRevision: '1
 const initial = () => scenario('ready').changes;
 afterEach(() => vi.useRealTimers());
 describe('active-page revision changes', () => {
+  it('reconciles queries against the first native baseline once, then invalidates only changed groups', async () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    const load = vi.fn().mockResolvedValue(initial());
+    const w = new RevisionWatcher({
+      scope,
+      reconcileInitial: true,
+      load,
+      onChange,
+      onAccessLost: vi.fn(),
+      random: () => 0,
+    });
+    w.setActive(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(onChange.mock.calls[0][0]).toEqual(['earnings', 'settlements', 'metrics', 'notices']);
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    load.mockResolvedValue({ ...initial(), noticesRevision: '2', metricsRevision: '2' });
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(onChange.mock.calls[1][0]).toEqual(['metrics', 'notices']);
+    w.stop();
+  });
   it('catches publication between scoped bootstrap and the first page read', async () => {
     vi.useFakeTimers();
     const onChange = vi.fn();

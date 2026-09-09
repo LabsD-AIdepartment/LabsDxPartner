@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { advanceRevisions } from '@/server/platform/db/revisions';
 import { z } from 'zod';
 import { Id } from '@/contracts/common';
 import { AccessFailure, type createPartnerAccess } from '@/server/modules/partners/access';
@@ -109,6 +110,7 @@ export function createSettlementImporter(
           await tx`insert into portal_statements.allocations(partner_id,settlement_id,statement_id,cash_minor,withholding_minor,other_minor,other_reason_ref)
           values(${record.partnerId},${id},${a.statementId},${a.cashMinor},${a.withholdingMinor},${a.otherMinor},${a.otherReasonRef})`;
         await tx`update portal_statements.revisions set settlements=settlements+1,updated_at=clock_timestamp() where partner_id=${record.partnerId}`;
+        await advanceRevisions(tx, record.partnerId, ['settlements']);
       }
       const result = { id };
       await recordCommand(

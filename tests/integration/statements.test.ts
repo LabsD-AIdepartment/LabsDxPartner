@@ -21,6 +21,9 @@ import { earningLineRef } from '@/server/modules/earnings/corrections';
 import { ApprovedPeriodFile, ApprovalContext } from '@/server/adapters/approved-period/schema';
 import { createStatementExportHttp } from '@/server/http/statement-export';
 import { createStatementsHttp } from '@/server/http/statements';
+import { createChangesHttp } from '@/server/http/changes';
+import { Changes } from '@/contracts/changes';
+import { advanceRevisions } from '@/server/platform/db/revisions';
 import {
   loadTransactions,
   type TransactionTransport,
@@ -215,6 +218,117 @@ function correctionSample(
   return { file, raw, context };
 }
 describe('native authorized approval to immutable statement on PostgreSQL', () => {
+  it('exposes isolated metadata and advances only committed owner changes, once per outcome', async () => {
+    const s = await setup();
+    const member = await actor(['record_payments']);
+    await sql`insert into portal_access.memberships(id,partner_id,user_id,status,capabilities,verified_contact_ref)
+      values(${randomUUID()},${s.partnerId},${member.id},'active',ARRAY['view_statements'],'synthetic-verified')`;
+    const http = createChangesHttp(access);
+    const url = new URL(config.BETTER_AUTH_URL + '/api/v1/partner/changes');
+    url.search = new URLSearchParams({
+      partnerId: s.partnerId,
+      permissionRevision: 'p1:m1',
+      capability: 'view_statements',
+    }).toString();
+    const response = () => http(new Request(url, { headers: member.headers }));
+    const read = async () => {
+      const r = await response();
+      expect(r.status).toBe(200);
+      expect(r.headers.get('cache-control')).toBe('private, no-store');
+      return Changes.parse(await r.json());
+    };
+    const empty = await read();
+    expect(empty).toMatchObject({
+      earningsRevision: '0',
+      settlementsRevision: '0',
+      metricsRevision: '0',
+      noticesRevision: '0',
+      sources: [],
+    });
+    const ready = await s.ready();
+    expect(await read()).toMatchObject({ earningsRevision: '1', settlementsRevision: '0' });
+    const issued = await s.publish(s.publisher.headers, ready.command);
+    await s.publish(s.publisher.headers, ready.command);
+    expect(await read()).toMatchObject({ earningsRevision: '2', settlementsRevision: '1' });
+    const payment = {
+      kind: 'payment',
+      partnerId: s.partnerId,
+      source: { authority: 'synthetic-finance', account: 'payor-1', reference: randomUUID() },
+      evidenceRef: 'synthetic-payment-evidence',
+      occurredAt: '2026-09-01T12:00:00.000Z',
+      cashMinor: '10000',
+      withholdingMinor: '0',
+      otherMinor: '0',
+      allocations: [
+        {
+          statementId: issued.id,
+          cashMinor: '10000',
+          withholdingMinor: '0',
+          otherMinor: '0',
+          otherReasonRef: null,
+        },
+      ],
+    };
+    const settle = createSettlementImporter(access, { load: async () => payment });
+    const command = {
+      sourceRecordId: randomUUID(),
+      expectedDigest: settlementDigest(payment),
+      idempotencyKey: randomUUID(),
+    };
+    await Promise.all([settle(member.headers, command), settle(member.headers, command)]);
+    expect(await read()).toMatchObject({
+      earningsRevision: '2',
+      settlementsRevision: '2',
+      metricsRevision: '0',
+      noticesRevision: '0',
+    });
+    await expect(
+      sql.begin(async (tx) => {
+        await advanceRevisions(tx, s.partnerId, ['earnings', 'metrics', 'notices']);
+        throw new Error('synthetic rollback');
+      }),
+    ).rejects.toThrow('synthetic rollback');
+    expect(await read()).toMatchObject({
+      earningsRevision: '2',
+      metricsRevision: '0',
+      noticesRevision: '0',
+    });
+    // Counter storage supports future independent owners, without claiming their services exist.
+    await Promise.all(
+      Array.from({ length: 5 }, () =>
+        sql.begin(async (tx) => {
+          await advanceRevisions(tx, s.partnerId, ['metrics']);
+        }),
+      ),
+    );
+    await sql.begin(async (tx) => {
+      await advanceRevisions(tx, s.partnerId, ['notices']);
+    });
+    expect(await read()).toMatchObject({
+      earningsRevision: '2',
+      settlementsRevision: '2',
+      metricsRevision: '5',
+      noticesRevision: '1',
+    });
+    expect((await http(new Request(url))).status).toBe(401);
+    url.searchParams.set('partnerId', randomUUID());
+    expect((await response()).status).toBe(403);
+    url.searchParams.set('partnerId', s.partnerId);
+    url.searchParams.set('capability', 'view_earnings');
+    expect((await response()).status).toBe(403);
+    url.searchParams.set('capability', 'view_statements');
+    url.searchParams.set('permissionRevision', 'p1:m0');
+    expect((await response()).status).toBe(403);
+    url.searchParams.set('permissionRevision', 'p1:m1');
+    url.searchParams.append('partnerId', s.partnerId);
+    expect((await response()).status).toBe(400);
+    url.searchParams.set('partnerId', s.partnerId);
+    url.searchParams.set('userId', member.id);
+    expect((await response()).status).toBe(400);
+    url.searchParams.delete('userId');
+    await sql`update portal_access.memberships set status='suspended' where user_id=${member.id} and partner_id=${s.partnerId}`;
+    expect((await response()).status).toBe(403);
+  });
   it('serves issued lines through native HTTP to the frontend model with complete microsecond cursors', async () => {
     const s = await setup();
     s.sample.file.rows.forEach((row, i) => {

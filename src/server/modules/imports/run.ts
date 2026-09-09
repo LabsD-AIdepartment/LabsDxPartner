@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { advanceRevisions } from '@/server/platform/db/revisions';
 import type { Sql } from 'postgres';
 import { Id } from '@/contracts/common';
 import { PermissionRevision } from '@/contracts/access';
@@ -199,6 +200,7 @@ export function createImportRunner(sql: Sql, approvals: ApprovalRepository) {
             await tx`update portal_imports.scopes set current_generation=${runId},approval_sequence=${sequence}
             where id=${scopeId} and lease_token=${token} and lease_until>clock_timestamp() returning id`;
           if (!advanced.length) throw new ImportFailure('superseded');
+          await advanceRevisions(tx, context.partnerId, ['earnings']);
         }
         await tx`update portal_imports.runs set state=${state},issues=${JSON.stringify(issues)}::text::jsonb,finished_at=clock_timestamp() where id=${runId}`;
         await tx`update portal_imports.scopes set lease_token=null,lease_until=null where id=${scopeId}`;

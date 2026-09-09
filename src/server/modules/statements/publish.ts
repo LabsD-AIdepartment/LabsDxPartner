@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { advanceRevisions } from '@/server/platform/db/revisions';
 import { z } from 'zod';
 import { Id, Instant } from '@/contracts/common';
 import { AccessFailure, type createPartnerAccess } from '@/server/modules/partners/access';
@@ -50,6 +51,7 @@ export function createStatementPublisher(access: ReturnType<typeof createPartner
       await tx`insert into portal_statements.revisions(partner_id,statements) values(${command.partnerId},1)
     on conflict(partner_id) do update set statements=portal_statements.revisions.statements+1,updated_at=clock_timestamp()`;
       const result = { id, version: command.generationId };
+      await advanceRevisions(tx, command.partnerId, ['earnings', 'settlements']);
       await recordCommand(
         tx,
         actor.userId,

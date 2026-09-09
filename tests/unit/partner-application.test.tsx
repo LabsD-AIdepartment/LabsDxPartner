@@ -40,7 +40,22 @@ describe('authenticated partner application', () => {
       expect(selectSessionPartner(session, cookie)).toEqual(session);
   });
   it('keeps the overview layout with unavailable amounts and does not show fixture earnings', async () => {
-    fetcher.mockResolvedValue(response(session));
+    fetcher.mockImplementation(async (url: string) =>
+      response(
+        url.startsWith('/api/v1/partner/changes?')
+          ? {
+              partnerId: 'partner-one',
+              permissionRevision: 'p1:m1',
+              earningsRevision: '0',
+              settlementsRevision: '0',
+              metricsRevision: '0',
+              noticesRevision: '0',
+              publishedAt: '1970-01-01T00:00:00.000Z',
+              sources: [],
+            }
+          : session,
+      ),
+    );
     render(
       <PartnerApplication
         initialSession={session}
@@ -53,7 +68,42 @@ describe('authenticated partner application', () => {
     expect(screen.getByRole('img', { name: /ภาพโปรไฟล์ พาร์ทเนอร์หนึ่ง/ })).toBeVisible();
     expect(screen.queryByText('฿37,360')).not.toBeInTheDocument();
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
-    expect(fetcher.mock.calls.every(([url]) => url === '/api/partner/session')).toBe(true);
+    await waitFor(() =>
+      expect(
+        fetcher.mock.calls.some(
+          ([url]) =>
+            url ===
+            '/api/v1/partner/changes?partnerId=partner-one&permissionRevision=p1%3Am1&capability=view_earnings',
+        ),
+      ).toBe(true),
+    );
+    expect(
+      fetcher.mock.calls.every(
+        ([url]) => url === '/api/partner/session' || url.startsWith('/api/v1/partner/changes?'),
+      ),
+    ).toBe(true);
+  });
+  it('rechecks the session and removes the private view when metadata denies membership', async () => {
+    let sessionReads = 0;
+    fetcher.mockImplementation(async (url: string) => {
+      if (url.startsWith('/api/v1/partner/changes?')) return response({}, 403);
+      sessionReads++;
+      return response(
+        sessionReads === 1 ? session : { ...session, access: 'suspended', memberships: [] },
+      );
+    });
+    render(
+      <PartnerApplication
+        initialSession={session}
+        screen={{ kind: 'overview' }}
+        initialContext={initialReportContext}
+      />,
+    );
+    expect(
+      await screen.findByText('สิทธิ์เข้าถึงถูกระงับ กรุณาติดต่อผู้ดูแล Labs D'),
+    ).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'คอมมิชชันของฉัน' })).not.toBeInTheDocument();
+    expect(sessionReads).toBe(2);
   });
   it('removes private content immediately on visibility change and rechecks permissions before showing it again', async () => {
     fetcher.mockResolvedValue(response(session));

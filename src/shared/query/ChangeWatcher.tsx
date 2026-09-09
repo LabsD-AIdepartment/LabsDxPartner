@@ -8,6 +8,7 @@ import type { ChangesValue, ChangeGroup } from '@/contracts/changes';
 export function ChangeWatcher({
   scope,
   initial,
+  reconcileInitial,
   load,
   onAccessLost,
   onChange,
@@ -15,6 +16,7 @@ export function ChangeWatcher({
 }: {
   scope: QueryScope;
   initial?: ChangesValue;
+  reconcileInitial?: boolean;
   load: (signal: AbortSignal) => Promise<unknown>;
   onAccessLost: () => void;
   onChange?: (groups: ChangeGroup[], snapshot: ChangesValue) => void;
@@ -35,6 +37,7 @@ export function ChangeWatcher({
       watcher = new RevisionWatcher({
         scope,
         initial: callbacks.current.initial,
+        reconcileInitial,
         load: (signal) => callbacks.current.load(signal),
         onChange: (groups, snapshot) => {
           void invalidateChanges(client, scope, groups);
@@ -60,6 +63,6 @@ export function ChangeWatcher({
       window.removeEventListener('online', visible);
       window.removeEventListener('offline', visible);
     };
-  }, [client, key]);
+  }, [client, key, reconcileInitial]);
   return null;
 }

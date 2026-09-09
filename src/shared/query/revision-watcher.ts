@@ -4,6 +4,7 @@ export class AccessLost extends Error {}
 type Options = {
   scope: QueryScope;
   initial?: ChangesValue;
+  reconcileInitial?: boolean;
   load: (signal: AbortSignal) => Promise<unknown>;
   onChange: (groups: ChangeGroup[], snapshot: ChangesValue) => void;
   onAccessLost: () => void;
@@ -62,6 +63,9 @@ export class RevisionWatcher {
       )
         throw new AccessLost('Membership scope changed');
       const groups: ChangeGroup[] = [];
+      // A query may have started before this first metadata read. Refetch once so
+      // a commit between those two snapshots cannot become the silent baseline.
+      if (!this.baseline && this.options.reconcileInitial) groups.push(...ChangeGroups);
       if (this.baseline) {
         for (const group of ChangeGroups) {
           const key = `${group}Revision` as const;

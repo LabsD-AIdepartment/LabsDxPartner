@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Session, type SessionValue } from '@/contracts/session';
 import { ScopedQueryProvider } from '@/shared/query/provider';
+import { ChangeWatcher } from '@/shared/query/ChangeWatcher';
+import { loadChanges } from '@/shared/query/changes-http';
 import { sourceUnavailable } from '@/shared/query/source-unavailable';
 import { PartnerShell } from '@/features/shell/PartnerShell';
 import { OverviewPage } from '@/features/overview/OverviewPage';
@@ -203,6 +205,29 @@ export function PartnerApplication({
             permissionRevision: member.permissionRevision,
           }}
         >
+          <ChangeWatcher
+            scope={{
+              userId: session.userId,
+              partnerId: member.partnerId,
+              permissionRevision: member.permissionRevision,
+            }}
+            reconcileInitial
+            load={(signal) =>
+              loadChanges(
+                {
+                  userId: session.userId,
+                  partnerId: member.partnerId,
+                  permissionRevision: member.permissionRevision,
+                },
+                capability,
+                signal,
+              )
+            }
+            onAccessLost={() => {
+              setState('checking');
+              setRetry((value) => value + 1);
+            }}
+          />
           <PartnerFeatures
             key={`${session.userId}:${member.partnerId}:${member.permissionRevision}`}
             session={session}
