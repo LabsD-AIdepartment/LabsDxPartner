@@ -1,14 +1,13 @@
 /* Single typography source for the portal, previews, controls and charts.
-   Body = 16px; supporting text never below 14px, at any breakpoint. */
+   Body = 16px; supporting text never below 16px, at any breakpoint. */
 :root {
   --font-family-body: 'DM Sans Variable', 'Noto Sans Thai Variable', sans-serif;
   --font-family-brand: 'Inter Variable', 'Noto Sans Thai Variable', sans-serif;
-  --text-caption-size: 14px;
+  --text-caption-size: 16px;
   --text-body-size: 16px;
   --text-label-size: var(--text-caption-size);
   --text-card-title-size: var(--font-size-20);
   --text-section-title-size: var(--font-size-22);
-  --font-size-15: 15px;
   --font-size-17: 17px;
   --font-size-18: 18px;
   --font-size-19: 19px;

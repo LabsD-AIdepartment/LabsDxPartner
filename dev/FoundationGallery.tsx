@@ -267,10 +267,10 @@ function Gallery() {
         </Text>
         <Text>เนื้อหาหลัก 16px · อ่านรายละเอียดรายได้และคอมมิชชันได้ชัดเจน</Text>
         <Text variant="label" as="span">
-          ป้ายกำกับ 14px
+          ป้ายกำกับ 16px
         </Text>
         <Text variant="caption" tone="muted">
-          ข้อความประกอบขั้นต่ำ 14px · ใช้ขนาดเดียวกันในทุกหน้าจอ
+          ข้อความประกอบขั้นต่ำ 16px · ใช้ขนาดเดียวกันในทุกหน้าจอ
         </Text>
       </Card>
       <section className={styles.scenarioPanel} aria-label="ชุดตรวจส่วนประกอบ">

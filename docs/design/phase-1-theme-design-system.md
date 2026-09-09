@@ -58,7 +58,7 @@ The latest owner adjustment reduced low-valued dark surface RGB channels by roug
 |---|---|
 | Highlighted sales bar | `linear-gradient(120deg, #a3ef89, #68df60 35%, #32c96b)` |
 | Clip commission panel | Same three-stop green gradient; dark text `#103d22` / `#214d2b` |
-| Notification count | Same gradient; text `#103d22`, circular 26px badge, 14px/700 count |
+| Notification count | Same gradient; text `#103d22`, circular 26px badge, 16px/700 count |
 | Completed payout steps | `linear-gradient(90deg, #99e887, #2db963)` |
 | Dark active navigation / primary payout action | `linear-gradient(120deg, #9aef82, #31cf6e)`, text `#083b20` |
 | Day active navigation / primary payout action | Charcoal surface, white text |
@@ -80,7 +80,7 @@ Inactive bars retain diagonal hatching rather than using equally bright solid gr
 | Main commission figure | 500 | 46px desktop; 42px narrow Overview |
 | Sales / pending payout figures | 500 | 38px desktop; 36px tablet arrangement |
 | Trend figure | 500 | 36px desktop; 34px narrow |
-| Supporting text and chart labels | Regular / medium | Minimum design target 14px; do not shrink to force fit |
+| Supporting text and chart labels | Regular / medium | Minimum design target 16px; do not shrink to force fit |
 
 Google Fonts currently supplies the fonts. The declaration is verified in source; font availability remains an external dependency.
 
@@ -147,7 +147,7 @@ Desktop uses a table with clip/brand, date, type, commission and status. Pending
 - Gradient coordinates use the SVG's plot bounds so it stays left-to-right when resized or filtered.
 - Area underneath remains a vertical lime fade: `#ccf66a` at opacity .18 → .07 at 60% → 0 at 100%.
 - Peak value tag remains lime `#ccf66a`. Preserve existing markers, axes, values and labels.
-- SVG is generated at actual container width with 180px height. Skip date ticks when narrow instead of reducing the 14px label font.
+- SVG is generated at actual container width with 180px height. Skip date ticks when narrow instead of reducing the 16px label font.
 
 ### Brand sales bars
 
@@ -231,13 +231,13 @@ Source of truth: `src/shared/theme/typography.css`, loaded once in `app/layout.t
 | Role | Shared preset | Size / line height |
 | --- | --- | --- |
 | Main text / clip title | `body` / `--text-body-size` | 16px / 1.6 |
-| Supporting text / chart labels | `caption` / `--text-caption-size` | 14px minimum / 1.6 |
-| Labels | `label` | 14px / 1.5 |
+| Supporting text / chart labels | `caption` / `--text-caption-size` | 16px minimum / 1.6 |
+| Labels | `label` | 16px / 1.5 |
 | Card heading | `cardTitle` | 20px / 1.4 |
 | Section heading | `sectionTitle` | 22px / 1.4 |
 
 Use `src/shared/ui/Text.tsx` for text blocks. Select semantic HTML independently from visual size, e.g. `<Text as="h2" variant="cardTitle">…</Text>` or `<Text variant="caption" tone="muted">…</Text>`. `Card` and `DataState` already use it; shell, content metadata and the foundation gallery consume the same component. Text defaults to a body paragraph and zero margins; the owning layout controls spacing.
 
-Controls, numeric figures and SVG labels use the same CSS tokens directly where a text wrapper is inappropriate. Existing larger display sizes remain in the central scale to preserve the approved visual hierarchy; new code should prefer semantic presets. Feature CSS must not introduce literal font sizes, font-family stacks or smaller mobile overrides. Reflow/wrap or reduce chart tick density when space is tight. SVG viewBox width must match the rendered plot so a 14px label does not shrink through scaling. No blanket `!important` minimum or browser zoom workaround.
+Controls, numeric figures and SVG labels use the same CSS tokens directly where a text wrapper is inappropriate. Existing larger display sizes remain in the central scale to preserve the approved visual hierarchy; new code should prefer semantic presets. Feature CSS must not introduce literal font sizes, font-family stacks or smaller mobile overrides. Reflow/wrap or reduce chart tick density when space is tight. SVG viewBox width must match the rendered plot so a 16px label does not shrink through scaling. No blanket `!important` minimum or browser zoom workaround.
 
 `/foundation` includes live Thai/English typography samples. `tests/unit/typography.test.tsx` checks semantic labels/headings and rejects page-local font literals; browser verification checks the actual computed sizes and overflow, which static tests cannot prove. Later F06/F07 pages inherit these presets and must use the same components.

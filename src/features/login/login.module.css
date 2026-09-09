@@ -225,7 +225,7 @@
   .provider {
     padding: 12px;
     gap: 8px;
-    font-size: var(--font-size-15);
+    font-size: var(--text-body-size);
   }
   .story h1 {
     font-size: var(--font-size-38);

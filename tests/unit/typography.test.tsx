@@ -28,7 +28,7 @@ describe('portal typography contract', () => {
   });
   it('centralizes font definitions and preserves the agreed readable minimum', () => {
     const source = readFileSync(resolve('src/shared/theme/typography.css'), 'utf8');
-    expect(source).toMatch(/--text-caption-size:\s*14px/);
+    expect(source).toMatch(/--text-caption-size:\s*16px/);
     expect(source).toMatch(/--text-body-size:\s*16px/);
     for (const file of [...cssFiles('src'), ...cssFiles('dev'), ...cssFiles('app')]) {
       if (file.endsWith('/typography.css')) continue;

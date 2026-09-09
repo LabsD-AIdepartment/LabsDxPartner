@@ -21,3 +21,9 @@ Project-local evidence: `.agent-work/20260909-font-floor/evidence/`.
 - Native200% browser zoom, independent implementation review and owner acceptance remain open; viewport checks do not substitute for native zoom. No real identity/API/DB integration or release occurred. F06 is still next and has not started.
 
 Rollback: revert this local typography commit. No schema/data rollback or deployment action required.
+
+## Owner size increase — 2026-09-09
+
+Owner requested another 2px increase to the smallest font. The shared caption/label/chart floor is now **16px**, superseding the earlier14px requirement above. Body remains16px and larger headings/figures remain unchanged. The lone15px narrow-login override now uses the16px body preset; its obsolete scale entry was removed. Gallery labels, canonical design guidance and the existing typography guard were updated together.
+
+Validation:3/3 focused typography/chart tests pass, diff check clean; browser computed text minimum16px with no horizontal overflow on clip detail at1162/280 and Overview at280/800. Evidence `.agent-work/20260909-font-plus-two/evidence/`. No additional build for this token-only follow-up; prior build belongs to the preceding candidate.

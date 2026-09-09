@@ -16,7 +16,7 @@ export function TrendChart({
   useEffect(() => {
     if (!ref.current) return;
     const observer = new ResizeObserver(([entry]) =>
-      // Match the actual plot width so SVG scaling cannot shrink its 14px labels.
+      // Match the actual plot width so SVG scaling cannot shrink its 16px labels.
       setWidth(Math.max(1, entry.contentRect.width)),
     );
     observer.observe(ref.current);
