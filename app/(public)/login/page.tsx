@@ -1,6 +1,7 @@
 import { PublicFrame } from '@/features/login/PublicFrame';
 import { LoginPage } from '@/features/login/LoginPage';
 import { safeReturnTo } from '@/features/login/access';
+export const dynamic = 'force-dynamic';
 export default async function LoginRoute({
   searchParams,
 }: {

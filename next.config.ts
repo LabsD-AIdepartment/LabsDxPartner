@@ -39,6 +39,18 @@ export default function config(phase: string): NextConfig {
     },
     async headers() {
       return [
+        ...['/login', '/invite', '/reset-password'].map((source) => ({
+          source,
+          headers: [
+            { key: 'Cache-Control', value: 'private, no-store' },
+            { key: 'Referrer-Policy', value: 'no-referrer' },
+            {
+              key: 'Content-Security-Policy',
+              value:
+                "connect-src 'self'; img-src 'self' data:; font-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'",
+            },
+          ],
+        })),
         {
           source: '/api/v1/:path*',
           headers: [{ key: 'Cache-Control', value: 'private, no-store' }],

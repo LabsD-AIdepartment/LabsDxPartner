@@ -10,11 +10,14 @@ import {
   CREDENTIAL_BINDING_ID,
 } from './credential-auth';
 import { credentialSessionHandler } from './credential-session';
+import { createAccessHttp } from '@/server/http/access';
+import { principalResolver } from './resolve-principal';
 
 type Runtime = {
   auth: ReturnType<typeof createCredentialIdentity>;
   assertBinding: () => Promise<void>;
   handle: (request: Request) => Promise<Response>;
+  access: (request: Request) => Promise<Response>;
 };
 let current: Runtime | undefined;
 export function getIdentityRuntime(): Runtime | null {
@@ -36,6 +39,11 @@ export function getIdentityRuntime(): Runtime | null {
     if (rows[0]?.digest !== credentialBindingDigest(config))
       throw new Error('Identity namespace binding unavailable');
   };
-  current = { auth, assertBinding, handle: credentialSessionHandler(sql, config, auth) };
+  current = {
+    auth,
+    assertBinding,
+    handle: credentialSessionHandler(sql, config, auth),
+    access: createAccessHttp(sql, config, principalResolver(auth, assertBinding), assertBinding),
+  };
   return current;
 }

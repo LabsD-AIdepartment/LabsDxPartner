@@ -47,14 +47,13 @@ describe('untrusted access URL inputs', () => {
 });
 
 describe('public access presentation', () => {
-  it('provider actions never simulate login, retain destination, and disclose availability', () => {
+  it('uses invited username/password accounts and explains setup without public signup', () => {
     render(<LoginPage next="/content/clip-1" />);
-    for (const name of ['Google', 'LINE', 'Apple'])
-      expect(screen.getByRole('link', { name: `เข้าสู่ระบบด้วย ${name}` })).toHaveAttribute(
-        'href',
-        '/access?reason=provider-unavailable&next=%2Fcontent%2Fclip-1',
-      );
-    expect(screen.getByRole('status')).toHaveTextContent('กำลังเตรียมเปิดใช้งาน');
+    expect(screen.getByLabelText('ชื่อผู้ใช้')).toHaveAttribute('autocomplete', 'username');
+    expect(screen.getByLabelText('รหัสผ่าน')).toHaveAttribute('autocomplete', 'current-password');
+    expect(
+      screen.queryByText(/เข้าสู่ระบบด้วย Google|เข้าสู่ระบบด้วย LINE|เข้าสู่ระบบด้วย Apple/),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'ได้รับคำเชิญแล้ว' }));
     expect(screen.getByRole('button', { name: 'ได้รับคำเชิญแล้ว' })).toHaveAttribute(
       'aria-expanded',
@@ -77,9 +76,11 @@ describe('public access presentation', () => {
   it('preview transitions are explicitly injected and separate from public behavior', () => {
     const transition = vi.fn();
     render(<LoginPage next="/overview" onPreview={transition} />);
-    fireEvent.click(screen.getByRole('button', { name: 'เข้าสู่ระบบด้วย LINE' }));
-    expect(transition).toHaveBeenCalledWith('pending');
-    expect(screen.getByRole('status')).toHaveTextContent('ไม่เชื่อมบัญชีจริง');
+    fireEvent.change(screen.getByLabelText('ชื่อผู้ใช้'), { target: { value: 'partner_test' } });
+    fireEvent.change(screen.getByLabelText('รหัสผ่าน'), { target: { value: 'test-password' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'เข้าสู่ระบบ' }).closest('form')!);
+    expect(transition).toHaveBeenCalledWith();
+    expect(screen.getByText(/ไม่เชื่อมบัญชีจริง/)).toBeVisible();
   });
   it('link mode has real destinations and preserves legacy gallery callbacks', () => {
     render(

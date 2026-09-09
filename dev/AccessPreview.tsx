@@ -60,7 +60,7 @@ export function AccessPreview({
       ) : (
         <PublicFrame>
           {state === 'login' ? (
-            <LoginPage next="/overview" onPreview={setState} />
+            <LoginPage next="/overview" onPreview={() => setState('active')} />
           ) : (
             <AccessPage reason={state} next="/overview" onRetry={() => setState('login')} />
           )}

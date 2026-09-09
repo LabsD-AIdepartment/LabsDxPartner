@@ -5,43 +5,7 @@ import {
   type CredentialConfig,
 } from './credential-auth';
 import { transactionDatabase } from './transaction-auth';
-
-/** Read network input before the credential writer lock; a slow body cannot hold it. */
-async function boundedLoginRequest(request: Request): Promise<Request | Response> {
-  if (!request.body) return Response.json({ code: 'INVALID_REQUEST' }, { status: 400 });
-  const reader = request.body.getReader();
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const deadline = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error('body-timeout')), 5000);
-  });
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  try {
-    while (true) {
-      const { done, value } = await Promise.race([reader.read(), deadline]);
-      if (done) break;
-      size += value.byteLength;
-      if (size > 8192) return Response.json({ code: 'INVALID_REQUEST' }, { status: 413 });
-      chunks.push(value);
-    }
-    const body = new Uint8Array(size);
-    let offset = 0;
-    for (const chunk of chunks) {
-      body.set(chunk, offset);
-      offset += chunk.byteLength;
-    }
-    return new Request(request, { body });
-  } catch (error) {
-    return Response.json(
-      { code: 'INVALID_REQUEST' },
-      { status: error instanceof Error && error.message === 'body-timeout' ? 408 : 400 },
-    );
-  } finally {
-    clearTimeout(timer);
-    void reader.cancel().catch(() => {});
-    reader.releaseLock();
-  }
-}
+import { boundedRequest } from '@/server/http/bounded-request';
 
 export async function credentialWrite<T>(
   sql: Sql,
@@ -68,7 +32,7 @@ export function credentialSessionHandler(
       return ordinary(request);
     if (request.headers.get('origin') !== config.BETTER_AUTH_URL)
       return Response.json({ code: 'INVALID_ORIGIN' }, { status: 403 });
-    const buffered = await boundedLoginRequest(request);
+    const buffered = await boundedRequest(request);
     if (buffered instanceof Response) return buffered;
     return credentialWrite(sql, async (tx) => {
       const transactional = createCredentialIdentity(config, transactionDatabase(tx));

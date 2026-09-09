@@ -58,3 +58,16 @@
 .details p {
   margin: 0;
 }
+.passwordControl {
+  position: relative;
+  min-width: 0;
+}
+.passwordControl input {
+  padding-right: 64px;
+}
+.passwordControl button {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
