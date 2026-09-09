@@ -2,6 +2,7 @@ import { createHmac, randomUUID } from 'node:crypto';
 import type { Sql } from 'postgres';
 import { boundedRequest } from '@/server/http/bounded-request';
 import { createPartnerAccess, AccessFailure } from '@/server/modules/partners/access';
+import { createStaffAccessReader } from '@/server/modules/partners/staff-access-read';
 import {
   createInvitationActivation,
   ActivationFailure,
@@ -61,6 +62,7 @@ export function createAccessHttp(
   const passwords = createPasswordService(sql, config, resolve);
   const limit = attemptLimiter(sql, config.BETTER_AUTH_SECRET);
   const authenticatedActions = new Set([
+    'staff/access',
     'session',
     'invitations/accept',
     'invitations/issue',
@@ -69,6 +71,7 @@ export function createAccessHttp(
     'passwords/issue',
   ]);
   const actions: Record<string, (headers: Headers, input: unknown) => Promise<unknown>> = {
+    'staff/access': createStaffAccessReader(partners),
     session: async (headers, input) =>
       partners.session(headers, sessionInput.parse(input).partnerId),
     'invitations/inspect': async (_, input) => invites.inspect(tokenInput.parse(input).token),
@@ -98,7 +101,7 @@ export function createAccessHttp(
           buffered.headers.set(name, value);
         return buffered;
       }
-      const read = action.endsWith('/inspect') || action === 'session';
+      const read = action.endsWith('/inspect') || action === 'session' || action === 'staff/access';
       await limit('global:' + action, read ? 240 : 60);
       let input: unknown;
       try {

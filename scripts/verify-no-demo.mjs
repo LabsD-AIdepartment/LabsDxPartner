@@ -46,6 +46,7 @@ export function assertNoProductionFixtures(root) {
         'synthetic-sale-',
         'Foundation components',
         'Access journey preview',
+        'Celebrity mock journey',
         'Overview journey preview',
         'Content journey preview',
         'Transactions journey preview',

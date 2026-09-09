@@ -1,71 +1,263 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState, type MouseEvent } from 'react';
 import { PublicFrame } from '@/features/login/PublicFrame';
 import { LoginPage } from '@/features/login/LoginPage';
-import { AccessPage } from '@/features/login/AccessPage';
-import { accessReasons, type AccessReason } from '@/features/login/access';
-import { PartnerShell } from '@/features/shell/PartnerShell';
+import { InvitePage } from '@/features/login/InvitePage';
+import { ResetPasswordPage } from '@/features/login/ResetPasswordPage';
+import { CredentialEnvironmentProvider } from '@/features/login/CredentialEnvironment';
 import type { Menu } from '@/features/shell/Navigation';
+import { NotificationButton } from '@/features/shell/NotificationButton';
+import { readyScenario } from './scenarios/ready';
+import { PartnerShell } from '@/features/shell/PartnerShell';
 import { Card } from '@/shared/ui/Card';
+import { Text } from '@/shared/ui/Text';
 import { Button } from '@/shared/ui/Button';
+import { ScopedQueryProvider } from '@/shared/query/provider';
+import { OverviewPage } from '@/features/overview/OverviewPage';
+import { ContentList } from '@/features/content/ContentList';
+import { ContentDetail } from '@/features/content/ContentDetail';
+import { AdDetail } from '@/features/content/AdDetail';
+import { StatementList } from '@/features/transactions/StatementList';
+import { StatementDetail } from '@/features/transactions/StatementDetail';
+import { readReportContext, reportHref } from '@/shared/routing/report-context';
+import { createOverviewTransport } from './overview-transport';
+import { createContentTransport } from './content-transport';
+import { createTransactionTransport, createSampleDocuments } from './transaction-transport';
+import { createCelebrityJourney } from './celebrity-journey';
 import styles from './access-preview.module.css';
-type PreviewState = AccessReason | 'login' | 'active';
-export function AccessPreview({
-  active,
-  initialActive = false,
-}: {
-  active: Menu;
-  initialActive?: boolean;
-}) {
-  const [state, setState] = useState<PreviewState>(initialActive ? 'active' : 'login');
+const scope = { userId: 'preview-user', partnerId: 'preview-partner', permissionRevision: '1' };
+const brands = ['Axtion', 'Tendrix', 'Rusiren', 'Melura', 'Zenova'];
+const routes = {
+  overview: '/access-preview/overview',
+  content: '/access-preview/content',
+  transactions: '/access-preview/transactions',
+};
+
+/** All credentials and session state die on reload. This component is excluded from production. */
+export function AccessPreview(_props: { active?: Menu; initialActive?: boolean }) {
+  const [journey] = useState(() => createCelebrityJourney());
+  const [href, setHref] = useState('/welcome');
+  const [token, setToken] = useState('');
+  const [resetSequence, setResetSequence] = useState(0);
+  const navigate = (next: string) => setHref(next.replace(/^\/access-preview(?=\/)/, ''));
+  const environment = {
+    request: journey.request,
+    signIn: journey.signIn,
+    navigate,
+    token,
+    clearLink: () => setToken(''),
+  };
+  const page = new URL(href, 'https://preview.invalid');
+  const path = page.pathname;
+  const privatePage = ['/overview', '/content', '/transactions', '/account'].some(
+    (base) => path === base || path.startsWith(base + '/'),
+  );
+  const effectivePath = privatePage && !journey.authenticated ? '/login' : path;
+  function intercept(event: MouseEvent<HTMLDivElement>) {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+      return;
+    const anchor = (event.target as Element).closest('a');
+    if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+    const url = new URL(anchor.href);
+    if (
+      url.origin !== window.location.origin ||
+      !/^\/(?:access-preview\/)?(overview|content|transactions|account|login)(\/|$)/.test(
+        url.pathname,
+      )
+    )
+      return;
+    event.preventDefault();
+    event.stopPropagation();
+    navigate(url.pathname + url.search);
+  }
   return (
-    <>
-      <aside className={styles.toolbar} aria-label="ชุดตรวจการเข้าถึง">
-        <strong>Access journey preview</strong>
-        <span>ข้อมูลจำลอง · ไม่สร้างบัญชีหรือสิทธิ์จริง</span>
-        <label>
-          สถานะตัวอย่าง{' '}
-          <select value={state} onChange={(event) => setState(event.target.value as PreviewState)}>
-            <option value="login">login</option>
-            {accessReasons.map((reason) => (
-              <option key={reason}>{reason}</option>
-            ))}
-            <option value="active">active</option>
-          </select>
-        </label>
-        {state === 'pending' && (
-          <Button onClick={() => setState('active')}>จำลองอนุมัติสิทธิ์</Button>
-        )}
-      </aside>
-      {state === 'active' ? (
-        <PartnerShell
-          active={active}
-          hrefs={{
-            overview: '/access-preview?screen=overview&state=active',
-            content: '/access-preview?screen=content&state=active',
-            transactions: '/access-preview?screen=transactions&state=active',
-          }}
-          footerNote="ตัวอย่างโครงหน้า · ยังไม่มีข้อมูลพาร์ทเนอร์จริง"
-        >
-          <div className={styles.content}>
-            <Card
-              title="พื้นที่ของคุณพร้อมสำหรับขั้นตอนถัดไป"
-              description="ตัวอย่างโครงหน้า เมนู และสถานะการเข้าถึงเท่านั้น หน้าข้อมูลจะเพิ่มใน F04–F07"
+    <CredentialEnvironmentProvider value={environment}>
+      <div onClickCapture={intercept}>
+        <aside className={styles.toolbar} aria-label="ทดลองเป็นดาราพาร์ทเนอร์">
+          <strong>Celebrity mock journey</strong>
+          <span>สมมุติคุณเป็นดารา · ข้อมูลจำลอง · ใช้รหัสทดลองเท่านั้น · รีโหลดแล้วเริ่มใหม่</span>
+          {journey.username && (
+            <Button
+              onClick={() => {
+                journey.logout();
+                navigate('/login');
+              }}
             >
-              <p>ไม่มีข้อมูลยอดขายหรือคอมมิชชันในตัวอย่างนี้</p>
-              <Button onClick={() => setState('login')}>ออกจากตัวอย่าง</Button>
-            </Card>
-          </div>
-        </PartnerShell>
-      ) : (
-        <PublicFrame>
-          {state === 'login' ? (
-            <LoginPage next="/overview" onPreview={() => setState('active')} />
-          ) : (
-            <AccessPage reason={state} next="/overview" onRetry={() => setState('login')} />
+              ออกจากระบบตัวอย่าง
+            </Button>
           )}
-        </PublicFrame>
-      )}
-    </>
+          {journey.username && (
+            <Button
+              onClick={() => {
+                setToken(journey.issueReset());
+                setResetSequence((value) => value + 1);
+                navigate('/reset-password');
+              }}
+            >
+              จำลองได้รับลิงก์ตั้งรหัสใหม่จากผู้ดูแล
+            </Button>
+          )}
+        </aside>
+        {effectivePath === '/welcome' ? (
+          <PublicFrame>
+            <h2>ดีลของคุณพร้อมแล้ว</h2>
+            <Text>
+              สมมุติว่าคุณตกลงร่วมงานกับ Labs D แล้ว และทีมส่งคำเชิญนี้ให้คุณตั้งบัญชีด้วยตัวเอง
+            </Text>
+            <Text>ดีลตัวอย่าง: Organic 10% และ Brand ads 3% ตามยอดขายที่เข้าเงื่อนไข</Text>
+            <Text tone="muted">
+              รูปประกอบเดิมใช้เป็นตัวแทนคุณในตัวอย่างนี้ ยอดและเอกสารทั้งหมดเป็นข้อมูลจำลอง
+            </Text>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setToken(journey.invitationToken);
+                navigate('/invite');
+              }}
+            >
+              เปิดคำเชิญและตั้งบัญชีของฉัน
+            </Button>
+          </PublicFrame>
+        ) : effectivePath === '/invite' ? (
+          <PublicFrame>
+            <InvitePage />
+          </PublicFrame>
+        ) : effectivePath === '/reset-password' ? (
+          <PublicFrame>
+            <ResetPasswordPage key={resetSequence} />
+          </PublicFrame>
+        ) : effectivePath === '/login' ? (
+          <PublicFrame>
+            <LoginPage next="/overview" />
+          </PublicFrame>
+        ) : (
+          <MockPartnerPages
+            href={href}
+            username={journey.username!}
+            navigate={navigate}
+            logout={() => {
+              journey.logout();
+              navigate('/login');
+            }}
+          />
+        )}
+      </div>
+    </CredentialEnvironmentProvider>
+  );
+}
+function MockPartnerPages({
+  href,
+  username,
+  navigate,
+  logout,
+}: {
+  href: string;
+  username: string;
+  navigate: (href: string) => void;
+  logout: () => void;
+}) {
+  const url = new URL(href, 'https://preview.invalid');
+  const [menu, id, , adId] = url.pathname.slice(1).split('/');
+  const active: Menu = menu === 'content' || menu === 'transactions' ? menu : 'overview';
+  const context = readReportContext(url.searchParams);
+  const [notices, setNotices] = useState(() => readyScenario().notifications);
+  const transport = useMemo(
+    () => ({
+      overview: createOverviewTransport('ready'),
+      content: createContentTransport('ready'),
+      transactions: createTransactionTransport('ready', false),
+      documents: createSampleDocuments('ready', false, 'ready'),
+    }),
+    [],
+  );
+  const contentProps = {
+    scope,
+    context,
+    transport: transport.content,
+    routes,
+    canViewAdSpend: false,
+  };
+  const statementProps = {
+    scope,
+    transport: transport.transactions,
+    documents: transport.documents,
+    basePath: routes.transactions,
+    returnTo: url.searchParams.get('returnTo')?.startsWith('/content')
+      ? routes.content
+      : routes.overview,
+  };
+  return (
+    <PartnerShell
+      active={active}
+      accountHref="/access-preview/account"
+      hrefs={routes}
+      notifications={
+        <NotificationButton
+          data={notices}
+          onSeen={(id) =>
+            setNotices((old) => {
+              const items = old.items.map((item) =>
+                item.id === id ? { ...item, seen: true } : item,
+              );
+              return { ...old, items, unseenCount: items.filter((item) => !item.seen).length };
+            })
+          }
+          onOpenStatement={(id) => navigate(routes.transactions + '/' + encodeURIComponent(id))}
+        />
+      }
+      avatar="/media/celebrity-avatar.png"
+      footerNote="ข้อมูลและเอกสารตัวอย่าง · บัญชีจำลองของคุณ"
+    >
+      <ScopedQueryProvider scope={scope}>
+        {menu === 'account' ? (
+          <Card title="บัญชีของคุณ">
+            <Text>ชื่อผู้ใช้: {username}</Text>
+            <Text>ดาราพาร์ทเนอร์ · ดีลตัวอย่าง Labs D</Text>
+            <Text tone="muted">
+              บัญชีนี้อยู่เฉพาะในตัวอย่างที่เปิดอยู่ รีโหลดแล้วข้อมูลบัญชีจะหาย
+            </Text>
+            <Button onClick={logout}>ออกจากระบบ</Button>
+          </Card>
+        ) : active === 'overview' ? (
+          <OverviewPage
+            transport={transport.overview}
+            scope={scope}
+            brands={brands}
+            initialFilters={{
+              from: context.from,
+              toExclusive: context.toExclusive,
+              brand: context.brand,
+            }}
+            contentBasePath={routes.content}
+            transactionsBasePath={routes.transactions}
+            overviewBasePath={routes.overview}
+            partner={{
+              name: username,
+              greeting: `คุณ ${username}`,
+              role: 'Celebrity partner',
+              portrait: '/media/celebrity-thumbnail.png',
+              avatar: '/media/celebrity-avatar.png',
+            }}
+          />
+        ) : active === 'content' ? (
+          adId ? (
+            <AdDetail key={href} {...contentProps} contentId={id} adId={adId} />
+          ) : id ? (
+            <ContentDetail key={href} {...contentProps} contentId={id} />
+          ) : (
+            <ContentList
+              key={href}
+              {...contentProps}
+              brands={brands}
+              onChange={(c) => navigate(reportHref(routes.content, c))}
+            />
+          )
+        ) : id ? (
+          <StatementDetail key={href} {...statementProps} statementId={id} />
+        ) : (
+          <StatementList {...statementProps} />
+        )}
+      </ScopedQueryProvider>
+    </PartnerShell>
   );
 }

@@ -1,4 +1,5 @@
 'use client';
+import { useCredentialEnvironment } from './CredentialEnvironment';
 import { useState, type FormEvent } from 'react';
 import { ResetPassword } from '@/contracts/passwords';
 import { PasswordChanged, PasswordResetContext } from '@/contracts/credential-responses';
@@ -6,10 +7,11 @@ import { Button } from '@/shared/ui/Button';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { PasswordField } from '@/shared/ui/PasswordField';
 import { Text } from '@/shared/ui/Text';
-import { credentialRequest, credentialErrorText } from './credential-client';
-import { useBearerLink, clearBearerLink } from './useBearerLink';
+import { credentialErrorText } from './credential-client';
+import { useBearerLink } from './useBearerLink';
 import forms from '@/shared/ui/forms.module.css';
 export function ResetPasswordPage() {
+  const environment = useCredentialEnvironment();
   const link = useBearerLink('/api/access/passwords/inspect', PasswordResetContext);
   const [busy, setBusy] = useState(false),
     [done, setDone] = useState(false),
@@ -30,9 +32,9 @@ export function ResetPasswordPage() {
     setBusy(true);
     setError('');
     try {
-      await credentialRequest('/api/access/passwords/reset', input.data, PasswordChanged);
+      await environment.request('/api/access/passwords/reset', input.data, PasswordChanged);
       setDone(true);
-      clearBearerLink();
+      environment.clearLink();
     } catch (failure) {
       setError(credentialErrorText(failure));
     } finally {

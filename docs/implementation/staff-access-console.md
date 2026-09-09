@@ -1,0 +1,9 @@
+# Staff access console — D031 local candidate
+
+After a deal is agreed, authorized Labs D staff can issue/revoke/reissue an invitation and generate an exact-account reset after verified contact/evidence. `/ops/access` now resolves maintained native staff identity/current manage_partners grant; the access metadata reader is independent of unconnected financial operations data.
+
+The reader projects bounded pages of partner/member/invitation metadata, checks the caller's grant revision and never returns stored password/bearer/hash material. Existing service transactions remain the writers. The UI validates user/revision/selected-partner responses, requests explicit review, holds stable idempotency keys, and shows a newly issued link only in ephemeral component state. Links clear on close, expiry, visibility loss or scope/error changes. Staff still deliver deliberately through their agreed contact channel; there is no automatic send.
+
+Reset issuance pins the exact account, membership revision and stored verified contact, with a new verification reference. Staff users are excluded from partner recovery. Read metadata does not require a fresh five-minute login; mutations retain that service requirement. Session/permission failures do not show stale staff data.
+
+Validation: 90 isolated PostgreSQL tests and 213 unit/component tests pass, including revoked grants, foreign staff responses, stale revision, wrong recipient contact, reissue/revoke and bounded directory pages. Typecheck/build/fixture exclusion pass. Actual staff browser/bootstrap acceptance remains open; local identity is still unconfigured. The previous dirty D023 operations preview is preserved and is not accepted by this receipt. Its obsolete invitation form was replaced in the working tree with a link to the separate console; membership edits and financial operations reconciliation remain later work. No new migration, real grant, automatic send or production exposure.

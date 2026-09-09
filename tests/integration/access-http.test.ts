@@ -1,3 +1,4 @@
+import { StaffAccessSnapshot } from '@/contracts/staff-access';
 import { createPartnerSessionHttp } from '@/server/http/partner-session';
 import { createPartnerAccess } from '@/server/modules/partners/access';
 import { PARTNER_COOKIE } from '@/server/modules/access/partner-session';
@@ -409,5 +410,178 @@ describe('partner application session', () => {
         .some((v) => v.startsWith(PARTNER_COOKIE + '=;') && v.includes('Max-Age=0')),
     ).toBe(true);
     expect((await sessionHttp(new Request(url, { headers: fresh }))).status).toBe(401);
+  });
+});
+
+describe('staff access projection and commands', () => {
+  it('reads bounded access metadata without secrets and uses the reviewed recipient for reissue/revoke/reset', async () => {
+    const partners = createPartnerAccess(
+      sql,
+      principalResolver(auth, async () => {}),
+    );
+    const actor = await partners.staffSession(staff);
+    const invite = await issue();
+    const load = (input: object, headers = staff) =>
+      handle(request('staff/access', { expectedRevision: actor.revision, ...input }, headers));
+    const snapshotResponse = await load({ partnerId: invite.partnerId });
+    expect(snapshotResponse.status).toBe(200);
+    const raw = await snapshotResponse.text();
+    expect(raw).not.toContain(invite.token);
+    expect(raw).not.toMatch(/token_hash|password|tokenHash/);
+    const snapshot = StaffAccessSnapshot.parse(JSON.parse(raw));
+    expect(snapshot.selected?.invitations.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: invite.id,
+          recipientName: 'คุณทดสอบ',
+          status: 'pending',
+          verifiedContactRef: 'contact-http',
+        }),
+      ]),
+    );
+    expect((await load({ partnerId: invite.partnerId, expectedRevision: '99999999' })).status).toBe(
+      409,
+    );
+    expect((await load({ partnerId: invite.partnerId }, new Headers())).status).toBe(401);
+    const reissued = await handle(
+      request(
+        'invitations/issue',
+        {
+          partnerId: invite.partnerId,
+          recipientName: 'คุณทดสอบ',
+          verifiedContactRef: 'contact-http',
+          capabilities: ['view_earnings'],
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          idempotencyKey: randomUUID(),
+        },
+        staff,
+      ),
+    );
+    expect(reissued.status).toBe(200);
+    const replacement = await reissued.json();
+    expect((await handle(request('invitations/inspect', { token: invite.token }))).status).toBe(
+      400,
+    );
+    const revoked = await handle(
+      request(
+        'invitations/revoke',
+        { partnerId: invite.partnerId, inviteId: replacement.id, idempotencyKey: randomUUID() },
+        staff,
+      ),
+    );
+    expect(revoked.status).toBe(200);
+    expect(
+      (await handle(request('invitations/inspect', { token: replacement.token }))).status,
+    ).toBe(400);
+    const finalInvite = await handle(
+      request(
+        'invitations/issue',
+        {
+          partnerId: invite.partnerId,
+          recipientName: 'คุณทดสอบ',
+          verifiedContactRef: 'contact-http',
+          capabilities: ['view_earnings'],
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          idempotencyKey: randomUUID(),
+        },
+        staff,
+      ),
+    );
+    const finalToken = await finalInvite.json();
+    const username = 'staffview_' + randomUUID().slice(0, 8);
+    const registered = await handle(
+      request('invitations/register', {
+        token: finalToken.token,
+        username,
+        password,
+        passwordConfirmation: password,
+      }),
+    );
+    expect(registered.status).toBe(200);
+    const user = await registered.json();
+    const partnerHeaders = cookies(await login(username));
+    expect((await load({ partnerId: invite.partnerId }, partnerHeaders)).status).toBe(403);
+    const memberData = StaffAccessSnapshot.parse(
+      await (await load({ partnerId: invite.partnerId })).json(),
+    );
+    const member = memberData.selected!.members.items.find((m) => m.userId === user.userId)!;
+    expect(member).toMatchObject({
+      username,
+      verifiedContactRef: 'contact-http',
+      resetAllowed: true,
+      revision: '1',
+    });
+    const resetCommand = {
+      partnerId: invite.partnerId,
+      userId: member.userId,
+      expectedRevision: member.revision,
+      verifiedContactRef: member.verifiedContactRef,
+      verificationEvidenceRef: 'support-verified-test',
+      idempotencyKey: randomUUID(),
+    };
+    expect(
+      (
+        await handle(
+          request(
+            'passwords/issue',
+            { ...resetCommand, verifiedContactRef: 'wrong-contact' },
+            staff,
+          ),
+        )
+      ).status,
+    ).toBe(403);
+    const reset = await handle(request('passwords/issue', resetCommand, staff));
+    expect(reset.status).toBe(200);
+    const resetValue = await reset.json();
+    expect(await (await load({ partnerId: invite.partnerId })).text()).not.toContain(
+      resetValue.token,
+    );
+    // A removed staff grant cannot keep reading cached authority, regardless of a submitted revision.
+    await sql`update portal_access.staff_grants set active=false,revision=revision+1 where user_id=${actor.userId}`;
+    try {
+      expect((await load({ partnerId: invite.partnerId })).status).toBe(403);
+    } finally {
+      await sql`update portal_access.staff_grants set active=true,revision=revision+1 where user_id=${actor.userId}`;
+    }
+  });
+  it('paginates partner metadata without silently truncating the directory', async () => {
+    const partners = createPartnerAccess(
+      sql,
+      principalResolver(auth, async () => {}),
+    );
+    const actor = await partners.staffSession(staff);
+    const prefix = 'zz-page-' + randomUUID();
+    const ids = Array.from({ length: 51 }, (_, i) => prefix + '-' + String(i).padStart(3, '0'));
+    await sql`insert into portal_access.partners ${sql(
+      ids.map((id) => ({ id, name: 'Synthetic page partner', status: 'active' })),
+      'id',
+      'name',
+      'status',
+    )}`;
+    const one = StaffAccessSnapshot.parse(
+      await (
+        await handle(
+          request(
+            'staff/access',
+            { expectedRevision: actor.revision, partnerCursor: prefix },
+            staff,
+          ),
+        )
+      ).json(),
+    );
+    expect(one.partners.items.map((p) => p.id)).toEqual(ids.slice(0, 50));
+    expect(one.partners.nextCursor).toBe(ids[49]);
+    const two = StaffAccessSnapshot.parse(
+      await (
+        await handle(
+          request(
+            'staff/access',
+            { expectedRevision: actor.revision, partnerCursor: one.partners.nextCursor },
+            staff,
+          ),
+        )
+      ).json(),
+    );
+    expect(two.partners.items[0].id).toBe(ids[50]);
   });
 });

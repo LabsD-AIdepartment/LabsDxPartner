@@ -1,4 +1,5 @@
 'use client';
+import { useCredentialEnvironment } from './CredentialEnvironment';
 import { useState, type FormEvent } from 'react';
 import { ArrowRight, Ticket } from 'lucide-react';
 import { CredentialLogin } from '@/contracts/credentials';
@@ -7,10 +8,11 @@ import { Field } from '@/shared/ui/Field';
 import { PasswordField } from '@/shared/ui/PasswordField';
 import { Text } from '@/shared/ui/Text';
 import { safeReturnTo } from './access';
-import { signIn, credentialErrorText } from './credential-client';
+import { credentialErrorText } from './credential-client';
 import forms from '@/shared/ui/forms.module.css';
 import styles from './login.module.css';
 export function LoginPage({ next, onPreview }: { next: string; onPreview?: () => void }) {
+  const environment = useCredentialEnvironment();
   const [inviteOpen, setInviteOpen] = useState(false),
     [forgot, setForgot] = useState(false);
   const [error, setError] = useState(''),
@@ -34,8 +36,8 @@ export function LoginPage({ next, onPreview }: { next: string; onPreview?: () =>
     setBusy(true);
     setError('');
     try {
-      await signIn(input.data.username, input.data.password, next);
-      window.location.assign(safeReturnTo(next));
+      await environment.signIn(input.data.username, input.data.password, next);
+      environment.navigate(safeReturnTo(next));
     } catch (failure) {
       setError(credentialErrorText(failure));
       setBusy(false);

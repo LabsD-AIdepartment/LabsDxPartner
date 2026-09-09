@@ -1,4 +1,5 @@
 'use client';
+import { useCredentialEnvironment } from './CredentialEnvironment';
 import { useState, type FormEvent } from 'react';
 import { ActivateAccount } from '@/contracts/invitations';
 import { CredentialLogin } from '@/contracts/credentials';
@@ -8,10 +9,11 @@ import { LinkButton } from '@/shared/ui/LinkButton';
 import { Field } from '@/shared/ui/Field';
 import { PasswordField } from '@/shared/ui/PasswordField';
 import { Text } from '@/shared/ui/Text';
-import { credentialRequest, credentialErrorText, signIn } from './credential-client';
-import { useBearerLink, clearBearerLink } from './useBearerLink';
+import { credentialErrorText } from './credential-client';
+import { useBearerLink } from './useBearerLink';
 import forms from '@/shared/ui/forms.module.css';
 export function InvitePage() {
+  const environment = useCredentialEnvironment();
   const invitation = useBearerLink('/api/access/invitations/inspect', InvitationContext);
   const [existing, setExisting] = useState(false),
     [busy, setBusy] = useState(false),
@@ -41,21 +43,25 @@ export function InvitePage() {
     setError('');
     try {
       if (existing) {
-        await signIn(parsed.data.username, parsed.data.password);
-        await credentialRequest(
+        await environment.signIn(parsed.data.username, parsed.data.password);
+        await environment.request(
           '/api/access/invitations/accept',
           { token: invitation.token },
           ActivatedAccount,
         );
         setCompleted(true);
-        clearBearerLink();
+        environment.clearLink();
       } else {
-        await credentialRequest('/api/access/invitations/register', parsed.data, ActivatedAccount);
+        await environment.request(
+          '/api/access/invitations/register',
+          parsed.data,
+          ActivatedAccount,
+        );
         setCompleted(true);
-        clearBearerLink();
-        await signIn(parsed.data.username, parsed.data.password);
+        environment.clearLink();
+        await environment.signIn(parsed.data.username, parsed.data.password);
       }
-      window.location.assign('/overview');
+      environment.navigate('/overview');
     } catch (failure) {
       setError(credentialErrorText(failure));
       setBusy(false);

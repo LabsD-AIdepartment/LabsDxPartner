@@ -5,6 +5,7 @@ import { Id } from '@/contracts/common';
 import { InviteRequest } from '@/contracts/operations';
 import { ActivationInviteRequest } from '@/contracts/invitations';
 import { Session, type SessionValue } from '@/contracts/session';
+import { StaffAccessSession, type StaffAccessSessionValue } from '@/contracts/staff-access';
 import type { ResolvePrincipal } from '@/server/modules/identity/resolve-principal';
 import { FRESH_SESSION_SECONDS } from '@/server/modules/identity/policy';
 import { revokeIdentitySessions } from '@/server/modules/identity/revocation';
@@ -92,11 +93,16 @@ export function createPartnerAccess(sql: Sql, resolvePrincipal: ResolvePrincipal
     });
     return outcome.value;
   }
-  async function staff(tx: Tx, actor: Actor) {
-    if (!actor.fresh) throw new AccessFailure('fresh_auth_required');
-    const [grant] = await tx`select capabilities from portal_access.staff_grants
+  async function staff(tx: Tx, actor: Actor, requireFresh = true) {
+    if (requireFresh && !actor.fresh) throw new AccessFailure('fresh_auth_required');
+    const [grant] = await tx`select capabilities,revision::text from portal_access.staff_grants
       where user_id = ${actor.userId} AND active for share`;
     if (!grant?.capabilities.includes('manage_partners')) throw new AccessFailure('forbidden');
+    return StaffAccessSession.parse({
+      userId: actor.userId,
+      displayName: actor.displayName,
+      revision: grant.revision,
+    });
   }
   async function activePartner(tx: Tx, partnerId: string) {
     const [partner] = await tx`select id from portal_access.partners
@@ -134,6 +140,17 @@ export function createPartnerAccess(sql: Sql, resolvePrincipal: ResolvePrincipal
   }
 
   return {
+    async staffSession(headers: Headers): Promise<StaffAccessSessionValue> {
+      return transaction(headers, false, (tx, actor) => staff(tx, actor, false));
+    },
+    async withStaff<T>(
+      headers: Headers,
+      read: (tx: Tx, session: StaffAccessSessionValue) => Promise<T>,
+    ): Promise<T> {
+      return transaction(headers, false, async (tx, actor) =>
+        read(tx, await staff(tx, actor, false)),
+      );
+    },
     /** Keep dependent data reads in this transaction and scope every join with scope.partnerId. */
     async withPartner<T>(
       headers: Headers,

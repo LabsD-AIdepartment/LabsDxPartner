@@ -7,7 +7,7 @@ export const credentialMessages: Record<string, string> = {
   INVALID_RESET: 'ลิงก์ตั้งรหัสใหม่นี้ใช้ไม่ได้แล้ว กรุณาติดต่อผู้ดูแล Labs D',
   USERNAME_UNAVAILABLE: 'ชื่อผู้ใช้นี้ถูกใช้แล้ว กรุณาเลือกชื่ออื่น',
   MEMBERSHIP_EXISTS: 'บัญชีนี้มีสิทธิ์กับพาร์ทเนอร์นี้แล้ว กรุณาเข้าสู่ระบบหรือติดต่อผู้ดูแล',
-  FRESH_AUTH_REQUIRED: 'กรุณาเข้าสู่ระบบอีกครั้งก่อนรับคำเชิญ',
+  FRESH_AUTH_REQUIRED: 'กรุณาเข้าสู่ระบบอีกครั้งก่อนทำรายการนี้',
   UNAUTHENTICATED: 'กรุณาเข้าสู่ระบบอีกครั้ง',
   TOO_MANY_ATTEMPTS: 'ลองหลายครั้งเกินไป กรุณารอสักครู่แล้วลองใหม่',
   INVALID_PASSWORD: 'รหัสผ่านปัจจุบันไม่ถูกต้อง',
