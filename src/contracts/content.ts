@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Id, Count, Instant, Money, Period, envelope, page } from './common';
+import { PeriodCoverage } from './coverage';
 export const Metric = z
   .strictObject({
     key: z.enum([
@@ -53,7 +54,10 @@ export const Ad = z.strictObject({
   asOf: Instant,
   metrics: z.array(Metric),
 });
-export const ContentListResponse = envelope(page(ContentCard));
+export const ContentListResponse = envelope(page(ContentCard)).extend({
+  coverage: PeriodCoverage.optional(),
+  brands: z.array(Id).max(100).optional(),
+});
 export const ContentDetailResponse = envelope(
   z.strictObject({
     content: ContentCard,
@@ -68,9 +72,9 @@ export const ContentDetailResponse = envelope(
       .enum(['confirmed', 'estimated', 'mixed', 'unavailable'])
       .default('unavailable'),
     metrics: z.array(Metric),
-    adCount: Count,
+    adCount: Count.nullable(),
     attribution: z.enum(['content', 'partner-only', 'unavailable']),
   }),
-);
+).extend({ coverage: PeriodCoverage.optional() });
 export const AdListResponse = envelope(page(Ad));
 export const AdDetailResponse = envelope(Ad);

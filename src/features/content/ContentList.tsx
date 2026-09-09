@@ -44,7 +44,7 @@ export function ContentList(
       <div className={styles.filters}>
         <FilterBar
           value={c}
-          brands={props.brands}
+          brands={data?.brands ?? props.brands}
           onChange={(v) => onChange(changeReportFilters(c, v))}
           onReset={() => {
             setSearch('');

@@ -1,17 +1,13 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { OverviewQuery, OverviewResponse } from '@/contracts/overview-http';
 import { coverageForPeriod } from '@/contracts/coverage';
 import { AccessFailure, type createPartnerAccess } from '@/server/modules/partners/access';
+import { earningsGeneration, instantSqlFormat, publishedPeriodsSql } from './publication';
 
-const dateSql = `'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'`;
+const dateSql = instantSqlFormat;
 // One data statement: publication, metadata, totals and revisions share an MVCC snapshot.
 // No current_generation read: unissued import candidates are private to operations.
-const query = `with pubs as materialized (
-  select s.generation_id,s.period_from,s.period_to,g.data_through
-  from portal_statements.statements s join portal_imports.generations g on g.id=s.generation_id and g.scope_id=s.scope_id
-  where s.partner_id=$1 and s.period_from<$3::timestamptz and s.period_to>$2::timestamptz
-  order by s.period_from,s.id limit 1001
-), rows as materialized (
+const query = `with ${publishedPeriodsSql}, rows as materialized (
   select e.earned_at,e.content_id,e.disposition,e.amount_minor,e.eligible_base_minor,
     e.payload->'earning'->>'kind' as kind,e.payload->'earning'->>'channel' as channel,
     (e.payload->'earning'->>'ratePpm')::integer as rate,c.id as metadata_id,c.brand
@@ -83,13 +79,29 @@ export function createOverviewReader(access: ReturnType<typeof createPartnerAcce
     const q = parsed.data;
     return access.withPartner(headers, q.partnerId, 'view_earnings', async (tx, scope) => {
       if (scope.permissionRevision !== q.permissionRevision) throw new AccessFailure('forbidden');
-      const period = { from: q.from + 'T00:00:00+07:00', toExclusive: q.toExclusive + 'T00:00:00+07:00', timezone: 'Asia/Bangkok' as const };
+      const period = {
+        from: q.from + 'T00:00:00+07:00',
+        toExclusive: q.toExclusive + 'T00:00:00+07:00',
+        timezone: 'Asia/Bangkok' as const,
+      };
       const canPay = scope.capabilities.includes('view_statements');
-      const [row] = await tx.unsafe(query, [scope.partnerId, period.from, period.toExclusive, q.brand ?? null, canPay]);
-      if (!row || row.publication_count > 1000 || row.brands.length > 100) throw new Error('Overview bounds exceeded');
-      const generation = createHash('sha256').update(JSON.stringify([
-        scope.partnerId, period.from, period.toExclusive, q.brand ?? null, row.statements_revision, row.catalogue_revision,
-      ])).digest('hex');
+      const [row] = await tx.unsafe(query, [
+        scope.partnerId,
+        period.from,
+        period.toExclusive,
+        q.brand ?? null,
+        canPay,
+      ]);
+      if (!row || row.publication_count > 1000 || row.brands.length > 100)
+        throw new Error('Overview bounds exceeded');
+      const generation = earningsGeneration(
+        scope.partnerId,
+        period.from,
+        period.toExclusive,
+        q.brand ?? null,
+        row.statements_revision,
+        row.catalogue_revision,
+      );
       if (q.generation && q.generation !== generation) throw new AccessFailure('conflict');
       const coverage = coverageForPeriod(period, row.periods);
       const known = coverage.status !== 'unavailable';
@@ -97,40 +109,95 @@ export function createOverviewReader(access: ReturnType<typeof createPartnerAcce
       const reasons: string[] = [];
       if (!known) reasons.push('ยังไม่มีรายได้ที่เผยแพร่ในช่วงวันที่เลือก');
       else if (coverage.status === 'partial') reasons.push('มีข้อมูลเฉพาะงวดที่เผยแพร่แล้ว');
-      if (row.missing_metadata) reasons.push('บางคลิปยังไม่มีข้อมูลชื่อหรือแบรนด์ ยอดที่ไม่กรองแบรนด์ยังรวมรายได้เหล่านี้');
-      if (q.brand && row.unknown_brand) reasons.push('ยอดที่กรองแบรนด์รวมเฉพาะรายการที่จับคู่แบรนด์แล้ว');
+      if (row.missing_metadata)
+        reasons.push('บางคลิปยังไม่มีข้อมูลชื่อหรือแบรนด์ ยอดที่ไม่กรองแบรนด์ยังรวมรายได้เหล่านี้');
+      if (q.brand && row.unknown_brand)
+        reasons.push('ยอดที่กรองแบรนด์รวมเฉพาะรายการที่จับคู่แบรนด์แล้ว');
       const payoutKnown = canPay && row.balance_count > 0;
       const unpaid = BigInt(row.outstanding);
       const next = payoutKnown && !row.has_credit ? row.next : null;
       return OverviewResponse.parse({
-        partnerId: scope.partnerId, permissionRevision: scope.permissionRevision, brand: q.brand ?? null,
-        earningsRevision: row.earnings_revision, settlementsRevision: row.settlements_revision, catalogueRevision: row.catalogue_revision,
+        partnerId: scope.partnerId,
+        permissionRevision: scope.permissionRevision,
+        brand: q.brand ?? null,
+        earningsRevision: row.earnings_revision,
+        settlementsRevision: row.settlements_revision,
+        catalogueRevision: row.catalogue_revision,
         data: {
           dataState: !known && !payoutKnown ? 'unavailable' : reasons.length ? 'partial' : 'ready',
-          generatedAt: row.as_of, dataThrough: row.through, reasons, requestId: randomUUID(),
-          profile: row.profile ?? null, brands: row.brands,
+          generatedAt: row.as_of,
+          dataThrough: row.through,
+          reasons,
+          requestId: randomUUID(),
+          profile: row.profile ?? null,
+          brands: row.brands,
           earnings: {
-            generation, period, coverage, estimated: null,
+            generation,
+            period,
+            coverage,
+            estimated: null,
             confirmed: known ? money(t.confirmed) : null,
             eligibleSales: known ? money(t.sales) : null,
             unassignedAmount: known ? money(t.unassigned) : null,
             excludedCount: known && (!q.brand || row.excluded === 0) ? row.excluded : null,
-            salesByBrand: known && !t.missing_sales_brand ? row.sales_by_brand.map((r: MinorRow & { label: string }) => ({ label: r.label, value: money(r.minor) })) : null,
-            channelBreakdown: known ? {
-              organic: money(t.organic), brandAds: money(t.ads), other: money(t.other), organicRatePpm: t.organic_rate, brandAdsRatePpm: t.ads_rate,
-            } : null,
+            salesByBrand:
+              known && !t.missing_sales_brand
+                ? row.sales_by_brand.map((r: MinorRow & { label: string }) => ({
+                    label: r.label,
+                    value: money(r.minor),
+                  }))
+                : null,
+            channelBreakdown: known
+              ? {
+                  organic: money(t.organic),
+                  brandAds: money(t.ads),
+                  other: money(t.other),
+                  organicRatePpm: t.organic_rate,
+                  brandAdsRatePpm: t.ads_rate,
+                }
+              : null,
             contentCount: known ? t.content_count : null,
-            trend: known ? row.days.map((r: MinorRow & { date: string }) => ({ date: r.date, amount: money(r.minor) })) : [],
-            topContent: known ? row.top_clips.map((r: Record<string, string | boolean | null>) => ({
-              id: r.id, title: r.title, brand: r.brand, publishedAt: r.published_at,
-              cover: r.cover, coverPosition: r.cover_position, removed: r.removed,
-              views: null, earned: money(String(r.earned)), unavailableReason: null,
-            })) : [],
+            trend: known
+              ? row.days.map((r: MinorRow & { date: string }) => ({
+                  date: r.date,
+                  amount: money(r.minor),
+                }))
+              : [],
+            topContent: known
+              ? row.top_clips.map((r: Record<string, string | boolean | null>) => ({
+                  id: r.id,
+                  title: r.title,
+                  brand: r.brand,
+                  publishedAt: r.published_at,
+                  cover: r.cover,
+                  coverPosition: r.cover_position,
+                  removed: r.removed,
+                  views: null,
+                  earned: money(String(r.earned)),
+                  unavailableReason: null,
+                }))
+              : [],
           },
           obligation: {
-            asOf: row.as_of, confirmedUnpaid: payoutKnown ? money(String(unpaid > 0n ? unpaid : 0n)) : null,
-            nextPayoutReason: !canPay ? 'บัญชีนี้ไม่ได้รับสิทธิ์ดูข้อมูลการจ่ายเงิน' : row.has_credit ? 'มีเครดิตคงเหลือ รอยืนยันการนำไปหักในรอบจ่าย' : null,
-            nextPayout: next ? { statementId: next.id, scheduledAt: next.scheduled_at, amount: money(next.amount), period: { from: next.period_from, toExclusive: next.period_to, timezone: 'Asia/Bangkok' } } : null,
+            asOf: row.as_of,
+            confirmedUnpaid: payoutKnown ? money(String(unpaid > 0n ? unpaid : 0n)) : null,
+            nextPayoutReason: !canPay
+              ? 'บัญชีนี้ไม่ได้รับสิทธิ์ดูข้อมูลการจ่ายเงิน'
+              : row.has_credit
+                ? 'มีเครดิตคงเหลือ รอยืนยันการนำไปหักในรอบจ่าย'
+                : null,
+            nextPayout: next
+              ? {
+                  statementId: next.id,
+                  scheduledAt: next.scheduled_at,
+                  amount: money(next.amount),
+                  period: {
+                    from: next.period_from,
+                    toExclusive: next.period_to,
+                    timezone: 'Asia/Bangkok',
+                  },
+                }
+              : null,
           },
         },
       });

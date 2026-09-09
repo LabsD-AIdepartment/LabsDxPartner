@@ -161,7 +161,9 @@ export function ContentDetail(props: ContentProps & { contentId: string }) {
               className={styles.disclosure}
               onToggle={(e) => setAdsOpen(e.currentTarget.open)}
             >
-              <summary>โฆษณาที่ใช้คลิปนี้ ({detail.adCount})</summary>
+              <summary>
+                โฆษณาที่ใช้คลิปนี้{detail.adCount === null ? '' : ` (${detail.adCount})`}
+              </summary>
               {adsOpen && <AdList {...props} context={pinned} />}
             </details>
           </Card>

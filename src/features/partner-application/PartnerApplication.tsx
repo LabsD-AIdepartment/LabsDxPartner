@@ -4,7 +4,7 @@ import { Session, type SessionValue } from '@/contracts/session';
 import { ScopedQueryProvider } from '@/shared/query/provider';
 import { ChangeWatcher } from '@/shared/query/ChangeWatcher';
 import { loadChanges } from '@/shared/query/changes-http';
-import { sourceUnavailable } from '@/shared/query/source-unavailable';
+import { contentHttp } from '@/features/content/http';
 import { PartnerShell } from '@/features/shell/PartnerShell';
 import { OverviewPage } from '@/features/overview/OverviewPage';
 import { overviewHttp } from '@/features/overview/http';
@@ -260,7 +260,7 @@ function PartnerFeatures({
     scope,
     context,
     routes: { content: '/content', overview: '/overview' },
-    transport: sourceUnavailable,
+    transport: contentHttp,
     canViewAdSpend: member.capabilities.includes('view_ad_spend'),
   };
   const transactions = {

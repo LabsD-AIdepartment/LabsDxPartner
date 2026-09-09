@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Id, Money, Instant, Period, Count, envelope, page } from './common';
+import { PeriodCoverage } from './coverage';
 export const RoundingRule = z.discriminatedUnion('mode', [
   z.strictObject({
     mode: z.literal('per-line'),
@@ -54,5 +55,8 @@ export const EarningsLine = z
   });
 export type EarningsLineValue = z.infer<typeof EarningsLine>;
 export const EarningsResponse = envelope(
-  page(EarningsLine).extend({ excludedCount: Count, unassignedAmount: Money }),
-);
+  page(EarningsLine).extend({
+    excludedCount: Count.nullable(),
+    unassignedAmount: Money.nullable(),
+  }),
+).extend({ coverage: PeriodCoverage.optional() });

@@ -6,6 +6,10 @@ import { timestamp, dateLabel } from '@/shared/ui/format-date';
 import { ContentError } from './model';
 import { Text } from '@/shared/ui/Text';
 import styles from './content.module.css';
+import { AccessLost } from '@/shared/query/revision-watcher';
+import { CoverageNotice } from '@/shared/ui/CoverageNotice';
+import type { z } from 'zod';
+import type { PeriodCoverage } from '@/contracts/coverage';
 export function ContentState({
   pending,
   error,
@@ -17,6 +21,16 @@ export function ContentState({
   retry: () => void;
   latestHref: string;
 }) {
+  if (error instanceof AccessLost)
+    return (
+      <>
+        <DataState
+          state="error"
+          message="สิทธิ์เข้าถึงข้อมูลเปลี่ยนแล้ว กรุณาเข้าสู่ระบบอีกครั้ง"
+        />
+        <LinkButton href="/login">ไปหน้าเข้าสู่ระบบ</LinkButton>
+      </>
+    );
   if (error instanceof SourceUnavailableError)
     return <DataState state="unavailable" message={error.message} />;
   if (pending) return <DataState state="loading" />;
@@ -50,6 +64,7 @@ export function DataEnvelope({
     dataThrough: string | null;
     generatedAt: string;
     period: { from: string; toExclusive: string };
+    coverage?: z.infer<typeof PeriodCoverage>;
   };
   children: ReactNode;
   showFreshness?: boolean;
@@ -69,6 +84,7 @@ export function DataEnvelope({
       {data.dataState !== 'ready' && (
         <DataState state={data.dataState} message={data.reasons.join(' · ') || undefined} />
       )}
+      {data.coverage && <CoverageNotice coverage={data.coverage} />}
       {data.dataState !== 'unavailable' && children}
     </>
   );

@@ -27,7 +27,7 @@ import {
 import styles from './overview.module.css';
 import { SourceUnavailableError } from '@/shared/query/source-unavailable';
 import { UnavailableOverview } from './UnavailableOverview';
-import { CoverageNotice } from './CoverageNotice';
+import { CoverageNotice } from '@/shared/ui/CoverageNotice';
 import { AccessLost } from '@/shared/query/revision-watcher';
 import { LinkButton } from '@/shared/ui/LinkButton';
 export function OverviewPage({
