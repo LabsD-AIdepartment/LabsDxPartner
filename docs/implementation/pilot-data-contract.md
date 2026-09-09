@@ -2,6 +2,10 @@
 
 2026-09-09, preparation only. No selected real partner, approved agreement or reconciled period is available in this portal yet. No confirmed amount may be published from this worksheet. Existing synthetic10%/3% examples are not defaults.
 
+## D032/D036 synthetic-first implementation
+
+The owner explicitly requested mock data with themselves as the celebrity. Real references below remain release/business-input requirements, not prerequisites for local implementation. The executable [synthetic financial import](synthetic-financial-import.md) now provides the six-clip detailed snapshot and exact controls, an isolated candidate-store migration and fenced import worker. No synthetic assumption becomes a real agreement default.
+
 ## Required owner/finance inputs
 
 | Input | Required evidence | Current state |

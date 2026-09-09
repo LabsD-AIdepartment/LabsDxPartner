@@ -31,6 +31,7 @@ const cmds = {
   // A fresh graph checks the complete program; no files or diagnostics are excluded.
   typecheck: ['typescript/bin/tsc', '--noEmit', '--incremental', 'false'],
   test: ['vitest/vitest.mjs', 'run'],
+  'import:once': ['tsx/dist/cli.mjs', resolve(root, 'scripts/import-once.ts')],
   'test:integration': ['vitest/vitest.mjs', 'run', '--config', 'vitest.integration.config.ts'],
   'test:e2e': ['@playwright/test/cli.js', 'test'],
 };
