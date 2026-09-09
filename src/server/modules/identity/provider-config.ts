@@ -22,7 +22,7 @@ const origin = required
   })
   .transform((value) => new URL(value).origin);
 
-const configSchema = z.object({
+export const baseIdentityConfigSchema = z.object({
   BETTER_AUTH_URL: origin,
   BETTER_AUTH_SECRET: required.min(32),
   DATABASE_URL: required.refine((value) => {
@@ -32,6 +32,8 @@ const configSchema = z.object({
       return false;
     }
   }),
+});
+const configSchema = baseIdentityConfigSchema.extend({
   GOOGLE_CLIENT_ID: required,
   GOOGLE_CLIENT_SECRET: required,
   LINE_CLIENT_ID: required,
