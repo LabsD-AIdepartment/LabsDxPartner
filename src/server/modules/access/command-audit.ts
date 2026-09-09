@@ -25,7 +25,8 @@ export async function recordCommand(
   key: string,
   hash: string,
   result: unknown,
+  details: Record<string, unknown> = {},
 ) {
-  await tx`insert into portal_access.audit(id,actor_id,action,partner_id,target_id,idempotency_key,request_hash,result)
- values(${randomUUID()},${actorId},${action},${partnerId},${targetId},${key},${hash},${JSON.stringify(result)}::text::jsonb)`;
+  await tx`insert into portal_access.audit(id,actor_id,action,partner_id,target_id,idempotency_key,request_hash,result,details)
+ values(${randomUUID()},${actorId},${action},${partnerId},${targetId},${key},${hash},${JSON.stringify(result)}::text::jsonb,${JSON.stringify(details)}::text::jsonb)`;
 }

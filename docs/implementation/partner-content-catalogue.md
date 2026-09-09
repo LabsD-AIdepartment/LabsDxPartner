@@ -1,0 +1,15 @@
+# Partner content catalogue
+
+Native financial records contain content IDs and amounts, but cannot establish a clip's title, brand, original publication date or cover image. The catalogue module supplies these presentation facts separately so Overview and content reads can share them without inventing metadata from sales records or embedding one partner's images in production components.
+
+The reviewed snapshot contract contains a partner profile and up to 5,000 clips. It accepts only application-hosted image paths, percentage crop positions and credential-free HTTPS source links. It contains no amounts, view counts, identity credentials or permissions. The development catalogue derives all six covers and titles from the existing approved preview; all eight referenced portrait/avatar/cover assets were checked on disk, and unknown platform URLs remain null.
+
+`createCataloguePublisher` first checks a fresh native `manage_partners` principal, loads the reviewed snapshot from a server-owned repository outside database locks, then checks current staff authority again before committing. The command supplies an exact source digest and expected catalogue revision; it cannot supply the metadata itself. Publication, clip upserts, archived-state changes, earnings/metrics revision signals and the audit snapshot commit together. Idempotent retries return the prior result, and concurrent stale publishers cannot overwrite a newer revision.
+
+Clips absent from a complete source snapshot become `removed`; their IDs and last-known title/brand/cover remain for historical earnings. A later reviewed snapshot can restore them. Equal clip IDs in different partners remain isolated. The complete accepted snapshot, review reference and digest are retained in the existing command audit details, while the replay receipt remains compact. Existing financial audit calls retain their previous empty details by default.
+
+Migration 0016 adds catalogue and clip tables/indexes only. Existing financial rows, prior migrations, credentials and memberships are unchanged. `readPresentation` is transaction-scoped for later composition into Overview's single response; it returns null profile/publication time when metadata has not been established. It does not create a separate first-screen API call or silently choose a fixture.
+
+Validation: 4 catalogue and 12 statement PostgreSQL integration tests pass, including authority loss during source loading, stale/digest/foreign-source rejection, duplicate publication, archive/restore, cross-partner IDs and retained audit history. All 236 unit tests, typecheck, build and production fixture exclusion pass. Only the project-owned isolated database received the additive migration.
+
+This is the metadata prerequisite for G04 read projections. Native Overview/content monetary reads, composed presentation delivery, staff catalogue source/UI binding and the rest of the implementation roadmap remain open. No production publishing or external source write occurred.
