@@ -3,6 +3,7 @@ import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { safeReturnTo } from '@/shared/routing/partner-paths';
 import { mapProfile } from './profile-map';
 import { providerNamespace, type IdentityConfig } from './provider-config';
+import { FRESH_SESSION_SECONDS } from './policy';
 
 /** Construction is injectable for adapter tests; production runtime supplies only the Postgres adapter. */
 export function identityOptions(
@@ -65,7 +66,7 @@ export function identityOptions(
     session: {
       expiresIn: 60 * 60 * 24 * 30,
       updateAge: 60 * 60 * 24,
-      freshAge: 60 * 5,
+      freshAge: FRESH_SESSION_SECONDS,
       cookieCache: { enabled: false },
     },
     account: {
