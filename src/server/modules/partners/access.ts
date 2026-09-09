@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { Sql, TransactionSql } from 'postgres';
 import { z } from 'zod';
 import { Id } from '@/contracts/common';
-import { InviteRequest } from '@/contracts/operations';
+import { InviteRequest, OpsCapability } from '@/contracts/operations';
 import { ActivationInviteRequest } from '@/contracts/invitations';
 import { Session, type SessionValue } from '@/contracts/session';
 import { StaffAccessSession, type StaffAccessSessionValue } from '@/contracts/staff-access';
@@ -93,11 +93,16 @@ export function createPartnerAccess(sql: Sql, resolvePrincipal: ResolvePrincipal
     });
     return outcome.value;
   }
-  async function staff(tx: Tx, actor: Actor, requireFresh = true) {
+  async function staff(
+    tx: Tx,
+    actor: Actor,
+    requireFresh = true,
+    capability: z.infer<typeof OpsCapability> = 'manage_partners',
+  ) {
     if (requireFresh && !actor.fresh) throw new AccessFailure('fresh_auth_required');
     const [grant] = await tx`select capabilities,revision::text from portal_access.staff_grants
       where user_id = ${actor.userId} AND active for share`;
-    if (!grant?.capabilities.includes('manage_partners')) throw new AccessFailure('forbidden');
+    if (!grant?.capabilities.includes(capability)) throw new AccessFailure('forbidden');
     return StaffAccessSession.parse({
       userId: actor.userId,
       displayName: actor.displayName,
@@ -140,6 +145,17 @@ export function createPartnerAccess(sql: Sql, resolvePrincipal: ResolvePrincipal
   }
 
   return {
+    async withStaffCapability<T>(
+      headers: Headers,
+      capability: z.infer<typeof OpsCapability>,
+      write: boolean,
+      run: (tx: Tx, session: StaffAccessSessionValue) => Promise<T>,
+    ): Promise<T> {
+      parse(OpsCapability, capability);
+      return transaction(headers, write, async (tx, actor) =>
+        run(tx, await staff(tx, actor, write, capability)),
+      );
+    },
     async staffSession(headers: Headers): Promise<StaffAccessSessionValue> {
       return transaction(headers, false, (tx, actor) => staff(tx, actor, false));
     },

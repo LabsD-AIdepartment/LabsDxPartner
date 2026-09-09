@@ -145,7 +145,7 @@ export function createImportRunner(sql: Sql, approvals: ApprovalRepository) {
             Math.min(...context.sources.map((s) => Date.parse(s.asOf))),
           ).toISOString();
           await tx`insert into portal_imports.generations(id,scope_id,approval_sequence,file_sha256,approval_context,included_count,excluded_count,eligible_base_minor,amount_minor,data_through)
-            values(${runId},${scopeId},${sequence},${fileHash},${tx.json(context)},${controls.reduce((s, c) => s + c.included, 0)},${controls.reduce((s, c) => s + c.excluded, 0)},${base},${amount},${through})`;
+            values(${runId},${scopeId},${sequence},${fileHash},${JSON.stringify(context)}::text::jsonb,${controls.reduce((s, c) => s + c.included, 0)},${controls.reduce((s, c) => s + c.excluded, 0)},${base},${amount},${through})`;
           for (let start = 0; start < parsed.data.rows.length; start += 500) {
             const rows = parsed.data.rows.slice(start, start + 500).map((row) => ({
               entitlement_key: entitlementKey(row.entitlement),
@@ -164,7 +164,7 @@ export function createImportRunner(sql: Sql, approvals: ApprovalRepository) {
               payload: row,
             }));
             await tx`insert into portal_imports.earning_rows(generation_id,entitlement_key,source_revision,earned_at,content_id,disposition,amount_minor,eligible_base_minor,payload)
-              select ${runId}::uuid,r.* from jsonb_to_recordset(${tx.json(rows)})
+              select ${runId}::uuid,r.* from jsonb_to_recordset(${JSON.stringify(rows)}::text::jsonb)
               as r(entitlement_key text,source_revision text,earned_at timestamptz,content_id text,disposition text,amount_minor numeric,eligible_base_minor numeric,payload jsonb)`;
           }
           const [duplicate] = await tx`select 1 from portal_imports.earning_rows incoming
@@ -177,7 +177,7 @@ export function createImportRunner(sql: Sql, approvals: ApprovalRepository) {
             where id=${scopeId} and lease_token=${token} and lease_until>clock_timestamp() returning id`;
           if (!advanced.length) throw new ImportFailure('superseded');
         }
-        await tx`update portal_imports.runs set state=${state},issues=${tx.json(issues)},finished_at=clock_timestamp() where id=${runId}`;
+        await tx`update portal_imports.runs set state=${state},issues=${JSON.stringify(issues)}::text::jsonb,finished_at=clock_timestamp() where id=${runId}`;
         await tx`update portal_imports.scopes set lease_token=null,lease_until=null where id=${scopeId}`;
       });
     } catch (error) {
