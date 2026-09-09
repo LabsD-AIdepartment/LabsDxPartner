@@ -8,12 +8,14 @@ import styles from './forms.module.css';
 export function PasswordField({
   label,
   hint,
+  error,
   showStrength = false,
   onChange,
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
   label: string;
   hint?: string;
+  error?: string;
   showStrength?: boolean;
 }) {
   const id = useId(),
@@ -40,8 +42,13 @@ export function PasswordField({
           }}
           id={id}
           type={visible ? 'text' : 'password'}
+          aria-invalid={error ? true : props['aria-invalid']}
           aria-describedby={
-            [hint ? id + '-hint' : '', showStrength ? id + '-strength' : '']
+            [
+              hint ? id + '-hint' : '',
+              showStrength ? id + '-strength' : '',
+              error ? id + '-error' : '',
+            ]
               .filter(Boolean)
               .join(' ') || undefined
           }
@@ -55,6 +62,11 @@ export function PasswordField({
           <Icon size={20} aria-hidden />
         </Button>
       </div>
+      {error && (
+        <Text as="span" role="alert" id={id + '-error'}>
+          {error}
+        </Text>
+      )}
       {hint && (
         <Text as="span" variant="caption" tone="muted" id={id + '-hint'}>
           {hint}

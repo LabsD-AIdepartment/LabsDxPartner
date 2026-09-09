@@ -57,6 +57,18 @@ describe('invitation credential forms', () => {
     fill('ยืนยันรหัสผ่าน', 'different-password');
     submit('สร้างบัญชีและเข้าสู่ระบบ');
     expect(screen.getByRole('alert')).toHaveTextContent('ยืนยันรหัสผ่าน');
+    expect(screen.getByLabelText('ยืนยันรหัสผ่าน', { exact: true })).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
+    expect(screen.getByLabelText('ยืนยันรหัสผ่าน', { exact: true })).toHaveFocus();
+    expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/register'))).toHaveLength(0);
+    fill('ชื่อผู้ใช้', 'คุณ ก้อง');
+    fill('ยืนยันรหัสผ่าน', 'abcdefgh');
+    submit('สร้างบัญชีและเข้าสู่ระบบ');
+    expect(screen.getByRole('alert')).toHaveTextContent('ไม่เว้นวรรค');
+    expect(screen.getByLabelText(/^ชื่อผู้ใช้/)).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText(/^ชื่อผู้ใช้/)).toHaveFocus();
     expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/register'))).toHaveLength(0);
   });
   it('never resubmits registration after committed creation followed by failed login', async () => {
@@ -78,7 +90,7 @@ describe('invitation credential forms', () => {
     );
     render(<InvitePage />);
     await screen.findByText(/คำเชิญสำหรับ/);
-    fill('ชื่อผู้ใช้', 'star');
+    fill('ชื่อผู้ใช้', 'คุณก้อง');
     fill('รหัสผ่าน', 'abcdefgh');
     fill('ยืนยันรหัสผ่าน', 'abcdefgh');
     submit('สร้างบัญชีและเข้าสู่ระบบ');
@@ -89,6 +101,7 @@ describe('invitation credential forms', () => {
       screen.queryByRole('button', { name: 'สร้างบัญชีและเข้าสู่ระบบ' }),
     ).not.toBeInTheDocument();
     expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/register'))).toHaveLength(1);
+    expect(JSON.parse(fetcher.mock.calls.find(([path]) => path.endsWith('/register'))![1].body).username).toBe('คุณก้อง');
   });
   it('invalid fragment never requests the API', async () => {
     window.history.replaceState(null, '', '/');

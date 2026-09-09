@@ -1,5 +1,5 @@
 'use client';
-import { passwordPolicy } from '@/contracts/credentials';
+import { passwordPolicy, usernameHint } from '@/contracts/credentials';
 import { useCredentialEnvironment } from './CredentialEnvironment';
 import { useState, type FormEvent } from 'react';
 import { ActivateAccount } from '@/contracts/invitations';
@@ -16,6 +16,7 @@ import forms from '@/shared/ui/forms.module.css';
 export function InvitePage() {
   const environment = useCredentialEnvironment();
   const invitation = useBearerLink('/api/access/invitations/inspect', InvitationContext);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [existing, setExisting] = useState(false),
     [busy, setBusy] = useState(false),
     [completed, setCompleted] = useState(false),
@@ -23,6 +24,8 @@ export function InvitePage() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
+    setError('');
+    setFieldErrors({});
     const values = new FormData(event.currentTarget);
     const credentials = { username: values.get('username'), password: values.get('password') };
     const parsed = existing
@@ -33,11 +36,21 @@ export function InvitePage() {
           passwordConfirmation: values.get('passwordConfirmation'),
         });
     if (!parsed.success) {
-      setError(
-        existing
-          ? 'กรุณากรอกชื่อผู้ใช้และรหัสผ่านให้ถูกต้อง'
-          : `ตรวจสอบชื่อผู้ใช้ รหัสผ่านอย่างน้อย ${passwordPolicy.minLength} ตัวอักษร และยืนยันรหัสผ่านให้ตรงกัน`,
-      );
+      const errors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const field = String(issue.path[0] ?? '');
+        if (field === 'username') errors[field] = usernameHint;
+        else if (field === 'password')
+          errors[field] = existing
+            ? 'กรุณากรอกรหัสผ่าน'
+            : `ใช้รหัสผ่าน ${passwordPolicy.minLength}–${passwordPolicy.maxLength} ตัวอักษร`;
+        else if (field === 'passwordConfirmation')
+          errors[field] = 'ยืนยันรหัสผ่านให้ตรงกับรหัสผ่านที่ตั้งไว้';
+        else setError('ลิงก์คำเชิญนี้ใช้ไม่ได้ กรุณาเปิดลิงก์คำเชิญอีกครั้ง');
+      }
+      setFieldErrors(errors);
+      const first = event.currentTarget.elements.namedItem(Object.keys(errors)[0] ?? '');
+      if (first instanceof HTMLInputElement) first.focus();
       return;
     }
     setBusy(true);
@@ -93,10 +106,19 @@ export function InvitePage() {
           <Text>
             คำเชิญสำหรับ {invitation.data.recipientName} · {invitation.data.partnerName}
           </Text>
-          <form onSubmit={submit} className={forms.form} aria-busy={busy}>
+          <form
+            onSubmit={submit}
+            className={forms.form}
+            aria-busy={busy}
+            onChange={() => {
+              setFieldErrors({});
+              setError('');
+            }}
+          >
             <Field
               label="ชื่อผู้ใช้"
-              hint="ใช้ a–z ตัวเลข จุด หรือ _ จำนวน 3–30 ตัว"
+              hint={usernameHint}
+              error={fieldErrors.username}
               name="username"
               autoComplete="username"
               autoCapitalize="none"
@@ -108,6 +130,7 @@ export function InvitePage() {
             />
             <PasswordField
               label="รหัสผ่าน"
+              error={fieldErrors.password}
               showStrength={!existing}
               hint={existing ? undefined : `อย่างน้อย ${passwordPolicy.minLength} ตัวอักษร`}
               name="password"
@@ -120,6 +143,7 @@ export function InvitePage() {
             {!existing && (
               <PasswordField
                 label="ยืนยันรหัสผ่าน"
+                error={fieldErrors.passwordConfirmation}
                 name="passwordConfirmation"
                 autoComplete="new-password"
                 required
@@ -143,6 +167,7 @@ export function InvitePage() {
               onClick={() => {
                 setExisting(!existing);
                 setError('');
+                setFieldErrors({});
               }}
             >
               {existing ? 'ตั้งค่าบัญชีใหม่' : 'มีบัญชีอยู่แล้ว'}

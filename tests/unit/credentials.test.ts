@@ -11,7 +11,17 @@ describe('invitation credential contracts', () => {
     expect(CredentialLogin.parse({ username: 'person', password: ' password ' }).password).toBe(
       ' password ',
     );
-    for (const name of ['ab', 'x'.repeat(31), 'two words', 'name@host', 'มดดำ', 'user\u200bname'])
+    for (const name of ['มดดำ', 'คุณก้อง', 'ดารา_๑๒๓', 'ดารา_ABC'])
+      expect(Username.parse(name)).toBe(name.toLowerCase());
+    for (const name of [
+      'ab',
+      'x'.repeat(31),
+      'two words',
+      'name@host',
+      'คุณ ก้อง',
+      'คุณ฿ก้อง',
+      'user\u200bname',
+    ])
       expect(Username.safeParse(name).success).toBe(false);
     expect(NewPassword.safeParse('x'.repeat(7)).success).toBe(false);
     expect(NewPassword.safeParse('x'.repeat(8)).success).toBe(true);

@@ -19,5 +19,8 @@ export const ActivateAccount = z
     password: NewPassword,
     passwordConfirmation: NewPassword,
   })
-  .refine((value) => value.password === value.passwordConfirmation);
+  .refine((value) => value.password === value.passwordConfirmation, {
+    path: ['passwordConfirmation'],
+    message: 'ยืนยันรหัสผ่านให้ตรงกับรหัสผ่านที่ตั้งไว้',
+  });
 export const AcceptInvitation = z.strictObject({ token: InviteToken });

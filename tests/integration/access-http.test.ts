@@ -118,9 +118,9 @@ afterAll(async () => {
   }
 });
 describe('access HTTP on native credentials and actual isolated PostgreSQL', () => {
-  it('accepts eight-character passwords across invitation, change, reset and native login', async () => {
+  it('accepts Thai usernames and eight-character passwords across invitation, change, reset and native login', async () => {
     const invite = await issue();
-    const username = 'simple_' + randomUUID().slice(0, 8);
+    const username = 'คุณก้อง_๑๒๓_' + randomUUID().slice(0, 8);
     const setup = {
       token: invite.token,
       username,
