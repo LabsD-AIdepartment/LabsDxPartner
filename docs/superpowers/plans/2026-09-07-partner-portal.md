@@ -183,6 +183,8 @@ Files: `src/server/modules/{identity,partners}/`; `db/schema/partners.ts`; `app/
 
 Acceptance: two-partner adversarial matrix covers session route, direct object IDs, mutation bodies and staff routes; suspended membership loses access immediately. No data access granted solely by invitation possession or matching email.
 
+Local preparation 2026-09-09: membership/invitation services and transactional native unlink wrapper implemented; 34 isolated PostgreSQL tests pass. See `docs/implementation/membership-access.md` and `docs/implementation/identity-methods.md`. Explicit linking, callback/session-issuance fencing, recovery, HTTP wiring and real-provider acceptance remain open; these partial service checks do not close A02.
+
 ### A03 — Connect frontend to real sessions
 
 Files: `src/features/login/`, `src/features/account/`, `src/shared/query/`, `app/(partner)/layout.tsx`; `tests/e2e/authenticated-journeys.spec.ts`.

@@ -97,7 +97,8 @@ export function identityOptions(
       max: 60,
       customRules: { '/sign-in/social': { window: 60, max: 10 } },
     },
-    // A02 must enforce fresh identity proofs and atomic last-method protection before enabling these.
+    // Raw HTTP unlink bypasses the application transaction. Keep both routes
+    // disabled until guarded host wiring and callback/session fencing are accepted.
     disabledPaths: [
       '/link-social',
       '/unlink-account',

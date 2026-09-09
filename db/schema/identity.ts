@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgSchema,
   text,
   timestamp,
@@ -87,4 +88,23 @@ export const binding = identity.table('binding', {
   namespaceDigest: text('namespace_digest').notNull(),
   createdAt: date('created_at').defaultNow().notNull(),
 });
+// Application-owned history, deliberately excluded from the maintained authSchema mapping.
+export const methodAudit = identity.table(
+  'method_audit',
+  {
+    id: text('id').primaryKey(),
+    actorId: text('actor_id').notNull(),
+    action: text('action').notNull(),
+    targetId: text('target_id').notNull(),
+    idempotencyKey: text('idempotency_key').notNull(),
+    requestHash: text('request_hash').notNull(),
+    result: jsonb('result').notNull(),
+    details: jsonb('details').notNull(),
+    createdAt: date('created_at').defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex('method_audit_actor_id_idempotency_key_key').on(t.actorId, t.idempotencyKey),
+    index('method_audit_actor_time_idx').on(t.actorId, t.createdAt),
+  ],
+);
 export const authSchema = { user, session, account, verification, rateLimit };
