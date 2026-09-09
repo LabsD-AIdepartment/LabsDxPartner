@@ -20,6 +20,13 @@ import { SourceSettlement } from '@/server/modules/statements/settlement-source'
 import { earningLineRef } from '@/server/modules/earnings/corrections';
 import { ApprovedPeriodFile, ApprovalContext } from '@/server/adapters/approved-period/schema';
 import { createStatementExportHttp } from '@/server/http/statement-export';
+import { createStatementsHttp } from '@/server/http/statements';
+import {
+  loadTransactions,
+  type TransactionTransport,
+  type DetailValue,
+} from '@/features/transactions/model';
+import { StatementDetailResponse, StatementListResponse } from '@/contracts/statements';
 
 let sql: Awaited<ReturnType<typeof connectTestDatabase>>;
 let auth: ReturnType<typeof createCredentialIdentity>;
@@ -208,6 +215,245 @@ function correctionSample(
   return { file, raw, context };
 }
 describe('native authorized approval to immutable statement on PostgreSQL', () => {
+  it('serves issued lines through native HTTP to the frontend model with complete microsecond cursors', async () => {
+    const s = await setup();
+    s.sample.file.rows.forEach((row, i) => {
+      row.earnedAt = `2026-08-20T05:00:00.00000${i + 1}Z`;
+    });
+    s.sample.raw = JSON.stringify(s.sample.file);
+    s.sample.context.fileSha256 = createHash('sha256').update(s.sample.raw).digest('hex');
+    s.approveInput.expectedDigest = reviewDigest(s.sample.raw, s.sample.context);
+    const ready = await s.ready();
+    const issued = await s.publish(s.publisher.headers, ready.command);
+    const member = await actor(['manage_partners']);
+    const http = createStatementsHttp(access);
+    const url = new URL(config.BETTER_AUTH_URL + '/api/v1/partner/statements');
+    url.searchParams.set('partnerId', s.partnerId);
+    url.searchParams.set('permissionRevision', 'p1:m1');
+    const request = () => new Request(url, { headers: member.headers });
+    expect((await http(new Request(url))).status).toBe(401);
+    expect((await http(request())).status).toBe(403);
+    await sql`insert into portal_access.memberships(id,partner_id,user_id,status,capabilities,verified_contact_ref)
+      values(${randomUUID()},${s.partnerId},${member.id},'active',ARRAY['view_statements'],'synthetic-verified')`;
+    const first = await http(request());
+    expect(first.status).toBe(200);
+    expect(first.headers.get('cache-control')).toBe('private, no-store');
+    const list = StatementListResponse.parse(await first.json());
+    expect(list.confirmedUnpaid.minor).toBe('3736000');
+    expect(list.data.items.map((x) => x.id)).toEqual([issued.id]);
+    const scope = { userId: member.id, partnerId: s.partnerId, permissionRevision: 'p1:m1' };
+    const transport: TransactionTransport = async (r) => {
+      const page = new URL(url);
+      page.searchParams.set('limit', '2');
+      for (const key of [
+        'cursor',
+        'lineCursor',
+        'settlementCursor',
+        'version',
+        'revision',
+      ] as const)
+        if (r[key]) page.searchParams.set(key, r[key]);
+      const response = await http(new Request(page, { headers: member.headers }), r.statementId);
+      expect(response.status).toBe(200);
+      return response.json();
+    };
+    let next: string | null = null;
+    const ids: string[] = [],
+      amounts: bigint[] = [];
+    do {
+      const detail: DetailValue = await loadTransactions(transport, {
+        scope,
+        resource: 'detail',
+        statementId: issued.id,
+        version: issued.version,
+        revision: list.settlementsRevision,
+        lineCursor: next,
+        signal: new AbortController().signal,
+      });
+      expect(detail.data.statement.newEarnings.minor).toBe('3736000');
+      expect(detail.data.lines.totalCount).toBe(6);
+      expect(detail.data.documents).toEqual([
+        {
+          id: 'csv:' + issued.id,
+          statementId: issued.id,
+          name: 'ใบสรุปรายได้ CSV',
+          kind: 'statement',
+        },
+      ]);
+      ids.push(...detail.data.lines.items.map((x) => x.id));
+      amounts.push(...detail.data.lines.items.map((x) => BigInt(x.amount.minor)));
+      next = detail.data.lines.nextCursor;
+      if (next)
+        expect(JSON.parse(Buffer.from(next, 'base64url').toString()).at).toMatch(/\.00000[1-6]Z$/);
+      expect(ids.length).toBeLessThanOrEqual(6);
+    } while (next);
+    expect(new Set(ids).size).toBe(6);
+    expect(amounts.reduce((n, a) => n + a, 0n)).toBe(3736000n);
+    const full = await loadTransactions(async () => (await http(request(), issued.id)).json(), {
+      scope,
+      resource: 'detail',
+      statementId: issued.id,
+      signal: new AbortController().signal,
+    });
+    expect(full.data.lines.items.map((x) => x.id)).toEqual(ids);
+    url.searchParams.set('version', randomUUID());
+    expect((await http(request(), issued.id)).status).toBe(409);
+    url.searchParams.delete('version');
+    url.searchParams.set('lineCursor', 'invalid');
+    expect((await http(request(), issued.id)).status).toBe(400);
+    url.searchParams.delete('lineCursor');
+    for (const limit of ['0', '101', '1.5']) {
+      url.searchParams.set('limit', limit);
+      expect((await http(request())).status).toBe(400);
+    }
+    url.searchParams.delete('limit');
+    expect((await http(request(), randomUUID())).status).toBe(403);
+    await sql`update portal_access.memberships set permission_revision=permission_revision+1 where user_id=${member.id} and partner_id=${s.partnerId}`;
+    expect((await http(request())).status).toBe(409);
+    url.searchParams.set('permissionRevision', 'p1:m2');
+    expect((await http(request())).status).toBe(200);
+    await sql`update portal_access.memberships set status='suspended' where user_id=${member.id} and partner_id=${s.partnerId}`;
+    expect((await http(request(), issued.id)).status).toBe(403);
+  });
+  it('keeps signed global credits across status filters and rejects stale cursors after payment and reversal', async () => {
+    const s = await setup(),
+      root = structuredClone(s.sample);
+    const ready = await s.ready();
+    const issued = await s.publish(s.publisher.headers, ready.command);
+    Object.assign(
+      s.sample,
+      correctionSample(root, ready.candidate.runId, '1', '-100000', '1180000'),
+    );
+    const approval = await s.approvals.approve(s.reviewer.headers, {
+      reviewId: randomUUID(),
+      expectedDigest: reviewDigest(s.sample.raw, s.sample.context),
+      idempotencyKey: randomUUID(),
+    });
+    const correction = await s.run(s.sample.raw, approval.id, randomUUID());
+    const credit = await s.publish(s.publisher.headers, {
+      ...ready.command,
+      generationId: correction.runId,
+      approvalId: approval.id,
+      idempotencyKey: randomUUID(),
+    });
+    const member = await actor(['record_payments']);
+    await sql`insert into portal_access.memberships(id,partner_id,user_id,status,capabilities,verified_contact_ref)
+      values(${randomUUID()},${s.partnerId},${member.id},'active',ARRAY['view_statements'],'synthetic-verified')`;
+    const http = createStatementsHttp(access);
+    const url = new URL(config.BETTER_AUTH_URL + '/api/v1/partner/statements');
+    url.searchParams.set('partnerId', s.partnerId);
+    url.searchParams.set('permissionRevision', 'p1:m1');
+    url.searchParams.set('limit', '1');
+    const read = (id?: string) => http(new Request(url, { headers: member.headers }), id);
+    const first = StatementListResponse.parse(await (await read()).json());
+    expect(first.confirmedUnpaid.minor).toBe('3636000');
+    expect(first.data.items[0]).toMatchObject({
+      id: credit.id,
+      status: 'credit',
+      adjustments: { minor: '-100000' },
+    });
+    expect(first.data.nextCursor).not.toBeNull();
+    url.searchParams.set('cursor', first.data.nextCursor!);
+    const second = StatementListResponse.parse(await (await read()).json());
+    expect(second.data.items.map((x) => x.id)).toEqual([issued.id]);
+    expect(second.data.nextCursor).toBeNull();
+    url.searchParams.delete('cursor');
+    url.searchParams.set('status', 'pending');
+    const pending = StatementListResponse.parse(await (await read()).json());
+    expect(pending.confirmedUnpaid.minor).toBe('3636000');
+    expect(pending.data.items.map((x) => x.id)).toEqual([issued.id]);
+    url.searchParams.delete('status');
+    const payment = {
+      kind: 'payment' as const,
+      partnerId: s.partnerId,
+      source: { authority: 'synthetic-finance', account: 'payor-1', reference: randomUUID() },
+      evidenceRef: 'synthetic-payment-evidence',
+      occurredAt: '2026-09-01T12:00:00.000Z',
+      cashMinor: '580000',
+      withholdingMinor: '20000',
+      otherMinor: '0',
+      allocations: [
+        {
+          statementId: issued.id,
+          cashMinor: '580000',
+          withholdingMinor: '15000',
+          otherMinor: '5000',
+          otherReasonRef: 'synthetic-offset-evidence',
+        },
+      ],
+    };
+    payment.withholdingMinor = '15000';
+    payment.otherMinor = '5000';
+    let source: unknown = payment;
+    const settle = createSettlementImporter(access, { load: async () => source });
+    const importPayment = () =>
+      settle(member.headers, {
+        sourceRecordId: randomUUID(),
+        expectedDigest: settlementDigest(source),
+        idempotencyKey: randomUUID(),
+      });
+    const paid = await importPayment();
+    url.searchParams.set('cursor', first.data.nextCursor!);
+    expect((await read()).status).toBe(409);
+    url.searchParams.delete('cursor');
+    const partial = StatementDetailResponse.parse(await (await read(issued.id)).json());
+    expect(partial.data.statement).toMatchObject({
+      status: 'part-paid',
+      settled: { minor: '600000' },
+      closing: { minor: '3136000' },
+    });
+    expect(partial.data.settlements.items[0]).toMatchObject({
+      kind: 'payment',
+      cash: { minor: '580000' },
+      withholding: { minor: '15000' },
+      other: { minor: '5000' },
+      otherReasonRef: 'synthetic-offset-evidence',
+    });
+    source = {
+      kind: 'reversal',
+      partnerId: s.partnerId,
+      source: { ...payment.source, reference: randomUUID() },
+      original: payment.source,
+      reasonRef: 'synthetic-bank-return',
+      evidenceRef: 'synthetic-return-evidence',
+      occurredAt: '2026-09-02T12:00:00.000Z',
+    };
+    await importPayment();
+    url.searchParams.set('revision', partial.settlementsRevision);
+    expect((await read(issued.id)).status).toBe(409);
+    url.searchParams.delete('revision');
+    const reversed = StatementDetailResponse.parse(await (await read(issued.id)).json());
+    expect(reversed.data.statement).toMatchObject({ status: 'pending', settled: { minor: '0' } });
+    expect(reversed.data.settlements.items[0]).toMatchObject({
+      kind: 'reversal',
+      originalSettlementId: paid.id,
+      reasonRef: 'synthetic-bank-return',
+      obligationSettled: { minor: '-600000' },
+    });
+    expect(reversed.data.settlements.nextCursor).not.toBeNull();
+    url.searchParams.set('settlementCursor', reversed.data.settlements.nextCursor!);
+    const older = StatementDetailResponse.parse(await (await read(issued.id)).json());
+    expect(older.data.settlements.items.map((x) => x.id)).toEqual([paid.id]);
+    expect(older.data.settlements.nextCursor).toBeNull();
+    url.searchParams.delete('settlementCursor');
+    url.searchParams.delete('limit');
+    const transport: TransactionTransport = async (r) => (await read(r.statementId)).json();
+    const scope = { userId: member.id, partnerId: s.partnerId, permissionRevision: 'p1:m1' };
+    const final = await loadTransactions(transport, {
+      scope,
+      resource: 'detail',
+      statementId: issued.id,
+      signal: new AbortController().signal,
+    });
+    expect(final.data.settlements.items).toHaveLength(2);
+    const creditDetail = await loadTransactions(transport, {
+      scope,
+      resource: 'detail',
+      statementId: credit.id,
+      signal: new AbortController().signal,
+    });
+    expect(creditDetail.data.lines.items[0].amount.minor).toBe('-100000');
+  });
   it('exports only a currently authorized partner and exact frozen version, with private response headers', async () => {
     const s = await setup();
     const ready = await s.ready();

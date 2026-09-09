@@ -10,6 +10,7 @@ import { ContentDetail } from '@/features/content/ContentDetail';
 import { AdDetail } from '@/features/content/AdDetail';
 import { StatementList } from '@/features/transactions/StatementList';
 import { StatementDetail } from '@/features/transactions/StatementDetail';
+import { transactionHttp, statementDocumentHttp } from '@/features/transactions/http';
 import { DataState } from '@/shared/ui/DataState';
 import { Button } from '@/shared/ui/Button';
 import { LinkButton } from '@/shared/ui/LinkButton';
@@ -238,8 +239,8 @@ function PartnerFeatures({
   };
   const transactions = {
     scope,
-    transport: sourceUnavailable,
-    documents: sourceUnavailable,
+    transport: transactionHttp,
+    documents: statementDocumentHttp,
     basePath: '/transactions',
     returnTo: '/overview',
   };

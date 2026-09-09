@@ -12,13 +12,35 @@ export const Settlement = z
     other: Money,
     obligationSettled: Money,
     evidenceRef: Id,
+    kind: z.enum(['payment', 'reversal']).optional(),
+    originalSettlementId: Id.nullable().optional(),
+    reasonRef: Id.nullable().optional(),
+    otherReasonRef: Id.nullable().optional(),
   })
   .refine(
     (s) =>
       BigInt(s.cash.minor) + BigInt(s.withholding.minor) + BigInt(s.other.minor) ===
       BigInt(s.obligationSettled.minor),
     'Settlement components must equal the obligation settled',
-  );
+  )
+  .superRefine((s, ctx) => {
+    if (!s.kind) return; // Older fixture/response versions did not include reversal metadata.
+    const components = [s.cash, s.withholding, s.other].map((v) => BigInt(v.minor));
+    const valid =
+      s.kind === 'reversal'
+        ? !!s.originalSettlementId &&
+          !!s.reasonRef &&
+          components.every((n) => n <= 0n) &&
+          BigInt(s.obligationSettled.minor) < 0n
+        : !s.originalSettlementId &&
+          components.every((n) => n >= 0n) &&
+          BigInt(s.obligationSettled.minor) > 0n;
+    if (!valid || (BigInt(s.other.minor) !== 0n && !s.otherReasonRef))
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Settlement direction and reversal reference must agree',
+      });
+  });
 export const Statement = z
   .strictObject({
     id: Id,

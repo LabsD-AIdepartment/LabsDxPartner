@@ -109,10 +109,12 @@ export function StatementDetail(props: TransactionsProps & { statementId: string
                     {d.settlements.items.map((p) => (
                       <div className={styles.payment} key={p.id}>
                         <Text as="h3" variant="label">
+                          {p.kind === 'reversal' ? 'กลับรายการ · ' : ''}
                           {p.reference}
                         </Text>
                         <Text variant="caption" tone="muted">
-                          จ่ายจริง {p.paidAt ? timestamp(p.paidAt) : 'ยังไม่มีวันที่จากต้นทาง'}
+                          {p.kind === 'reversal' ? 'กลับรายการ' : 'จ่ายจริง'}{' '}
+                          {p.paidAt ? timestamp(p.paidAt) : 'ยังไม่มีวันที่จากต้นทาง'}
                           <br />
                           บันทึก {timestamp(p.recordedAt)}
                         </Text>
@@ -136,6 +138,16 @@ export function StatementDetail(props: TransactionsProps & { statementId: string
                         <Text variant="caption" tone="muted">
                           อ้างอิงหลักฐาน {p.evidenceRef}
                         </Text>
+                        {p.otherReasonRef && (
+                          <Text variant="caption">วิธีชำระอื่นอ้างอิง {p.otherReasonRef}</Text>
+                        )}
+                        {p.kind === 'reversal' && (
+                          <details>
+                            <summary>ที่มาของการกลับรายการ</summary>
+                            <Text variant="caption">รายการเดิม {p.originalSettlementId}</Text>
+                            <Text variant="caption">เหตุผลอ้างอิง {p.reasonRef}</Text>
+                          </details>
+                        )}
                       </div>
                     ))}
                   </div>

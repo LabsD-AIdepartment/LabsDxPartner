@@ -83,18 +83,24 @@ function DocumentRow({
       setMessage(e instanceof Error ? e.message : 'เตรียมเอกสารไม่สำเร็จ');
     }
   }
-  function save() {
+  async function save() {
     const file = prepared.current;
     if (!file || !documentIsCurrent(file)) {
       setState('error');
       setMessage('ลิงก์หมดอายุ กรุณาเตรียมเอกสารใหม่');
       return;
     }
+    setState('pending');
+    setMessage('กำลังดาวน์โหลด');
     try {
-      file.save();
-    } catch {
-      setState('error');
-      setMessage('ดาวน์โหลดไม่สำเร็จ กรุณาลองใหม่');
+      await file.save();
+      if (abort.current?.signal.aborted) return;
+      setState('ready');
+      setMessage('ส่งเอกสารให้เบราว์เซอร์ดาวน์โหลดแล้ว');
+    } catch (e) {
+      if (abort.current?.signal.aborted) return;
+      setState(e instanceof TransactionError && e.code === 'forbidden' ? 'forbidden' : 'error');
+      setMessage(e instanceof Error ? e.message : 'ดาวน์โหลดไม่สำเร็จ กรุณาลองใหม่');
     }
   }
   return (

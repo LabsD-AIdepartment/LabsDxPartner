@@ -117,7 +117,11 @@ export type DocumentRequest = {
   signal: AbortSignal;
 };
 /** Adapter owns file delivery; UI does not create financial documents or authorize access. */
-export type PreparedDocument = { expiresAt: string; save: () => void; dispose?: () => void };
+export type PreparedDocument = {
+  expiresAt: string;
+  save: () => void | Promise<void>;
+  dispose?: () => void;
+};
 export type DocumentTransport = (request: DocumentRequest) => Promise<PreparedDocument>;
 /** Future HTTP adapter validates signed HTTPS tickets before exposing a download action. */
 export function signedDocument(raw: unknown): PreparedDocument {
