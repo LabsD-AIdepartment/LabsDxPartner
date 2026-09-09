@@ -14,7 +14,7 @@ beforeEach(() => {
   mocks.binding.mockReset();
   mocks.runtime.mockReturnValue({
     assertBinding: mocks.binding,
-    partners: { staffSession: mocks.session },
+    partners: { withStaffCapability: mocks.session },
   });
 });
 describe('staff leaf authorization', () => {
@@ -23,10 +23,26 @@ describe('staff leaf authorization', () => {
     mocks.session.mockResolvedValue(proof);
     expect(await requireStaffAccess()).toBe(proof);
     expect(mocks.binding).toHaveBeenCalledOnce();
+    expect(mocks.session).toHaveBeenLastCalledWith(
+      expect.any(Headers),
+      'manage_partners',
+      false,
+      expect.any(Function),
+    );
+    expect(await requireStaffAccess('publish_statements', '/ops/periods')).toBe(proof);
+    expect(mocks.session).toHaveBeenLastCalledWith(
+      expect.any(Headers),
+      'publish_statements',
+      false,
+      expect.any(Function),
+    );
   });
   it('sends unauthenticated staff to the concrete supported login destination', async () => {
     mocks.session.mockRejectedValue(new AccessFailure('unauthenticated'));
     await expect(requireStaffAccess()).rejects.toThrow('redirect:/login?next=%2Fops%2Faccess');
+    await expect(requireStaffAccess('publish_statements', '/ops/periods')).rejects.toThrow(
+      'redirect:/login?next=%2Fops%2Fperiods',
+    );
   });
   it('keeps valid nonstaff accounts out of operations without a login loop', async () => {
     mocks.session.mockRejectedValue(new AccessFailure('forbidden'));

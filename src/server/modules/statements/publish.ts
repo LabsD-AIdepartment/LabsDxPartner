@@ -2,10 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { advanceRevisions } from '@/server/platform/db/revisions';
 import { z } from 'zod';
 import { Id, Instant } from '@/contracts/common';
+import { PermissionRevision } from '@/contracts/access';
 import { AccessFailure, type createPartnerAccess } from '@/server/modules/partners/access';
 import { commandHash, priorCommand, recordCommand } from '@/server/modules/access/command-audit';
 import { assertCorrectionHistoryCurrent } from '@/server/modules/earnings/corrections';
 const Publish = z.strictObject({
+  expectedStaffRevision: PermissionRevision.optional(),
   partnerId: Id,
   generationId: z.uuid(),
   approvalId: z.uuid(),
@@ -17,6 +19,11 @@ export function createStatementPublisher(access: ReturnType<typeof createPartner
   return async (headers: Headers, input: unknown) => {
     const command = Publish.parse(input);
     return access.withStaffCapability(headers, 'publish_statements', true, async (tx, actor) => {
+      if (
+        command.expectedStaffRevision !== undefined &&
+        command.expectedStaffRevision !== actor.revision
+      )
+        throw new AccessFailure('forbidden');
       const requestHash = commandHash('publish-statement', command);
       const prior = await priorCommand(tx, actor.userId, command.idempotencyKey, requestHash);
       if (prior) return { ...PublishedReceipt.parse(prior), replayed: true };

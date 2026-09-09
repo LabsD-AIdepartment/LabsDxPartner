@@ -40,6 +40,7 @@ export function StaffAccessConsole({ session }: { session: StaffAccessSessionVal
       notifications={null}
     >
       <div className={forms.actions}>
+        <LinkButton href="/ops/periods">ตรวจงวดและใบสรุป</LinkButton>
         <LinkButton href="/account">บัญชีของคุณ / ออกจากระบบ</LinkButton>
         <LinkButton href="/login?next=%2Fops%2Faccess">ยืนยันตัวตนเจ้าหน้าที่อีกครั้ง</LinkButton>
       </div>

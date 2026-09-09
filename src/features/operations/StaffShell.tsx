@@ -8,8 +8,10 @@ export function StaffShell({
   view,
   basePath = '/ops',
   children,
+  routes,
 }: {
   view: OpsView;
+  routes?: Partial<Record<OpsView, string>>;
   basePath?: string;
   children: ReactNode;
 }) {
@@ -31,16 +33,18 @@ export function StaffShell({
             ['imports', 'ข้อมูลนำเข้า'],
             ['periods', 'งวดและการชำระ'],
           ] as const
-        ).map(([key, label]) => (
-          <LinkButton
-            key={key}
-            href={`${basePath}/${key}`}
-            aria-current={view === key ? 'page' : undefined}
-            variant={view === key ? 'primary' : 'secondary'}
-          >
-            {label}
-          </LinkButton>
-        ))}
+        )
+          .filter(([key]) => !routes || !!routes[key])
+          .map(([key, label]) => (
+            <LinkButton
+              key={key}
+              href={routes?.[key] ?? `${basePath}/${key}`}
+              aria-current={view === key ? 'page' : undefined}
+              variant={view === key ? 'primary' : 'secondary'}
+            >
+              {label}
+            </LinkButton>
+          ))}
       </nav>
       <main id="main-content">
         <Text as="h1" variant="sectionTitle">
