@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Instant, Minor, Period } from '@/contracts/common';
 import { Rate, RoundingRule } from '@/contracts/earnings';
+import { PermissionRevision } from '@/contracts/access';
 
 // Offline parser safety bounds, not measured capacity or the interactive export limit.
 export const INTAKE_LIMITS = { bytes: 16 * 1024 * 1024, rows: 50_000 } as const;
@@ -60,6 +61,14 @@ const Earning = z.discriminatedUnion('kind', [
     amountMinor: Minor,
     originalLineRef: Ref,
     reasonRef: Ref,
+    correction: z
+      .strictObject({
+        originalGenerationId: z.uuid(),
+        originalEntitlement: Entitlement,
+        revisionSequence: PermissionRevision,
+        revisedAmountMinor: Minor,
+      })
+      .optional(),
   }),
 ]);
 const RowBase = {

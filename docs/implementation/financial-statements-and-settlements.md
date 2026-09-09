@@ -11,7 +11,7 @@ This extends the existing reconciled candidate importer. An authorized staff mem
 - `statements/settle.ts` requires `record_payments`. It validates component totals and allocations, scopes every statement, rejects allocations above outstanding, and records payment/evidence plus allocations in one transaction. A reversal pins the original payment, negates its exact allocations and requires a reason/evidence. Only one full reversal is permitted; corrections use reversal plus a new finance record. Actual payment history remains immutable.
 - `access/command-audit.ts` is shared receipt/idempotency support. Identity/access remains responsible for native sessions and current staff capabilities. Financial modules own their data; no new deployment unit or partner onboarding approval is introduced.
 
-Each statement currently represents its own period obligation with zero opening/adjustment amounts. Prior unpaid periods remain separate obligations; they must not be duplicated as both carry-forward and original debt. Linked post-close earning corrections and explicit credit/carry-forward treatment remain to be implemented before G03 acceptance.
+Each statement represents its own period obligation with zero opening balance. Prior unpaid periods remain separate obligations; they must not be duplicated as both carry-forward and original debt. Linked post-close corrections now populate the adjustment amount in a later period; negative periods remain credits in signed partner-wide outstanding and reduce the amount available for another recorded payment. No automatic debit or cash refund is executed. See [corrections and export](earning-corrections-and-export.md).
 
 ## Schema and consistency
 
@@ -29,4 +29,4 @@ Literal fixture controls reconcile 6 rights to ฿550,000 eligible sales and ฿
 
 Evidence: `.agent-work/20260909-financial-statements/evidence/`. Full suite:220 unit and109 PostgreSQL tests pass; typecheck/build pass. Initial enlarged integration run hit the native login throttle because cases shared synthetic login history; per-case isolated throttle cleanup fixes the test harness without changing production policy. Earlier failure log is preserved.
 
-G02/G03 are still partial: persistent source-review acquisition/ops HTTP composition, linked closed-period earning adjustments, scoped read APIs, notifications, CSV/private document delivery and production frontend transports remain. This receipt does not certify native browser HTTPS, real source authority, financial load/recovery or independent release review.
+G02/G03 are still partial: persistent source-review acquisition/ops HTTP composition, scoped read APIs, notifications, external private evidence delivery and production frontend transports remain. Corrections and the private CSV route are covered by the newer receipt. This receipt does not certify native browser HTTPS, real source authority, financial load/recovery or independent release review.

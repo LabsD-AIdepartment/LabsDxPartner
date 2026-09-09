@@ -8,6 +8,7 @@ import {
   INTAKE_LIMITS,
 } from '@/server/adapters/approved-period/schema';
 import { parseApprovedPeriod } from '@/server/adapters/approved-period/parse';
+import { resolveCorrections, persistCorrectionLinks } from '@/server/modules/earnings/corrections';
 
 /** Must be constructed on the server from independently authorized records, never upload input. */
 export interface ApprovalRepository {
@@ -117,8 +118,8 @@ export function createImportRunner(sql: Sql, approvals: ApprovalRepository) {
     if ('replay' in claimed) return claimed.replay!;
     // No upstream fetch/parse occurs while a database transaction is held.
     const parsed = parseApprovedPeriod(raw, context);
-    const issues = parsed.ok ? parsed.blockers : parsed.issues;
-    const state = !parsed.ok ? 'failed' : issues.length ? 'blocked' : 'ready';
+    let issues = parsed.ok ? parsed.blockers : parsed.issues;
+    let state: ImportResult['state'] = !parsed.ok ? 'failed' : issues.length ? 'blocked' : 'ready';
     try {
       await sql.begin(async (tx) => {
         await tx`set local lock_timeout='5s'`;
@@ -137,6 +138,27 @@ export function createImportRunner(sql: Sql, approvals: ApprovalRepository) {
         const [partner] =
           await tx`select status from portal_access.partners where id=${context.partnerId} for share`;
         if (!partner || partner.status !== 'active') throw new ImportFailure('inactive_partner');
+        const links = parsed.ok
+          ? await resolveCorrections(
+              tx,
+              context.partnerId,
+              scopeId,
+              context.period.from,
+              parsed.data.rows.filter((row) => row.disposition === 'included'),
+            )
+          : [];
+        if (parsed.ok) {
+          issues = parsed.blockers.filter((issue) => {
+            if (issue.code !== 'original_history_required') return true;
+            const row = parsed.data.rows[issue.row];
+            return (
+              row.disposition !== 'included' ||
+              row.earning.kind !== 'adjustment' ||
+              !row.earning.correction
+            );
+          });
+          state = issues.length ? 'blocked' : 'ready';
+        }
         if (state === 'ready' && parsed.ok) {
           const controls = context.sources.map((source) => source.controls);
           const amount = controls.reduce((s, c) => s + BigInt(c.amountMinor), 0n).toString();
@@ -167,6 +189,7 @@ export function createImportRunner(sql: Sql, approvals: ApprovalRepository) {
               select ${runId}::uuid,r.* from jsonb_to_recordset(${JSON.stringify(rows)}::text::jsonb)
               as r(entitlement_key text,source_revision text,earned_at timestamptz,content_id text,disposition text,amount_minor numeric,eligible_base_minor numeric,payload jsonb)`;
           }
+          await persistCorrectionLinks(tx, runId, links);
           const [duplicate] = await tx`select 1 from portal_imports.earning_rows incoming
             join portal_imports.earning_rows existing on existing.entitlement_key=incoming.entitlement_key
             join portal_imports.scopes other on other.current_generation=existing.generation_id

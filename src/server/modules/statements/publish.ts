@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Id, Instant } from '@/contracts/common';
 import { AccessFailure, type createPartnerAccess } from '@/server/modules/partners/access';
 import { commandHash, priorCommand, recordCommand } from '@/server/modules/access/command-audit';
+import { assertCorrectionHistoryCurrent } from '@/server/modules/earnings/corrections';
 const Publish = z.strictObject({
   partnerId: Id,
   generationId: z.uuid(),
@@ -34,10 +35,17 @@ export function createStatementPublisher(access: ReturnType<typeof createPartner
       if (!candidate || candidate.closed_statement_ref) throw new AccessFailure('conflict');
       if (Date.parse(command.scheduledAt) < new Date(candidate.period_to).getTime())
         throw new AccessFailure('invalid_input');
+      await assertCorrectionHistoryCurrent(tx, command.partnerId, command.generationId);
+      const [amounts] = await tx`select
+        coalesce(sum(amount_minor) filter(where payload->'earning'->>'kind'='adjustment'),0)::text as adjustments,
+        coalesce(sum(amount_minor) filter(where payload->'earning'->>'kind'<>'adjustment'),0)::text as earnings
+        from portal_imports.earning_rows where generation_id=${command.generationId} and disposition='included'`;
+      if (BigInt(amounts.earnings) + BigInt(amounts.adjustments) !== BigInt(candidate.amount_minor))
+        throw new AccessFailure('conflict');
       // Rows and source approval are immutable. The issued statement pins that exact generation.
       const id = randomUUID();
-      await tx`insert into portal_statements.statements(id,partner_id,scope_id,generation_id,approval_id,period_from,period_to,new_earnings_minor,excluded_count,scheduled_at,published_by)
-    values(${id},${command.partnerId},${candidate.scope_id},${command.generationId},${command.approvalId},${candidate.period_from},${candidate.period_to},${candidate.amount_minor},${candidate.excluded_count},${command.scheduledAt},${actor.userId})`;
+      await tx`insert into portal_statements.statements(id,partner_id,scope_id,generation_id,approval_id,period_from,period_to,new_earnings_minor,adjustments_minor,excluded_count,scheduled_at,published_by)
+    values(${id},${command.partnerId},${candidate.scope_id},${command.generationId},${command.approvalId},${candidate.period_from},${candidate.period_to},${amounts.earnings},${amounts.adjustments},${candidate.excluded_count},${command.scheduledAt},${actor.userId})`;
       await tx`update portal_imports.scopes set closed_statement_ref=${id} where id=${candidate.scope_id}`;
       await tx`insert into portal_statements.revisions(partner_id,statements) values(${command.partnerId},1)
     on conflict(partner_id) do update set statements=portal_statements.revisions.statements+1,updated_at=clock_timestamp()`;

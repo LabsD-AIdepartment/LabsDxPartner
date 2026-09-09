@@ -94,6 +94,15 @@ export function createSettlementImporter(
           )
             throw new AccessFailure('conflict');
         }
+        if (record.kind === 'payment') {
+          // Negative correction periods remain credits; do not ignore them by summing only positive statements.
+          const [balance] = await tx`select
+            (select coalesce(sum(opening_minor+new_earnings_minor+adjustments_minor),0) from portal_statements.statements where partner_id=${record.partnerId})
+            -(select coalesce(sum(cash_minor+withholding_minor+other_minor),0) from portal_statements.allocations where partner_id=${record.partnerId}) as outstanding`;
+          const total =
+            BigInt(record.cashMinor) + BigInt(record.withholdingMinor) + BigInt(record.otherMinor);
+          if (total > BigInt(balance.outstanding)) throw new AccessFailure('conflict');
+        }
         await tx`insert into portal_statements.settlements(id,partner_id,authority,account,reference,record_digest,kind,original_id,evidence_ref,reason_ref,occurred_at,recorded_by)
           values(${id},${record.partnerId},${record.source.authority},${record.source.account},${record.source.reference},${digest},${record.kind},${originalId},${record.evidenceRef},${record.kind === 'reversal' ? record.reasonRef : null},${record.occurredAt},${actor.userId})`;
         for (const a of allocations)

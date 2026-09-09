@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { connectTestDatabase } from '../../scripts/test-database.mjs';
@@ -17,6 +17,9 @@ import { createImportRunner } from '@/server/modules/imports/run';
 import { createStatementPublisher } from '@/server/modules/statements/publish';
 import { createSettlementImporter, settlementDigest } from '@/server/modules/statements/settle';
 import { SourceSettlement } from '@/server/modules/statements/settlement-source';
+import { earningLineRef } from '@/server/modules/earnings/corrections';
+import { ApprovedPeriodFile, ApprovalContext } from '@/server/adapters/approved-period/schema';
+import { createStatementExportHttp } from '@/server/http/statement-export';
 
 let sql: Awaited<ReturnType<typeof connectTestDatabase>>;
 let auth: ReturnType<typeof createCredentialIdentity>;
@@ -135,7 +138,271 @@ async function setup() {
     reads: () => reads,
   };
 }
+function correctionSample(
+  root: ReturnType<typeof celebrityPeriod>,
+  generation: string,
+  sequence: string,
+  delta: string,
+  revised: string,
+  from = '2026-09-01',
+  to = '2026-09-03',
+) {
+  const row = structuredClone(root.file.rows[0]);
+  if (row.disposition !== 'included') throw new Error('Expected included original');
+  const original = structuredClone(row.entitlement);
+  row.entitlement = { ...original, reference: 'correction-' + sequence };
+  row.sourceRevision = 'correction-' + sequence;
+  row.earnedAt = from + 'T12:00:00+07:00';
+  row.earning = {
+    kind: 'adjustment',
+    approvalRef: 'synthetic-correction-' + sequence,
+    amountMinor: delta,
+    reasonRef: 'synthetic-cumulative-refund',
+    originalLineRef: earningLineRef(generation, original),
+    correction: {
+      originalGenerationId: generation,
+      originalEntitlement: original,
+      revisionSequence: sequence,
+      revisedAmountMinor: revised,
+    },
+  };
+  const period = {
+    from: from + 'T00:00:00+07:00',
+    toExclusive: to + 'T00:00:00+07:00',
+    timezone: 'Asia/Bangkok' as const,
+  };
+  const source = {
+    ...root.file.sources[0],
+    revision: 'correction-' + sequence,
+    asOf: to + 'T12:00:00+07:00',
+    controls: {
+      rows: 1,
+      included: 1,
+      excluded: 0,
+      unresolved: 0,
+      eligibleBaseMinor: '0',
+      amountMinor: delta,
+    },
+  };
+  const file = ApprovedPeriodFile.parse({ ...root.file, period, sources: [source], rows: [row] });
+  const raw = JSON.stringify(file);
+  const context = ApprovalContext.parse({
+    ...root.context,
+    fileSha256: createHash('sha256').update(raw).digest('hex'),
+    period,
+    sources: [source],
+    groups: [],
+    amounts: [
+      {
+        entitlement: row.entitlement,
+        agreementVersion: row.agreementVersion,
+        earnedAt: row.earnedAt,
+        evidenceRef: row.evidenceRef,
+        earning: row.earning,
+      },
+    ],
+    attributions: root.context.attributions
+      .slice(0, 1)
+      .map((a) => ({ ...a, entitlement: row.entitlement })),
+  });
+  return { file, raw, context };
+}
 describe('native authorized approval to immutable statement on PostgreSQL', () => {
+  it('exports only a currently authorized partner and exact frozen version, with private response headers', async () => {
+    const s = await setup();
+    const ready = await s.ready();
+    const statement = await s.publish(s.publisher.headers, ready.command);
+    const member = await actor(['manage_partners']);
+    const exportFile = createStatementExportHttp(access);
+    const url = new URL(
+      config.BETTER_AUTH_URL + '/api/v1/partner/statements/' + statement.id + '/export',
+    );
+    url.searchParams.set('partnerId', s.partnerId);
+    url.searchParams.set('version', statement.version);
+    const request = () => new Request(url, { headers: member.headers });
+    expect((await exportFile(request(), statement.id)).status).toBe(403);
+    await sql`insert into portal_access.memberships(id,partner_id,user_id,status,capabilities,verified_contact_ref)
+      values(${randomUUID()},${s.partnerId},${member.id},'active',ARRAY['view_statements'],'synthetic-verified')`;
+    const exported = await exportFile(request(), statement.id);
+    expect(exported.status).toBe(200);
+    expect(exported.headers.get('cache-control')).toBe('private, no-store');
+    expect(exported.headers.get('content-disposition')).toBe(
+      'attachment; filename="statement-' + statement.id + '.csv"',
+    );
+    const csv = await exported.text();
+    expect(csv).toContain(',37360.00,0.00,0\r\n');
+    expect(csv.match(/"included","commission"/g)).toHaveLength(6);
+    expect(csv).toContain(',128000.00,100000,12800.00,');
+    expect(csv).not.toContain('demo-right-clip');
+    url.searchParams.set('version', randomUUID());
+    expect((await exportFile(request(), statement.id)).status).toBe(409);
+    url.searchParams.set('version', statement.version);
+    url.searchParams.set('partnerId', randomUUID());
+    expect((await exportFile(request(), statement.id)).status).toBe(403);
+    url.searchParams.set('partnerId', s.partnerId);
+    await sql`update portal_access.memberships set status='suspended' where user_id=${member.id} and partner_id=${s.partnerId}`;
+    expect((await exportFile(request(), statement.id)).status).toBe(403);
+  });
+  it('books only each cumulative correction delta and carries negative credit into the payment cap', async () => {
+    const s = await setup(),
+      root = structuredClone(s.sample);
+    const original = await s.ready();
+    const first = await s.publish(s.publisher.headers, original.command);
+    async function importCorrection(sample: ReturnType<typeof correctionSample>) {
+      Object.assign(s.sample, sample);
+      const approval = await s.approvals.approve(s.reviewer.headers, {
+        reviewId: randomUUID(),
+        expectedDigest: reviewDigest(sample.raw, sample.context),
+        idempotencyKey: randomUUID(),
+      });
+      const candidate = await s.run(sample.raw, approval.id, randomUUID());
+      return {
+        ...original.command,
+        generationId: candidate.runId,
+        approvalId: approval.id,
+        idempotencyKey: randomUUID(),
+      };
+    }
+    const one = await importCorrection(
+      correctionSample(root, original.candidate.runId, '1', '-100000', '1180000'),
+    );
+    await s.publish(s.publisher.headers, one);
+    await expect(
+      importCorrection(
+        correctionSample(
+          root,
+          original.candidate.runId,
+          '2',
+          '-150000',
+          '1130000',
+          '2026-09-03',
+          '2026-09-05',
+        ),
+      ),
+    ).rejects.toMatchObject({ code: 'conflict' });
+    const two = await importCorrection(
+      correctionSample(
+        root,
+        original.candidate.runId,
+        '2',
+        '-50000',
+        '1130000',
+        '2026-09-03',
+        '2026-09-05',
+      ),
+    );
+    await s.publish(s.publisher.headers, two);
+    await expect(
+      importCorrection(
+        correctionSample(
+          root,
+          original.candidate.runId,
+          '1',
+          '-100000',
+          '1180000',
+          '2026-09-05',
+          '2026-09-07',
+        ),
+      ),
+    ).rejects.toMatchObject({ code: 'conflict' });
+    const statements =
+      await sql`select new_earnings_minor::text as earnings,adjustments_minor::text as adjustments
+      from portal_statements.statements where partner_id=${s.partnerId} order by period_from`;
+    expect(statements).toEqual([
+      { earnings: '3736000', adjustments: '0' },
+      { earnings: '0', adjustments: '-100000' },
+      { earnings: '0', adjustments: '-50000' },
+    ]);
+    const [history] =
+      await sql`select count(*)::int as count,sum(revised_amount_minor-prior_amount_minor)::text as delta
+      from portal_imports.correction_links l join portal_statements.statements s on s.generation_id=l.generation_id where s.partner_id=${s.partnerId}`;
+    expect(history).toEqual({ count: 2, delta: '-150000' });
+    const finance = await actor(['record_payments']);
+    let record = {
+      kind: 'payment' as const,
+      partnerId: s.partnerId,
+      source: { authority: 'synthetic-finance', account: 'payor-1', reference: randomUUID() },
+      evidenceRef: 'synthetic-net-of-credit',
+      occurredAt: '2026-09-08T12:00:00.000Z',
+      cashMinor: '3736000',
+      withholdingMinor: '0',
+      otherMinor: '0',
+      allocations: [
+        {
+          statementId: first.id,
+          cashMinor: '3736000',
+          withholdingMinor: '0',
+          otherMinor: '0',
+          otherReasonRef: null,
+        },
+      ],
+    };
+    const settle = createSettlementImporter(access, { load: async () => record });
+    const command = () => ({
+      sourceRecordId: 'synthetic-credit-payment',
+      expectedDigest: settlementDigest(record),
+      idempotencyKey: randomUUID(),
+    });
+    await expect(settle(finance.headers, command())).rejects.toMatchObject({ code: 'conflict' });
+    record = {
+      ...record,
+      cashMinor: '3586000',
+      allocations: [{ ...record.allocations[0], cashMinor: '3586000' }],
+    };
+    expect(await settle(finance.headers, command())).toMatchObject({ replayed: false });
+    record = {
+      ...record,
+      source: { ...record.source, reference: randomUUID() },
+      cashMinor: '1',
+      allocations: [{ ...record.allocations[0], cashMinor: '1' }],
+    };
+    await expect(settle(finance.headers, command())).rejects.toMatchObject({ code: 'conflict' });
+  });
+  it('requires an issued original in scope and refuses parallel pending claims on the same original', async () => {
+    const s = await setup(),
+      root = structuredClone(s.sample);
+    const original = await s.ready();
+    async function candidate(sample: ReturnType<typeof correctionSample>) {
+      Object.assign(s.sample, sample);
+      const approval = await s.approvals.approve(s.reviewer.headers, {
+        reviewId: randomUUID(),
+        expectedDigest: reviewDigest(sample.raw, sample.context),
+        idempotencyKey: randomUUID(),
+      });
+      return s.run(sample.raw, approval.id, randomUUID());
+    }
+    await expect(
+      candidate(correctionSample(root, original.candidate.runId, '1', '-100000', '1180000')),
+    ).rejects.toMatchObject({ code: 'conflict' });
+    await s.publish(s.publisher.headers, original.command);
+    expect(
+      (await candidate(correctionSample(root, original.candidate.runId, '1', '-100000', '1180000')))
+        .state,
+    ).toBe('ready');
+    await expect(
+      candidate(
+        correctionSample(
+          root,
+          original.candidate.runId,
+          '2',
+          '-100000',
+          '1180000',
+          '2026-09-03',
+          '2026-09-05',
+        ),
+      ),
+    ).rejects.toMatchObject({ code: 'conflict' });
+    const wrong = correctionSample(
+      root,
+      randomUUID(),
+      '2',
+      '-100000',
+      '1180000',
+      '2026-09-03',
+      '2026-09-05',
+    );
+    await expect(candidate(wrong)).rejects.toMatchObject({ code: 'conflict' });
+  });
   it('imports partial cash and withholding, replays once, and reverses with immutable evidence', async () => {
     const s = await setup();
     const ready = await s.ready();
