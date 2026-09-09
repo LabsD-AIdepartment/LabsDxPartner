@@ -1,11 +1,12 @@
 import { z } from 'zod';
-import { Id, Money, Instant, Period, page } from './common';
+import { Id, Money, Instant, Period, Freshness, page } from './common';
 import { EarningsLine } from './earnings';
 export const Settlement = z
   .strictObject({
     id: Id,
     reference: Id,
     recordedAt: Instant,
+    paidAt: Instant.nullable().default(null),
     cash: Money,
     withholding: Money,
     other: Money,
@@ -24,6 +25,7 @@ export const Statement = z
     version: Id,
     period: Period,
     publishedAt: Instant,
+    scheduledAt: Instant.nullable().default(null),
     settlementAsOf: Instant,
     status: z.enum(['pending', 'part-paid', 'paid', 'credit']),
     opening: Money,
@@ -59,3 +61,15 @@ export const DownloadResponse = z.strictObject({
   expiresAt: Instant,
 });
 export const ExportRequest = z.strictObject({ statementId: Id, version: Id });
+
+// Settlement revision is independent of the frozen earnings/statement version.
+export const StatementListResponse = Freshness.extend({
+  settlementsRevision: Id,
+  asOf: Instant,
+  confirmedUnpaid: Money,
+  data: StatementList,
+});
+export const StatementDetailResponse = Freshness.extend({
+  settlementsRevision: Id,
+  data: StatementDetail,
+});

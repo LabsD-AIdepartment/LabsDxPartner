@@ -16,6 +16,7 @@ import { EarningMix } from './EarningMix';
 import { PayoutSummary } from './PayoutSummary';
 import { TopContent } from './TopContent';
 import {
+  earningsHref,
   defaultOverviewFilters,
   loadOverview,
   validateFilters,
@@ -30,6 +31,8 @@ export function OverviewPage({
   initialFilters = defaultOverviewFilters,
   partner,
   contentBasePath,
+  transactionsBasePath,
+  overviewBasePath = '/overview',
 }: {
   scope: QueryScope;
   transport: OverviewTransport;
@@ -37,6 +40,8 @@ export function OverviewPage({
   initialFilters?: FilterValue;
   partner?: PartnerPresentation;
   contentBasePath?: string;
+  transactionsBasePath?: string;
+  overviewBasePath?: string;
 }) {
   const [filters, setFilters] = useState(initialFilters);
   const [exportOpen, setExportOpen] = useState(false);
@@ -134,7 +139,11 @@ export function OverviewPage({
                       </div>
                       <p className="small muted">ใช้เป็นฐานคำนวณรายได้ ไม่ใช่ยอดเงินที่จะได้รับ</p>
                     </Card>
-                    <PayoutSummary data={data} />
+                    <PayoutSummary
+                      data={data}
+                      basePath={transactionsBasePath}
+                      returnTo={earningsHref(overviewBasePath, data, filters)}
+                    />
                     <Card
                       className={styles.trend}
                       title="Every clip counts"

@@ -10,12 +10,13 @@ import { createOverviewTransport } from './overview-transport';
 import { NotificationButton } from '@/features/shell/NotificationButton';
 import { readyScenario } from './scenarios/ready';
 import type { ScenarioName } from './scenarios';
+import { usePreviewPayment } from './preview-payment';
 import styles from './access-preview.module.css';
 const scope = { userId: 'preview-user', partnerId: 'preview-partner', permissionRevision: '1' };
 export function OverviewPreview({ search = '' }: { search?: string }) {
   const report = readReportContext(new URLSearchParams(search));
   const [mode, setMode] = useState<ScenarioName | 'loading' | 'error'>('ready');
-  const [paid, setPaid] = useState(false);
+  const [paid, setPaid] = usePreviewPayment();
   const [notices, setNotices] = useState(() => readyScenario().notifications);
   const transport = useMemo(() => createOverviewTransport(mode, paid), [mode, paid]);
   return (
@@ -49,7 +50,7 @@ export function OverviewPreview({ search = '' }: { search?: string }) {
         hrefs={{
           overview: '/overview-preview',
           content: '/content-preview',
-          transactions: '/transactions',
+          transactions: '/transactions-preview',
         }}
         footerNote="ตัวอย่าง Overview · ข้อมูลจำลอง"
         avatar="/media/celebrity-avatar.png"
@@ -69,7 +70,7 @@ export function OverviewPreview({ search = '' }: { search?: string }) {
               })
             }
             onOpenStatement={() => {
-              window.location.href = '/transactions';
+              window.location.href = '/transactions-preview';
             }}
           />
         }
@@ -78,6 +79,8 @@ export function OverviewPreview({ search = '' }: { search?: string }) {
           <OverviewPage
             key={search}
             contentBasePath="/content-preview"
+            transactionsBasePath="/transactions-preview"
+            overviewBasePath="/overview-preview"
             initialFilters={{
               from: report.from,
               toExclusive: report.toExclusive,

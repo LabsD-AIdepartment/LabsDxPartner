@@ -23,7 +23,8 @@
       "@foundation-gallery": ["./dev/FoundationGallery.tsx"],
       "@access-preview": ["./dev/AccessPreview.tsx"],
       "@content-preview": ["./dev/ContentPreview.tsx"],
-      "@overview-preview": ["./dev/OverviewPreview.tsx"]
+      "@overview-preview": ["./dev/OverviewPreview.tsx"],
+      "@transactions-preview": ["./dev/TransactionsPreview.tsx"]
     }
   },
   "include": [

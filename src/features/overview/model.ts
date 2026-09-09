@@ -34,7 +34,12 @@ export async function loadOverview(
 export function earningsHref(path: string, data: OverviewValue, filters: FilterValue) {
   return `${path}?${new URLSearchParams({ generation: data.earnings.generation, origin: 'overview', from: filters.from, toExclusive: filters.toExclusive, ...(filters.brand ? { brand: filters.brand } : {}) })}`;
 }
-export function obligationHref(data: OverviewValue, statementId?: string) {
-  return `/transactions${statementId ? '/' + encodeURIComponent(statementId) : ''}?${new URLSearchParams({ obligationAsOf: data.obligation.asOf })}`;
+export function obligationHref(
+  data: OverviewValue,
+  statementId?: string,
+  basePath = '/transactions',
+  returnTo?: string,
+) {
+  return `${basePath}${statementId ? '/' + encodeURIComponent(statementId) : ''}?${new URLSearchParams({ obligationAsOf: data.obligation.asOf, ...(returnTo ? { returnTo } : {}) })}`;
 }
 export { timestamp, dateLabel } from '@/shared/ui/format-date';

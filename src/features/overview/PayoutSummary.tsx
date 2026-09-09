@@ -4,7 +4,15 @@ import { Money } from '@/shared/ui/Money';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { timestamp, dateLabel, obligationHref } from './model';
 import styles from './overview.module.css';
-export function PayoutSummary({ data }: { data: OverviewValue }) {
+export function PayoutSummary({
+  data,
+  basePath,
+  returnTo,
+}: {
+  data: OverviewValue;
+  basePath?: string;
+  returnTo?: string;
+}) {
   const { obligation } = data;
   const next = obligation.nextPayout;
   return (
@@ -24,7 +32,10 @@ export function PayoutSummary({ data }: { data: OverviewValue }) {
               ? `งวด ${dateLabel(next.period.from)} ถึงก่อน ${dateLabel(next.period.toExclusive)}`
               : 'ยังไม่ระบุงวดจ่าย'}
           </p>
-          <LinkButton variant="primary" href={obligationHref(data, next.statementId)}>
+          <LinkButton
+            variant="primary"
+            href={obligationHref(data, next.statementId, basePath, returnTo)}
+          >
             ดูรอบจ่ายนี้ ↗
           </LinkButton>
         </div>
@@ -49,7 +60,7 @@ export function PayoutSummary({ data }: { data: OverviewValue }) {
         <span>ยืนยันยอด</span>
         <span>โอนเงิน</span>
       </div>
-      <a href={obligationHref(data)}>ดูรายการจ่ายทั้งหมด</a>
+      <a href={obligationHref(data, undefined, basePath, returnTo)}>ดูรายการจ่ายทั้งหมด</a>
     </Card>
   );
 }

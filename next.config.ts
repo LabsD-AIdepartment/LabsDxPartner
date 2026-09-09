@@ -7,6 +7,10 @@ export default function config(phase: string): NextConfig {
     reactStrictMode: true,
     turbopack: {
       resolveAlias: {
+        '@transactions-preview':
+          phase === PHASE_DEVELOPMENT_SERVER
+            ? './dev/TransactionsPreview.tsx'
+            : './src/features/transactions/UnavailablePreview.tsx',
         '@content-preview':
           phase === PHASE_DEVELOPMENT_SERVER
             ? './dev/ContentPreview.tsx'

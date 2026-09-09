@@ -120,11 +120,13 @@ Local candidate implemented 2026-09-08. Verification and open owner/independent 
 
 Files: `app/(partner)/transactions/{page.tsx,[statementId]/page.tsx}`; `src/features/transactions/{StatementList,StatementDetail,SettlementBridge,DocumentList}.tsx`; `tests/e2e/transactions.spec.ts`.
 
-- [ ] Separate earnings period, publication date, scheduled payment and actual payment. Show pending/part-paid/paid and explicit adjustments.
-- [ ] Statement explains opening balance, newly confirmed earnings, adjustments, settled obligation and closing balance; cash, withholding and other evidenced settlement components remain distinct.
-- [ ] Design download/export pending/error/ready and permission-denied states. Add ask-about-this-reference using the existing contact channel, without sending messages automatically.
+- [x] Separate earnings period, publication date, scheduled payment and actual payment. Show pending/part-paid/paid and explicit adjustments.
+- [x] Statement explains opening balance, newly confirmed earnings, adjustments, settled obligation and closing balance; cash, withholding and other evidenced settlement components remain distinct.
+- [x] Design download/export pending/error/ready and permission-denied states. Add ask-about-this-reference using the existing contact channel, without sending messages automatically.
 
 Acceptance: partial-pay and correction examples explain the exact balance; sample download in development is explicitly synthetic. G03/G04 supply real ownership checks/files.
+
+Local candidate implemented 2026-09-09. Author verification and remaining acceptance gates: `docs/implementation/transactions-frontend.md`. F07 is next; real payment recording and private document authorization remain later phases.
 
 ### F07 — Account and minimal staff operations frontend
 

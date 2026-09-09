@@ -68,7 +68,9 @@ export function ContentPreview({
         hrefs={{
           overview: reportHref(routes.overview, context),
           content: reportHref(routes.content, context),
-          transactions: '/transactions',
+          transactions:
+            '/transactions-preview?' +
+            new URLSearchParams({ returnTo: reportHref(routes.content, context) }),
         }}
         footerNote="ตัวอย่างคลิป · ข้อมูลจำลอง"
         notifications={
@@ -80,7 +82,7 @@ export function ContentPreview({
                 return { ...old, items, unseenCount: items.filter((x) => !x.seen).length };
               })
             }
-            onOpenStatement={() => router.push('/transactions')}
+            onOpenStatement={() => router.push('/transactions-preview')}
           />
         }
       >
