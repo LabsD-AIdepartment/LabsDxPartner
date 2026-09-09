@@ -20,7 +20,9 @@ export async function loadOverview(
   request: Parameters<OverviewTransport>[0],
 ): Promise<OverviewValue> {
   if (!validateFilters(request.filters)) throw new Error('Invalid period');
-  const data = Overview.parse(await transport(request));
+  const raw = await transport(request);
+  if (request.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+  const data = Overview.parse(raw);
   // A response for another date window must never appear underneath the selected filters.
   const expectedFrom = Date.parse(request.filters.from + 'T00:00:00+07:00');
   const expectedTo = Date.parse(request.filters.toExclusive + 'T00:00:00+07:00');

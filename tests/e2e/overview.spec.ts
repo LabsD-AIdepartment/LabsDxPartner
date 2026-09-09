@@ -11,9 +11,14 @@ test('content filters do not rewrite payout; later settlement keeps selected fil
   await expect(page.getByText('฿15,520', { exact: true }).first()).toBeVisible();
   await expect(page.getByLabel('แบรนด์')).toHaveValue('Axtion');
   await expect(page.getByText('฿15,920', { exact: true }).first()).toBeVisible();
+  const destination = new URL(
+    (await page.getByRole('link', { name: 'ดูรอบจ่ายนี้ ↗' }).getAttribute('href'))!,
+    page.url(),
+  );
+  expect(destination.searchParams.has('generation')).toBe(false);
   expect(
-    await page.getByRole('link', { name: 'ดูรอบจ่ายนี้ ↗' }).getAttribute('href'),
-  ).not.toContain('generation');
+    new URL(destination.searchParams.get('returnTo')!, page.url()).searchParams.get('generation'),
+  ).toBe('1');
 });
 test('partial and unavailable are understandable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

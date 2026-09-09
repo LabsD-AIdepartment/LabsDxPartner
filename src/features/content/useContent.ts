@@ -1,6 +1,7 @@
 'use client';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { partnerKey } from '@/shared/query/keys';
+import { changeMeta } from '@/shared/query/invalidate-changes';
 import { validContentFilters } from '@/shared/routing/report-context';
 import {
   loadContent,
@@ -15,6 +16,12 @@ export function useContent<K extends Resource>(
   request: Omit<ContentRequest, 'signal' | 'resource'> & { resource: K },
 ) {
   return useQuery({
+    meta:
+      request.resource === 'ads' || request.resource === 'ad'
+        ? changeMeta('metrics')
+        : request.resource === 'detail'
+          ? changeMeta('earnings', 'metrics')
+          : changeMeta('earnings'),
     queryKey: partnerKey(
       request.scope,
       request.resource === 'ads' || request.resource === 'ad' ? 'metrics' : 'earnings',
@@ -47,6 +54,7 @@ export function useContentLibrary(
 ) {
   const context = { ...request.context, cursor: null, history: [] };
   return useInfiniteQuery({
+    meta: changeMeta('earnings', 'metrics'),
     queryKey: partnerKey(
       request.scope,
       'earnings',

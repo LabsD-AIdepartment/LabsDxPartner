@@ -6,6 +6,31 @@ const scope = { userId: 'user-1', partnerId: 'partner-1', permissionRevision: '1
 const initial = () => scenario('ready').changes;
 afterEach(() => vi.useRealTimers());
 describe('active-page revision changes', () => {
+  it('catches publication between scoped bootstrap and the first page read', async () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    const w = new RevisionWatcher({
+      scope,
+      initial: initial(),
+      load: async () => ({ ...initial(), earningsRevision: '2' }),
+      onChange,
+      onAccessLost: vi.fn(),
+    });
+    w.setActive(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(onChange.mock.calls[0][0]).toEqual(['earnings']);
+    w.stop();
+    expect(
+      () =>
+        new RevisionWatcher({
+          scope,
+          initial: { ...initial(), partnerId: 'other' },
+          load: vi.fn(),
+          onChange,
+          onAccessLost: vi.fn(),
+        }),
+    ).toThrow(AccessLost);
+  });
   it('polls only changed data groups and ignores older revisions', async () => {
     vi.useFakeTimers();
     const onChange = vi.fn();

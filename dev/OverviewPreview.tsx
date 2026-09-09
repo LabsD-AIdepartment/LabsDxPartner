@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { PartnerShell } from '@/features/shell/PartnerShell';
 import { OverviewPage } from '@/features/overview/OverviewPage';
 import { ScopedQueryProvider } from '@/shared/query/provider';
+import { invalidateChanges } from '@/shared/query/invalidate-changes';
 import { Button } from '@/shared/ui/Button';
 import { createOverviewTransport } from './overview-transport';
 import { NotificationButton } from '@/features/shell/NotificationButton';
@@ -111,14 +112,7 @@ function RefreshOnPayment({ paid }: { paid: boolean }) {
   useEffect(() => {
     if (previous.current === paid) return;
     previous.current = paid;
-    // Also replace an initial in-flight response, which invalidation alone can reuse.
-    let current = true;
-    void client.cancelQueries().then(() => {
-      if (current) return client.invalidateQueries();
-    });
-    return () => {
-      current = false;
-    };
+    void invalidateChanges(client, scope, ['settlements']);
   }, [paid, client]);
   return null;
 }

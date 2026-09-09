@@ -144,12 +144,14 @@ Local candidate implemented 2026-09-09. Evidence and limitations: `docs/implemen
 
 Files: `tests/e2e/partner-journeys.spec.ts`; `docs/implementation/frontend-acceptance.md`.
 
-- [ ] Run full routes across ready/empty/loading/error/partial/stale/unavailable/access states; all fixtures validated by F01 schemas.
-- [ ] Review day/dark, mobile/desktop, keyboard, long labels and portraits with the owner-visible preview. Record screenshots within project work area and list any remaining UI issue.
-- [ ] Verify no eager download of every clip/ad, no double loading shell, and no URL state that bypasses access. Record a screen-to-endpoint matrix.
-- [ ] Simulate a new published revision, an old response arriving late, hidden/offline/resumed tabs and a partner switch. Only changed active data refetches; the matching graph/cards update together; client financial totals are never incremented from event deltas.
+- [x] Run full routes across ready/empty/loading/error/partial/stale/unavailable/access states; all fixtures validated by F01 schemas.
+- [x] Review day/dark, mobile/desktop, keyboard, long labels and portraits with the owner-visible preview. Record screenshots within project work area and list any remaining UI issue.
+- [x] Verify no eager download of every clip/ad, no double loading shell, and no URL state that bypasses access. Record a screen-to-endpoint matrix.
+- [x] Simulate a new published revision, an old response arriving late, hidden/offline/resumed tabs and a partner switch. Only changed active data refetches; the matching graph/cards update together; client financial totals are never incremented from event deltas.
 
 Check: `npm run typecheck`, `npm run build`, `npm run test`, `npm run test:e2e`, `npm run verify:no-demo`. Exit means **frontend complete against contracts**, not authentication/data correctness in production. Change to real integration begins only after this UX checkpoint.
+
+Local frontend candidate verified 2026-09-09: 147 unit/contract tests and 28 browser tests pass; production build and fixture exclusion pass. Receipt: `docs/implementation/frontend-acceptance.md`. Native200% zoom and independent/owner acceptance remain explicit release items; actual providers/data are subsequent phases.
 
 ## 4. Phase 2 — Real identity and partner isolation
 

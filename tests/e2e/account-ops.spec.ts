@@ -1,4 +1,22 @@
 import { test, expect } from '@playwright/test';
+test('maximum-length staff evidence stays readable inside a narrow confirmation', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 280, height: 900 });
+  await page.goto('/ops-preview/partners');
+  await page.getByText('คำเชิญและสมาชิก', { exact: true }).click();
+  const evidence = 'หลักฐาน-' + 'x'.repeat(150);
+  await page.getByRole('textbox', { name: /^อ้างอิงการตรวจสอบตัวตน/ }).fill(evidence);
+  await page.getByRole('button', { name: 'ตรวจการระงับสมาชิก', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText(evidence);
+  const size = await page
+    .getByRole('dialog')
+    .evaluate((e) => ({ width: e.clientWidth, scroll: e.scrollWidth }));
+  expect(size.scroll).toBeLessThanOrEqual(size.width + 1);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'ตรวจการระงับสมาชิก', exact: true })).toBeFocused();
+});
 test('account remains in partner navigation and retains its final login method', async ({
   page,
 }) => {

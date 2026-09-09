@@ -2,10 +2,11 @@ import { test, expect } from '@playwright/test';
 test('Overview to clip to ad and back preserves the earnings context', async ({ page }) => {
   await page.goto('/overview-preview');
   await expect(page.getByText('฿37,360', { exact: true }).first()).toBeVisible();
-  await page.getByLabel('แบรนด์', { exact: true }).selectOption('Axtion');
+  await page.getByRole('combobox', { name: 'แบรนด์', exact: true }).selectOption('Axtion');
   await expect(page.getByText('฿15,920', { exact: true }).first()).toBeVisible();
   const link = page.locator('a[href^="/content-preview/clip-1?"]').first();
   await link.click();
+  await expect(page).toHaveURL(/\/content-preview\/clip-1\?/);
   await expect(page.getByText('฿12,800', { exact: true })).toBeVisible();
   const detailUrl = new URL(page.url());
   expect(detailUrl.searchParams.get('brand')).toBe('Axtion');
@@ -13,12 +14,15 @@ test('Overview to clip to ad and back preserves the earnings context', async ({ 
   expect(detailUrl.searchParams.get('origin')).toBe('overview');
   await page.getByText('โฆษณาที่ใช้คลิปนี้ (3)', { exact: true }).click();
   await page.getByRole('link', { name: /วิดีโอหลัก/ }).click();
+  await expect(page).toHaveURL(/\/ads\/clip-1-ad-1\?/);
   await expect(page.getByText('81,200', { exact: true })).toBeVisible();
   await expect(page.getByText('ค่าโฆษณา', { exact: true })).toHaveCount(0);
   await page.getByRole('link', { name: '← กลับรายละเอียดคลิป' }).click();
+  await expect(page).toHaveURL(/\/content-preview\/clip-1\?/);
   await expect(page.getByText('฿12,800', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '← กลับภาพรวม' }).click();
-  await expect(page.getByLabel('แบรนด์', { exact: true })).toHaveValue('Axtion');
+  await expect(page).toHaveURL(/\/overview-preview\?/);
+  await expect(page.getByRole('combobox', { name: 'แบรนด์', exact: true })).toHaveValue('Axtion');
   await expect(page.getByText('฿15,920', { exact: true }).first()).toBeVisible();
 });
 test('library shows all six portrait covers in one page and restores filters on return', async ({

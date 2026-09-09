@@ -3,6 +3,7 @@ import type { QueryScope } from './keys';
 export class AccessLost extends Error {}
 type Options = {
   scope: QueryScope;
+  initial?: ChangesValue;
   load: (signal: AbortSignal) => Promise<unknown>;
   onChange: (groups: ChangeGroup[], snapshot: ChangesValue) => void;
   onAccessLost: () => void;
@@ -18,7 +19,17 @@ export class RevisionWatcher {
   private sequence = 0;
   private failures = 0;
   private baseline: ChangesValue | null = null;
-  constructor(private readonly options: Options) {}
+  constructor(private readonly options: Options) {
+    if (options.initial) {
+      const initial = Changes.parse(options.initial);
+      if (
+        initial.partnerId !== options.scope.partnerId ||
+        initial.permissionRevision !== options.scope.permissionRevision
+      )
+        throw new AccessLost('Initial membership scope changed');
+      this.baseline = initial;
+    }
+  }
   setActive(active: boolean) {
     if (this.stopped || this.active === active) return;
     this.active = active;

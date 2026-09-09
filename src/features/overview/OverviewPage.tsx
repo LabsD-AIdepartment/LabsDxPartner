@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, ArrowUpRight, Video } from 'lucide-react';
 import { type QueryScope, partnerKey } from '@/shared/query/keys';
+import { changeMeta } from '@/shared/query/invalidate-changes';
 import { FilterBar, type FilterValue } from '@/shared/ui/FilterBar';
 import { DataState } from '@/shared/ui/DataState';
 import { Button } from '@/shared/ui/Button';
@@ -47,6 +48,7 @@ export function OverviewPage({
   const [exportOpen, setExportOpen] = useState(false);
   const valid = validateFilters(filters);
   const query = useQuery({
+    meta: changeMeta('earnings', 'settlements', 'metrics'),
     queryKey: partnerKey(scope, 'earnings', 'overview', filters),
     queryFn: ({ signal }) => loadOverview(transport, { scope, filters, signal }),
     enabled: valid,

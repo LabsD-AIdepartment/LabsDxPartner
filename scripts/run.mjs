@@ -26,7 +26,10 @@ const cmds = {
   dev: ['next/dist/bin/next', 'dev', '--hostname', '127.0.0.1', '--port', '4187'],
   build: ['next/dist/bin/next', 'build'],
   start: ['next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', '4188'],
-  typecheck: ['typescript/bin/tsc', '--noEmit'],
+  // Generated Next route declarations can change between dev/typegen/build.
+  // TS7's retained incremental graph has produced false `Route extends never` errors here.
+  // A fresh graph checks the complete program; no files or diagnostics are excluded.
+  typecheck: ['typescript/bin/tsc', '--noEmit', '--incremental', 'false'],
   test: ['vitest/vitest.mjs', 'run'],
   'test:e2e': ['@playwright/test/cli.js', 'test'],
 };

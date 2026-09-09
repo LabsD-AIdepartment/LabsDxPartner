@@ -3,7 +3,8 @@ test('Overview old earnings period sees later payment and returns with filters',
   page,
 }) => {
   await page.goto('/overview-preview');
-  await page.getByLabel('แบรนด์', { exact: true }).selectOption('Axtion');
+  await expect(page.getByText('฿37,360', { exact: true }).first()).toBeVisible();
+  await page.getByRole('combobox', { name: 'แบรนด์', exact: true }).selectOption('Axtion');
   await expect(page.getByText('฿15,920', { exact: true }).first()).toBeVisible();
   await page.getByRole('link', { name: 'ดูรอบจ่ายนี้ ↗' }).click();
   await expect(page.getByText('฿25,520', { exact: true }).first()).toBeVisible();
@@ -11,7 +12,7 @@ test('Overview old earnings period sees later payment and returns with filters',
   await expect(page.getByText('฿15,520', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('฿37,360', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'กลับหน้าก่อนหน้า', exact: true }).click();
-  await expect(page.getByLabel('แบรนด์', { exact: true })).toHaveValue('Axtion');
+  await expect(page.getByRole('combobox', { name: 'แบรนด์', exact: true })).toHaveValue('Axtion');
   await expect(page.getByText('฿15,920', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('฿15,520', { exact: true }).first()).toBeVisible();
 });
