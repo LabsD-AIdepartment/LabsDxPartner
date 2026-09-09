@@ -19,7 +19,11 @@ import { ContentState, DataEnvelope } from './ContentState';
 import type { ContentProps } from './types';
 import styles from './content.module.css';
 export function ContentList(
-  props: ContentProps & { brands: string[]; onChange: (c: ReportContext) => void },
+  props: ContentProps & {
+    brands: string[];
+    onChange: (c: ReportContext) => void;
+    resetContext?: ReportContext;
+  },
 ) {
   const { routes, onChange } = props;
   const c = { ...props.context, cursor: null, history: [] };
@@ -44,7 +48,14 @@ export function ContentList(
           onChange={(v) => onChange(changeReportFilters(c, v))}
           onReset={() => {
             setSearch('');
-            onChange({ ...initialReportContext });
+            onChange({
+              ...(props.resetContext ?? initialReportContext),
+              q: '',
+              brand: null,
+              cursor: null,
+              history: [],
+              generation: null,
+            });
           }}
           onExport={() => setExportOpen(true)}
           actions={

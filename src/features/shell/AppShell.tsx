@@ -1,6 +1,6 @@
 'use client';
 import type { ReactNode } from 'react';
-import { LayoutGrid, Video, Wallet } from 'lucide-react';
+import { LayoutGrid, Video, Wallet, UserRound } from 'lucide-react';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { Button } from '@/shared/ui/Button';
 import { ThemeToggle } from './ThemeToggle';
@@ -45,10 +45,14 @@ export function AppShell({
         <div className={styles.controls}>
           <ThemeToggle />
           {notifications}
-          {avatar && (
+          {avatar ? (
             <a href={accountHref} aria-label="บัญชีของคุณ">
               <img className={styles.avatar} src={avatar} alt="ภาพโปรไฟล์" />
             </a>
+          ) : (
+            <LinkButton href={accountHref} icon aria-label="บัญชีของคุณ">
+              <UserRound size={18} aria-hidden />
+            </LinkButton>
           )}
         </div>
       </header>

@@ -1,3 +1,4 @@
+import { SourceUnavailableError } from '@/shared/query/source-unavailable';
 import type { ReactNode } from 'react';
 import { DataState } from '@/shared/ui/DataState';
 import { LinkButton } from '@/shared/ui/LinkButton';
@@ -16,6 +17,8 @@ export function ContentState({
   retry: () => void;
   latestHref: string;
 }) {
+  if (error instanceof SourceUnavailableError)
+    return <DataState state="unavailable" message={error.message} />;
   if (pending) return <DataState state="loading" />;
   if (error instanceof ContentError && error.code === 'generation_changed')
     return (

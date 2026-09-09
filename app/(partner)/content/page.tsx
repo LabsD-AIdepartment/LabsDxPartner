@@ -1,4 +1,8 @@
-import { requirePartnerAccess } from '@/server/modules/access/requirePartnerAccess';
-export default function Page() {
-  return requirePartnerAccess('/content');
+import { renderPartnerPage } from '@/server/modules/access/renderPartnerPage';
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return renderPartnerPage('/content', { kind: 'content' }, await searchParams);
 }

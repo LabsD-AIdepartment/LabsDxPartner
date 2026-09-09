@@ -1,3 +1,4 @@
+import { SourceUnavailableError } from '@/shared/query/source-unavailable';
 import { DataState } from '@/shared/ui/DataState';
 import { Button } from '@/shared/ui/Button';
 import { TransactionError } from './model';
@@ -10,6 +11,8 @@ export function TransactionState({
   error: Error | null;
   retry: () => void;
 }) {
+  if (error instanceof SourceUnavailableError)
+    return <DataState state="unavailable" message={error.message} />;
   if (pending) return <DataState state="loading" />;
   if (!error) return null;
   const blocked =

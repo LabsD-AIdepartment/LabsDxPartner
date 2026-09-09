@@ -12,12 +12,16 @@ import {
 import { credentialSessionHandler } from './credential-session';
 import { createAccessHttp } from '@/server/http/access';
 import { principalResolver } from './resolve-principal';
+import { createPartnerAccess } from '../partners/access';
+import { createPartnerSessionHttp } from '@/server/http/partner-session';
 
 type Runtime = {
   auth: ReturnType<typeof createCredentialIdentity>;
   assertBinding: () => Promise<void>;
   handle: (request: Request) => Promise<Response>;
   access: (request: Request) => Promise<Response>;
+  partners: ReturnType<typeof createPartnerAccess>;
+  partnerSession: (request: Request) => Promise<Response>;
 };
 let current: Runtime | undefined;
 export function getIdentityRuntime(): Runtime | null {
@@ -39,11 +43,14 @@ export function getIdentityRuntime(): Runtime | null {
     if (rows[0]?.digest !== credentialBindingDigest(config))
       throw new Error('Identity namespace binding unavailable');
   };
+  const partners = createPartnerAccess(sql, principalResolver(auth, assertBinding));
   current = {
     auth,
     assertBinding,
     handle: credentialSessionHandler(sql, config, auth),
     access: createAccessHttp(sql, config, principalResolver(auth, assertBinding), assertBinding),
+    partners,
+    partnerSession: createPartnerSessionHttp(partners, config.BETTER_AUTH_URL),
   };
   return current;
 }

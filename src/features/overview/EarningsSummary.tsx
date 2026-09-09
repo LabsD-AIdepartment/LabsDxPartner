@@ -1,9 +1,9 @@
-import { BadgeCheck, Wallet } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import type { OverviewValue } from '@/contracts/overview';
 import type { FilterValue } from '@/shared/ui/FilterBar';
 import { Card } from '@/shared/ui/Card';
 import { Money } from '@/shared/ui/Money';
-import { CoverImage } from '@/shared/ui/CoverImage';
+import { PartnerIdentity } from './PartnerIdentity';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { earningsHref } from './model';
 import styles from './overview.module.css';
@@ -28,21 +28,7 @@ export function EarningsSummary({
   const channels = data.earnings.channelBreakdown;
   return (
     <Card className={styles.earnings} aria-label="โปรไฟล์และคอมมิชชัน">
-      <div className={styles.portrait}>
-        <CoverImage
-          src={partner?.portrait ?? null}
-          alt={partner ? `ภาพโปรไฟล์ ${partner.name}` : 'ภาพโปรไฟล์พาร์ทเนอร์'}
-          loading="eager"
-        />
-        <div className={styles.identity}>
-          <CoverImage src={partner?.avatar ?? null} alt="" />
-          <div>
-            <strong>{partner?.name ?? 'พาร์ทเนอร์'}</strong>
-            <span>{partner?.role ?? 'Partner'}</span>
-          </div>
-          <BadgeCheck size={19} aria-hidden />
-        </div>
-      </div>
+      <PartnerIdentity partner={partner} />
       <div className={styles.earningPane}>
         <div className={styles.earningsTotal}>
           <div className={styles.cardLabel}>

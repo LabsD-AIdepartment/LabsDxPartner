@@ -25,6 +25,8 @@ import {
   type OverviewTransport,
 } from './model';
 import styles from './overview.module.css';
+import { SourceUnavailableError } from '@/shared/query/source-unavailable';
+import { UnavailableOverview } from './UnavailableOverview';
 export function OverviewPage({
   scope,
   transport,
@@ -86,6 +88,8 @@ export function OverviewPage({
         />
       ) : query.isPending ? (
         <DataState state="loading" />
+      ) : query.error instanceof SourceUnavailableError && !data ? (
+        <UnavailableOverview partner={partner} />
       ) : query.isError && !data ? (
         <DataState state="error" onRetry={() => void query.refetch()} />
       ) : (

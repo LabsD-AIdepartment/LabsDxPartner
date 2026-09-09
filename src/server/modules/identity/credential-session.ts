@@ -6,6 +6,7 @@ import {
 } from './credential-auth';
 import { transactionDatabase } from './transaction-auth';
 import { boundedRequest } from '@/server/http/bounded-request';
+import { PARTNER_COOKIE } from '../access/partner-session';
 
 export async function credentialWrite<T>(
   sql: Sql,
@@ -28,8 +29,16 @@ export function credentialSessionHandler(
 ) {
   const ordinary = credentialHandler(auth);
   return async (request: Request) => {
-    if (request.method !== 'POST' || new URL(request.url).pathname !== '/api/auth/sign-in/username')
-      return ordinary(request);
+    const path = new URL(request.url).pathname;
+    if (request.method !== 'POST' || path !== '/api/auth/sign-in/username') {
+      const response = await ordinary(request);
+      if (request.method === 'POST' && path === '/api/auth/sign-out' && response.ok)
+        response.headers.append(
+          'Set-Cookie',
+          `${PARTNER_COOKIE}=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0`,
+        );
+      return response;
+    }
     if (request.headers.get('origin') !== config.BETTER_AUTH_URL)
       return Response.json({ code: 'INVALID_ORIGIN' }, { status: 403 });
     const buffered = await boundedRequest(request);

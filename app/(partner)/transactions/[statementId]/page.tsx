@@ -1,5 +1,15 @@
-import { requirePartnerAccess } from '@/server/modules/access/requirePartnerAccess';
-export default async function Page({ params }: { params: Promise<{ statementId: string }> }) {
+import { renderPartnerPage } from '@/server/modules/access/renderPartnerPage';
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ statementId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { statementId } = await params;
-  return requirePartnerAccess('/transactions/' + encodeURIComponent(statementId));
+  return renderPartnerPage(
+    '/transactions/' + encodeURIComponent(statementId),
+    { kind: 'statement', statementId },
+    await searchParams,
+  );
 }

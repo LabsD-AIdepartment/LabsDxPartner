@@ -1,3 +1,6 @@
+import { createPartnerSessionHttp } from '@/server/http/partner-session';
+import { createPartnerAccess } from '@/server/modules/partners/access';
+import { PARTNER_COOKIE } from '@/server/modules/access/partner-session';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -310,5 +313,101 @@ describe('access HTTP on native credentials and actual isolated PostgreSQL', () 
         )
       ).status,
     ).toBe(429);
+  });
+});
+
+// Application session path uses the same native signed session and fresh membership authority.
+describe('partner application session', () => {
+  it('selects only owned partners, ignores another user preference, rechecks revocation and expires selection on logout', async () => {
+    const invite = await issue();
+    const username = 'app_' + randomUUID().slice(0, 8);
+    const registered = await handle(
+      request('invitations/register', {
+        token: invite.token,
+        username,
+        password,
+        passwordConfirmation: password,
+      }),
+    );
+    expect(registered.status).toBe(200);
+    const account = await registered.json();
+    const signedIn = await login(username);
+    expect(signedIn.status).toBe(200);
+    const headers = cookies(signedIn);
+    const partners = createPartnerAccess(
+      sql,
+      principalResolver(auth, async () => {}),
+    );
+    const sessionHttp = createPartnerSessionHttp(partners, config.BETTER_AUTH_URL);
+    const url = config.BETTER_AUTH_URL + '/api/partner/session';
+    const get = () => sessionHttp(new Request(url, { headers }));
+    const post = (partnerId: string, origin = config.BETTER_AUTH_URL) =>
+      sessionHttp(
+        new Request(url, {
+          method: 'POST',
+          headers: { cookie: headers.get('cookie')!, origin, 'content-type': 'application/json' },
+          body: JSON.stringify({ partnerId }),
+        }),
+      );
+    const first = await get();
+    expect(first.headers.get('cache-control')).toBe('private, no-store');
+    expect(await first.json()).toMatchObject({
+      userId: account.userId,
+      activePartnerId: invite.partnerId,
+      access: 'active',
+    });
+    const other = await issue();
+    expect((await post(other.partnerId)).status).toBe(403);
+    expect((await post(invite.partnerId, 'https://foreign.example')).status).toBe(403);
+    const accepted = await handle(request('invitations/accept', { token: other.token }, headers));
+    expect(accepted.status).toBe(200);
+    const switched = await post(other.partnerId);
+    expect(switched.status).toBe(200);
+    expect(await switched.json()).toMatchObject({
+      activePartnerId: other.partnerId,
+      userId: account.userId,
+    });
+    const selection = switched.headers.getSetCookie()[0];
+    expect(selection).toContain('Secure; HttpOnly; SameSite=Lax');
+    headers.set('cookie', headers.get('cookie') + '; ' + selection.split(';')[0]);
+    expect(await (await get()).json()).toMatchObject({ activePartnerId: other.partnerId });
+    const foreign = new Headers(staff);
+    foreign.set('cookie', foreign.get('cookie') + '; ' + selection.split(';')[0]);
+    expect(await (await sessionHttp(new Request(url, { headers: foreign }))).json()).toMatchObject({
+      activePartnerId: null,
+    });
+    const member = (
+      await sql`select permission_revision::text as revision from portal_access.memberships where user_id=${account.userId} and partner_id=${other.partnerId}`
+    )[0];
+    await partners.changeMembership(staff, {
+      partnerId: other.partnerId,
+      userId: account.userId,
+      expectedRevision: member.revision,
+      status: 'suspended',
+      verifiedContactRef: 'contact-http',
+      capabilities: ['view_earnings'],
+      idempotencyKey: randomUUID(),
+    });
+    // Suspension revokes native sessions; selection cannot retain access.
+    expect((await get()).status).toBe(401);
+    const fresh = cookies(await login(username));
+    const signout = await native(
+      new Request(config.BETTER_AUTH_URL + '/api/auth/sign-out', {
+        method: 'POST',
+        headers: {
+          cookie: fresh.get('cookie')!,
+          origin: config.BETTER_AUTH_URL,
+          'content-type': 'application/json',
+        },
+        body: '{}',
+      }),
+    );
+    expect(signout.status).toBe(200);
+    expect(
+      signout.headers
+        .getSetCookie()
+        .some((v) => v.startsWith(PARTNER_COOKIE + '=;') && v.includes('Max-Age=0')),
+    ).toBe(true);
+    expect((await sessionHttp(new Request(url, { headers: fresh }))).status).toBe(401);
   });
 });
