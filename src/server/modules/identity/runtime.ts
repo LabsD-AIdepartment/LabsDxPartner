@@ -8,8 +8,8 @@ import {
   readCredentialConfig,
   credentialBindingDigest,
   CREDENTIAL_BINDING_ID,
-  credentialHandler,
 } from './credential-auth';
+import { credentialSessionHandler } from './credential-session';
 
 type Runtime = {
   auth: ReturnType<typeof createCredentialIdentity>;
@@ -36,6 +36,6 @@ export function getIdentityRuntime(): Runtime | null {
     if (rows[0]?.digest !== credentialBindingDigest(config))
       throw new Error('Identity namespace binding unavailable');
   };
-  current = { auth, assertBinding, handle: credentialHandler(auth) };
+  current = { auth, assertBinding, handle: credentialSessionHandler(sql, config, auth) };
   return current;
 }

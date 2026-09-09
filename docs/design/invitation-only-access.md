@@ -29,7 +29,7 @@ Retain the existing visual system and partner pages. The invite screen is an acc
 
 Initial recovery uses the existing LabsD support contact. Staff verify the requester through the established contact record, select the exact account and issue a short-lived, one-use reset link. Requesting or issuing a reset does not itself change the password. Successful reset replaces the credential and revokes old sessions atomically; expired, revoked and replayed resets fail. Staff cannot bypass verification by editing a displayed contact field.
 
-Verified email recovery can be added if a real delivery channel is selected; email is not required merely to satisfy an internal library field. Any library-required internal address is non-deliverable metadata and must never become a recovery address. The pinned library's username plugin exists locally, but its full registration/reset integration still needs implementation proof.
+Verified email recovery can be added if a real delivery channel is selected; email is not required merely to satisfy an internal library field. Any library-required internal address is non-deliverable metadata and must never become a recovery address. The maintained username adapter, atomic invitation registration and password recovery services now have local PostgreSQL evidence; public HTTP and browser integration remain unaccepted.
 
 ## Transition and work packages
 
@@ -49,6 +49,6 @@ No real customer account inventory was performed in this decision. Verify actual
 
 Change Mode — replace entry and recovery flows. B1/B2/B8: commercial approval stays with LabsD; partners owns invitation grants/membership and identity owns credentials/sessions. B3/B4: shared access contracts and login/account components change together. B9: invitation bearer proof plus credentials replaces external-provider identity; staff authority remains separate. B10: the existing support owner verifies recovery. B5–B7 stay one build/application/Postgres, with no new service.
 
-This decision supersedes prior mandatory social-provider requirements. It does not change earnings, source authority, payment rules or the approved portal layout. Runtime currently remains the earlier social configuration with passwords disabled; this document is not implementation acceptance.
+This decision supersedes prior mandatory social-provider requirements. It does not change earnings, source authority, payment rules or the approved portal layout. Runtime now uses the credential adapter with only username login/session/logout exposed and identity disabled by default. Invitation and recovery services remain server-only; the public UI still needs transition. See the implementation receipts for credential adapter, invitation activation and password recovery; this design document is not release acceptance.
 
 Verdict: **READY FOR DECLARED SCOPE** — invitation-first design and local work sequencing. Registration, reset and migration behavior must be verified before exposure.
