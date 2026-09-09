@@ -1,0 +1,9 @@
+# Configured reviewed-file acquisition
+
+The importer previously ran only the synthetic developer example. It now has a normal offline path that resolves an existing authenticated approval, reads its named export and independent control file from a configured operator-owned directory, and verifies the exact stored review digest before invoking the existing runner. It does not create approvals or publish statements.
+
+`reviewed-files` supplies the existing period, catalogue and settlement repository interfaces through bounded regular-file reads. Safe identifiers, separate directories, UTF-8/schema checks, file-change detection and catalogue partner binding prevent an arbitrary path or mismatched record from becoming a source. The approved database repository was extracted from the existing approval store so the authenticated service and offline importer share revocation semantics.
+
+The normal CLI requires explicit import enablement, selected database/credential namespace binding and reviewed directory configuration, uses a separate2connection pool, supports stable idempotency keys and emits safe structured outcomes. Existing synthetic mode remains explicitly isolated. See [operator runbook](../runbooks/imports.md) for source responsibilities, commands, limits and recovery.
+
+Verification uses actual files and the isolated PostgreSQL database, including a child process running the normal CLI. Tests cover missing approval, changed raw/control bytes, revocation during file acquisition, exact income/replay without publication, existing catalogue/payment services, disabled import/wrong namespace, traversal/symlink/nonregular/oversize/invalid UTF-8/schema cases. No external source API, manual payment authority, scheduled refresh, native source-review screen or production connection is inferred from these checks. Full batch evidence is in `.agent-work/20260909-reviewed-file-import/`.

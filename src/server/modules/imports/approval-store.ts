@@ -7,7 +7,7 @@ import { ApprovalContext, INTAKE_LIMITS } from '@/server/adapters/approved-perio
 import { parseApprovedPeriod } from '@/server/adapters/approved-period/parse';
 import { AccessFailure, type createPartnerAccess } from '@/server/modules/partners/access';
 import { commandHash, priorCommand, recordCommand } from '../access/command-audit';
-import type { ApprovalRepository } from './run';
+import { createApprovalRepository } from './approval-repository';
 export interface SourceReviewRepository {
   load(id: string): Promise<{ raw: string; context: unknown }>;
 }
@@ -38,15 +38,7 @@ export function createApprovalStore(
   access: ReturnType<typeof createPartnerAccess>,
   reviews: SourceReviewRepository,
 ) {
-  const repository: ApprovalRepository = {
-    async load(id) {
-      z.uuid().parse(id);
-      const [row] = await sql`select a.sequence::text,a.context from portal_imports.approvals a
-    where a.id=${id} and not exists(select 1 from portal_imports.approval_revocations r where r.approval_id=a.id)`;
-      if (!row) throw new AccessFailure('forbidden');
-      return { sequence: row.sequence, context: ApprovalContext.parse(row.context) };
-    },
-  };
+  const { repository } = createApprovalRepository(sql);
   return {
     repository,
     async approve(headers: Headers, input: unknown) {
