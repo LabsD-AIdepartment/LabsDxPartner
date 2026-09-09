@@ -80,6 +80,7 @@ export function TransactionsPreview({
         </Button>
       </aside>
       <PartnerShell
+        accountHref="/account-preview"
         active="transactions"
         avatar="/media/celebrity-avatar.png"
         hrefs={{

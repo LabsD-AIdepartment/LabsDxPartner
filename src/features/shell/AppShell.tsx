@@ -16,10 +16,11 @@ export function AppShell({
   subtitle,
   notifications,
   avatar,
+  accountHref = '/account',
   footerNote,
   children,
 }: {
-  active: Menu;
+  active: Menu | null;
   onNavigate?: (menu: Menu) => void;
   hrefs?: Record<Menu, string>;
   title: string;
@@ -27,6 +28,7 @@ export function AppShell({
   subtitle: string;
   notifications: ReactNode;
   avatar?: string;
+  accountHref?: string;
   footerNote?: ReactNode;
   children: ReactNode;
 }) {
@@ -43,7 +45,11 @@ export function AppShell({
         <div className={styles.controls}>
           <ThemeToggle />
           {notifications}
-          {avatar && <img className={styles.avatar} src={avatar} alt="ภาพโปรไฟล์" />}
+          {avatar && (
+            <a href={accountHref} aria-label="บัญชีของคุณ">
+              <img className={styles.avatar} src={avatar} alt="ภาพโปรไฟล์" />
+            </a>
+          )}
         </div>
       </header>
       <aside className={styles.rail} aria-label="ทางลัด">

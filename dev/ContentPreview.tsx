@@ -63,6 +63,7 @@ export function ContentPreview({
         </label>
       </aside>
       <PartnerShell
+        accountHref="/account-preview"
         active="content"
         avatar="/media/celebrity-avatar.png"
         hrefs={{

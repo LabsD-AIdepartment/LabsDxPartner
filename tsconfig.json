@@ -19,6 +19,8 @@
       }
     ],
     "paths": {
+      "@account-preview": ["./dev/AccountPreview.tsx"],
+      "@operations-preview": ["./dev/OperationsPreview.tsx"],
       "@/*": ["./src/*"],
       "@foundation-gallery": ["./dev/FoundationGallery.tsx"],
       "@access-preview": ["./dev/AccessPreview.tsx"],

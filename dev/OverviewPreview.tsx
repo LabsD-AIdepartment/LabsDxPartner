@@ -46,6 +46,7 @@ export function OverviewPreview({ search = '' }: { search?: string }) {
         </Button>
       </aside>
       <PartnerShell
+        accountHref="/account-preview"
         active="overview"
         hrefs={{
           overview: '/overview-preview',

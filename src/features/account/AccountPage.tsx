@@ -1,0 +1,196 @@
+'use client';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { scopeKey, type QueryScope } from '@/shared/query/keys';
+import { Card } from '@/shared/ui/Card';
+import { Text } from '@/shared/ui/Text';
+import { Button } from '@/shared/ui/Button';
+import { LinkButton } from '@/shared/ui/LinkButton';
+import { DataState } from '@/shared/ui/DataState';
+import { ConfirmAction } from '@/shared/ui/ConfirmAction';
+import { dateLabel } from '@/shared/ui/format-date';
+import { actOnAccount, loadAccount, type AccountTransport, type Action } from './model';
+import styles from '@/shared/ui/forms.module.css';
+const providers = { google: 'Google', line: 'LINE', apple: 'Apple' } as const;
+type Props = {
+  scope: QueryScope;
+  transport: AccountTransport;
+  onLogout: () => void;
+  reauthHref?: string;
+};
+export function AccountPage(props: Props) {
+  return <AccountContent key={JSON.stringify(scopeKey(props.scope))} {...props} />;
+}
+function AccountContent({
+  scope,
+  transport,
+  onLogout,
+  reauthHref = '/login?next=%2Faccount',
+}: Props) {
+  const client = useQueryClient();
+  const [action, setAction] = useState<Action | null>(null),
+    [message, setMessage] = useState(''),
+    [needsAuth, setNeedsAuth] = useState(false);
+  const q = useQuery({
+    queryKey: [...scopeKey(scope), 'account'],
+    queryFn: ({ signal }) => loadAccount(transport, scope, signal),
+  });
+  const data = q.data?.data;
+  const clearReview = () => setAction(null);
+  return (
+    <div className={styles.stack}>
+      {q.isPending && <DataState state="loading" />}
+      {q.error && (
+        <DataState state="error" message="โหลดบัญชีไม่สำเร็จ" onRetry={() => void q.refetch()} />
+      )}
+      {message && <Text role="status">{message}</Text>}
+      {needsAuth && <LinkButton href={reauthHref}>ยืนยันตัวตนอีกครั้ง</LinkButton>}
+      {q.data && data && !q.error && (
+        <>
+          <DataState state={q.data.dataState} message={q.data.reasons.join(' · ') || undefined} />
+          {q.data.dataState !== 'unavailable' && (
+            <>
+              <Card title="บัญชีของคุณ">
+                <Text variant="sectionTitle">{data.displayName}</Text>
+                <Text variant="caption" tone="muted">
+                  ข้อมูลบัญชีและช่องทางเข้าสู่ระบบของคุณ
+                </Text>
+              </Card>
+              <Card title="ข้อตกลงของคุณ">
+                {data.agreement ? (
+                  <div className={styles.details}>
+                    <Text>
+                      {data.termsSummary ?? 'รายละเอียดเงื่อนไขอยู่ในข้อตกลงที่คุณทำกับ Labs D'}
+                    </Text>
+                    <Text variant="caption" tone="muted">
+                      มีผล {dateLabel(data.agreement.effective.from)} – ก่อน{' '}
+                      {dateLabel(data.agreement.effective.toExclusive)}
+                    </Text>
+                    <details>
+                      <summary>รายละเอียดข้อตกลง</summary>
+                      <Text variant="caption">
+                        เวอร์ชัน {data.agreement.id} · อ้างอิง {data.agreement.evidenceRef}
+                      </Text>
+                      <Text variant="caption">
+                        คำนวณ
+                        {
+                          { day: 'รายวัน', month: 'รายเดือน', statement: 'ตามงวดสรุป' }[
+                            data.agreement.calculationPeriod
+                          ]
+                        }{' '}
+                        · ปัดเศษ
+                        {data.agreement.roundingRule.mode === 'per-line'
+                          ? 'ทีละรายการ'
+                          : 'รวมตามงวด'}
+                      </Text>
+                    </details>
+                  </div>
+                ) : (
+                  <Text tone="muted">
+                    ยังไม่มีข้อตกลงที่ยืนยันสำหรับบัญชีนี้ กรุณาติดต่อผู้ดูแล
+                  </Text>
+                )}
+              </Card>
+              <Card
+                title="วิธีเข้าสู่ระบบ"
+                description="เพิ่มช่องทางสำรองสำหรับเข้าสู่บัญชีเดียวกัน"
+              >
+                {Object.entries(providers).map(([key, label]) => {
+                  const provider = key as keyof typeof providers;
+                  const linked = data.providers.find((p) => p.provider === provider);
+                  const last = data.providers.length === 1;
+                  return (
+                    <div className={styles.row} key={key}>
+                      <div>
+                        <Text variant="label">{label}</Text>
+                        <Text variant="caption" tone="muted">
+                          {linked ? 'เชื่อมแล้ว' : 'ยังไม่เชื่อม'}
+                          {linked && last ? ' · ต้องเหลืออย่างน้อยหนึ่งวิธี' : ''}
+                        </Text>
+                      </div>
+                      <Button
+                        disabled={
+                          q.data!.dataState !== 'ready' || (!!linked && (!linked.canUnlink || last))
+                        }
+                        onClick={() => {
+                          setMessage('');
+                          setNeedsAuth(false);
+                          setAction({ action: linked ? 'unlink' : 'link', provider });
+                        }}
+                      >
+                        {linked ? 'ยกเลิกการเชื่อม' : 'เชื่อมบัญชี'} {label}
+                      </Button>
+                    </div>
+                  );
+                })}
+                <Button onClick={() => setAction({ action: 'recover' })}>
+                  เข้าใช้งานวิธีเดิมไม่ได้
+                </Button>
+              </Card>
+              <Card title="ความช่วยเหลือ">
+                <Text>
+                  ติดต่อผู้ดูแล Labs D ผ่านช่องทางที่ใช้อยู่ หากต้องตรวจสอบบัญชีหรือข้อตกลง
+                </Text>
+                {data.supportUrl && (
+                  <LinkButton href={data.supportUrl} target="_blank" rel="noopener noreferrer">
+                    ติดต่อผู้ดูแล
+                  </LinkButton>
+                )}
+              </Card>
+              <Button onClick={() => setAction({ action: 'logout' })}>ออกจากระบบ</Button>
+              {action && (
+                <ConfirmAction
+                  key={`${scope.userId}:${scope.partnerId}:${scope.permissionRevision}:${q.data.revision}:${JSON.stringify(action)}`}
+                  title={
+                    action.action === 'logout'
+                      ? 'ออกจากระบบ'
+                      : action.action === 'recover'
+                        ? 'กู้คืนการเข้าใช้งาน'
+                        : 'จัดการวิธีเข้าสู่ระบบ'
+                  }
+                  onClose={clearReview}
+                  onConfirm={async (signal, idempotencyKey) => {
+                    const result = await actOnAccount(transport, {
+                      scope,
+                      expectedRevision: q.data!.revision,
+                      idempotencyKey,
+                      command: action,
+                      signal,
+                    });
+                    setNeedsAuth(result.status === 'requires-reauth');
+                    if (result.status === 'complete') {
+                      if (action.action === 'logout') {
+                        await client.cancelQueries();
+                        client.clear();
+                        onLogout();
+                      } else
+                        await client.invalidateQueries({
+                          queryKey: [...scopeKey(scope), 'account'],
+                        });
+                    }
+                    return result;
+                  }}
+                  onComplete={(text) => {
+                    setMessage(text);
+                    clearReview();
+                  }}
+                >
+                  <Text>{data.displayName}</Text>
+                  <Text>
+                    {action.action === 'logout'
+                      ? 'ออกจากบัญชีนี้และล้างข้อมูลที่แสดงบนเครื่องนี้'
+                      : action.action === 'recover'
+                        ? 'ใช้วิธีเข้าสู่ระบบอื่นที่เชื่อมไว้ หรือติดต่อผู้ดูแลเพื่อพิสูจน์ความเป็นเจ้าของบัญชี'
+                        : 'provider' in action
+                          ? `${action.action === 'link' ? 'เชื่อม' : 'ยกเลิกการเชื่อม'} ${providers[action.provider]} โดยต้องยืนยันตัวตนก่อน`
+                          : ''}
+                  </Text>
+                </ConfirmAction>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

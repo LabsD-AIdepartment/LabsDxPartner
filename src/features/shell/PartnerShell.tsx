@@ -23,6 +23,7 @@ export function PartnerShell({
   notifications = null,
   footerNote,
   avatar,
+  accountHref,
 }: {
   active: Menu;
   children: ReactNode;
@@ -30,6 +31,7 @@ export function PartnerShell({
   notifications?: ReactNode;
   footerNote?: ReactNode;
   avatar?: string;
+  accountHref?: string;
 }) {
   const [title, accent, subtitle] = headings[active];
   return (
@@ -42,6 +44,7 @@ export function PartnerShell({
       notifications={notifications}
       footerNote={footerNote}
       avatar={avatar}
+      accountHref={accountHref}
     >
       {children}
     </AppShell>

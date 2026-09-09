@@ -9,7 +9,7 @@ export function Navigation({
   onNavigate,
   hrefs,
 }: {
-  active: Menu;
+  active: Menu | null;
   onNavigate?: (menu: Menu) => void;
   hrefs?: Record<Menu, string>;
 }) {

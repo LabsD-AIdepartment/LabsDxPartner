@@ -132,11 +132,13 @@ Local candidate implemented 2026-09-09. Author verification and remaining accept
 
 Files: `app/(partner)/account/page.tsx`; `app/(staff)/ops/{partners,imports,periods}/page.tsx`; `src/features/{account,operations}/`; `tests/e2e/account-ops.spec.ts`.
 
-- [ ] Account contains agreement summary, connected methods, support and logout; link-conflict/final-method-unlink/recovery states are designed.
-- [ ] Staff-only shell contains partner invitation/membership/terms mapping, import exceptions, period review/publication and finance payment recording. No general ERP, ad manager or ticketing system.
-- [ ] Dangerous business actions show concrete partner/period/amount/evidence context and confirmation. Buttons remain development simulation until authenticated server services land.
+- [x] Account contains agreement summary, connected methods, support and logout; link-conflict/final-method-unlink/recovery states are designed.
+- [x] Staff-only shell contains partner invitation/membership/terms mapping, import exceptions, period review/publication and finance payment recording. No general ERP, ad manager or ticketing system.
+- [x] Dangerous business actions show concrete partner/period/amount/evidence context and confirmation. Buttons remain development simulation until authenticated server services land.
 
 Acceptance: partner navigation never exposes staff controls; scope/error/re-auth states covered; no promise of automatic bank payment or tax issuance.
+
+Local candidate implemented 2026-09-09. Evidence and limitations: `docs/implementation/account-operations-frontend.md`. F08 acceptance is next; real identity and persistent staff writes remain later phases.
 
 ### F08 — Frontend acceptance and contract freeze
 

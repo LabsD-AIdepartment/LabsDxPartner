@@ -1,0 +1,38 @@
+.shell {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 4vw, 64px);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 28px 0;
+}
+.facts {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+.facts > div {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0;
+}
+.facts dd {
+  margin: 0;
+}
+.review {
+  margin-top: 20px;
+}

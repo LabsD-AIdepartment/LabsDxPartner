@@ -17,7 +17,16 @@ export function ScopedQueryProvider({
   scope: QueryScope;
   children: ReactNode;
 }) {
-  const key = JSON.stringify(scopeKey(scope));
+  return <IsolatedQueryProvider identity={scopeKey(scope)}>{children}</IsolatedQueryProvider>;
+}
+export function IsolatedQueryProvider({
+  identity,
+  children,
+}: {
+  identity: readonly string[];
+  children: ReactNode;
+}) {
+  const key = JSON.stringify(identity);
   // Each access scope gets a distinct client: old amounts cannot render in a new identity's cache.
   const client = useMemo(() => createQueryClient(), [key]);
   useEffect(
