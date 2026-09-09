@@ -11,6 +11,7 @@ export const opsScope = { actorId: 'preview-staff', permissionRevision: '1' };
 export const opsModes = [
   'ready',
   'read-only',
+  'multiple-members',
   'empty',
   'partial',
   'stale',
@@ -46,8 +47,30 @@ export function opsFixture(mode: OpsMode = 'ready') {
               {
                 id: 'partner-1',
                 name: 'มดดำ คชาภา',
-                membership: 'active',
-                verifiedContactRef: 'synthetic-known-contact',
+                members: [
+                  {
+                    id: 'membership-1',
+                    userId: 'preview-user',
+                    displayName: 'มดดำ คชาภา',
+                    status: 'active',
+                    revision: '1',
+                    verifiedContactRef: 'synthetic-known-contact',
+                    capabilities: ['view_earnings', 'view_content', 'view_statements'],
+                  },
+                  ...(mode === 'multiple-members'
+                    ? [
+                        {
+                          id: 'membership-2',
+                          userId: 'preview-manager',
+                          displayName: 'ผู้จัดการตัวอย่าง',
+                          status: 'active',
+                          revision: '2',
+                          verifiedContactRef: 'synthetic-manager-contact',
+                          capabilities: ['view_content'],
+                        },
+                      ]
+                    : []),
+                ],
                 agreementVersion: sample.account.agreement!.id,
                 contentRefs: ['clip-1', 'clip-2', 'clip-3', 'clip-4', 'clip-5', 'clip-6'],
                 skuRefs: ['synthetic-sku-1'],
@@ -163,8 +186,11 @@ export function createOpsTransport(mode: OpsMode): OpsTransport {
       const c = r.command;
       if (c.action === 'membership') {
         const p = value.partners.items.find((p) => p.id === c.partnerId)!;
-        p.membership = c.status;
-        p.verifiedContactRef = c.verifiedContactRef;
+        const member = p.members.find((m) => m.userId === c.userId)!;
+        member.status = c.status;
+        member.verifiedContactRef = c.verifiedContactRef;
+        member.capabilities = c.capabilities;
+        member.revision = (BigInt(member.revision) + 1n).toString();
       }
       if (c.action === 'terms') {
         const p = value.partners.items.find((p) => p.id === c.partnerId)!;
@@ -218,11 +244,9 @@ export function createOpsTransport(mode: OpsMode): OpsTransport {
         targetId: commandTarget(c),
         status: c.action === 'import' ? 'pending' : 'complete',
         message:
-          c.action === 'invite'
-            ? `สร้างคำเชิญจำลอง synthetic-invite-${r.command.idempotencyKey} แล้ว ไม่มีการส่งข้อความหรือสิทธิ์ใช้งานจริง`
-            : c.action === 'import'
-              ? 'รับงานนำเข้าจำลองแล้ว รอประมวลผล'
-              : 'บันทึกรายการจำลองแล้ว ไม่มีการแก้ข้อมูลจริง',
+          c.action === 'import'
+            ? 'รับงานนำเข้าจำลองแล้ว รอประมวลผล'
+            : 'บันทึกรายการจำลองแล้ว ไม่มีการแก้ข้อมูลจริง',
       };
       results.set(r.command.idempotencyKey, { fingerprint, result });
       return result;

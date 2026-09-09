@@ -13,8 +13,8 @@ describe('invitation credential contracts', () => {
     );
     for (const name of ['ab', 'x'.repeat(31), 'two words', 'name@host', 'มดดำ', 'user\u200bname'])
       expect(Username.safeParse(name).success).toBe(false);
-    expect(NewPassword.safeParse('x'.repeat(11)).success).toBe(false);
-    expect(NewPassword.safeParse('x'.repeat(12)).success).toBe(true);
+    expect(NewPassword.safeParse('x'.repeat(7)).success).toBe(false);
+    expect(NewPassword.safeParse('x'.repeat(8)).success).toBe(true);
     expect(NewPassword.safeParse('x'.repeat(129)).success).toBe(false);
     expect(
       CredentialLogin.safeParse({ username: 'person', password: 'x', partnerId: 'other' }).success,

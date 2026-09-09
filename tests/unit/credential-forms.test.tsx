@@ -53,7 +53,7 @@ describe('invitation credential forms', () => {
     expect(fetcher.mock.calls.every(([path]) => !path.includes(token))).toBe(true);
     expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ token });
     fill('ชื่อผู้ใช้', 'star');
-    fill('รหัสผ่าน', 'test-password-12');
+    fill('รหัสผ่าน', 'abcdefgh');
     fill('ยืนยันรหัสผ่าน', 'different-password');
     submit('สร้างบัญชีและเข้าสู่ระบบ');
     expect(screen.getByRole('alert')).toHaveTextContent('ยืนยันรหัสผ่าน');
@@ -79,8 +79,8 @@ describe('invitation credential forms', () => {
     render(<InvitePage />);
     await screen.findByText(/คำเชิญสำหรับ/);
     fill('ชื่อผู้ใช้', 'star');
-    fill('รหัสผ่าน', 'test-password-12');
-    fill('ยืนยันรหัสผ่าน', 'test-password-12');
+    fill('รหัสผ่าน', 'abcdefgh');
+    fill('ยืนยันรหัสผ่าน', 'abcdefgh');
     submit('สร้างบัญชีและเข้าสู่ระบบ');
     await screen.findByRole('heading', { name: 'บัญชีของคุณพร้อมแล้ว' });
     await screen.findByRole('alert');
@@ -104,8 +104,8 @@ describe('invitation credential forms', () => {
     );
     render(<ResetPasswordPage />);
     await screen.findByText('บัญชี star');
-    fill('รหัสผ่านใหม่', 'new-password-123');
-    fill('ยืนยันรหัสผ่าน', 'new-password-123');
+    fill('รหัสผ่านใหม่', 'ijklmnop');
+    fill('ยืนยันรหัสผ่าน', 'ijklmnop');
     submit('บันทึกรหัสผ่านใหม่');
     await screen.findByRole('heading', { name: 'ตั้งรหัสผ่านใหม่แล้ว' });
     expect(window.location.hash).toBe('');

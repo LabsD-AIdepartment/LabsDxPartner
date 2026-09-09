@@ -29,3 +29,13 @@ export const MembershipChange = z
     idempotencyKey: Id,
   })
   .refine((v) => v.status !== 'active' || v.capabilities.length > 0);
+
+export const MembershipSummary = z.strictObject({
+  id: Id,
+  userId: Id,
+  displayName: z.string().min(1),
+  status: z.enum(['pending', 'active', 'suspended']),
+  revision: PermissionRevision,
+  verifiedContactRef: EvidenceRef.nullable(),
+  capabilities: MemberCapabilities,
+});

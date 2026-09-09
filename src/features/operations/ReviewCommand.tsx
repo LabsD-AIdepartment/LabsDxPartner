@@ -1,4 +1,5 @@
 import type { DraftCommand, OpsValue } from './model';
+import { capabilityLabels } from '@/shared/access/CapabilityPicker';
 import { Text } from '@/shared/ui/Text';
 import { Money } from '@/shared/ui/Money';
 import { timestamp, dateLabel } from '@/shared/ui/format-date';
@@ -43,29 +44,29 @@ export function ReviewCommand({ command: c, value }: { command: DraftCommand; va
             </div>
           </>
         )}
-        {c.action === 'invite' && (
-          <>
-            <div>
-              <dt>คำเชิญหมดอายุ</dt>
-              <dd>{timestamp(c.expiresAt)}</dd>
-            </div>
-            <div>
-              <dt>การเปิดใช้งาน</dt>
-              <dd>ต้องตรวจตัวตนก่อนเปิดสมาชิก ไม่มีการส่งข้อความอัตโนมัติ</dd>
-            </div>
-          </>
-        )}
         {c.action === 'membership' && (
           <>
+            <div>
+              <dt>สมาชิกที่จะเปลี่ยนสิทธิ์</dt>
+              <dd>
+                {partner?.members.find((m) => m.userId === c.userId)?.displayName} · {c.userId}
+              </dd>
+            </div>
             <div>
               <dt>สถานะใหม่</dt>
               <dd>{c.status === 'active' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}</dd>
             </div>
             <div>
-              <dt>หลักฐานตรวจตัวตน</dt>
+              <dt>ช่องทางที่ตรวจสอบแล้ว</dt>
               <dd>{c.verifiedContactRef}</dd>
             </div>
           </>
+        )}
+        {c.action === 'membership' && (
+          <div>
+            <dt>ข้อมูลที่ให้ดู</dt>
+            <dd>{c.capabilities.map((key) => capabilityLabels[key]).join(' · ') || 'ไม่มี'}</dd>
+          </div>
         )}
         {c.action === 'terms' && (
           <>

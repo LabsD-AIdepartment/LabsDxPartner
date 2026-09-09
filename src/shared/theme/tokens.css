@@ -10,6 +10,7 @@
   --control: #f5f5f2;
   --hover: #e5e9df;
   --accent: #62695b;
+  --feedback-caution: #b7791f;
   --green: linear-gradient(120deg, #a3ef89, #68df60 35%, #32c96b);
   --primary: #272925;
   --primary-text: #fff;
@@ -36,6 +37,7 @@
   --control: #0c1410;
   --hover: #17251c;
   --accent: #7ee5a1;
+  --feedback-caution: #e9b75f;
   --primary: linear-gradient(120deg, #9aef82, #31cf6e);
   --primary-text: #083b20;
   --badge: #181d13;

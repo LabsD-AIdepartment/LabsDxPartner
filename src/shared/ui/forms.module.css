@@ -71,3 +71,24 @@
   top: 50%;
   transform: translateY(-50%);
 }
+.passwordStrength {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.strengthTrack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.strengthTrack span {
+  height: 5px;
+  border-radius: 99px;
+  background: var(--line);
+}
+.strengthTrack span[data-filled='true'] {
+  background: var(--green);
+}
+.strengthTrack[data-level='1'] span[data-filled='true'] {
+  background: var(--feedback-caution);
+}

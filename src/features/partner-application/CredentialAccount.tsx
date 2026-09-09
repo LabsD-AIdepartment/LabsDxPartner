@@ -1,4 +1,5 @@
 'use client';
+import { passwordPolicy } from '@/contracts/credentials';
 import { useState, type FormEvent } from 'react';
 import { ChangePassword } from '@/contracts/passwords';
 import { PasswordChanged } from '@/contracts/credential-responses';
@@ -32,7 +33,9 @@ export function CredentialAccount({
       idempotencyKey: crypto.randomUUID(),
     });
     if (!input.success) {
-      setError('ใช้รหัสผ่าน 12–128 ตัวอักษร และยืนยันให้ตรงกัน');
+      setError(
+        `ใช้รหัสผ่าน ${passwordPolicy.minLength}–${passwordPolicy.maxLength} ตัวอักษร และยืนยันให้ตรงกัน`,
+      );
       return;
     }
     setBusy(true);
@@ -65,17 +68,18 @@ export function CredentialAccount({
             name="currentPassword"
             autoComplete="current-password"
             required
-            maxLength={128}
+            maxLength={passwordPolicy.maxLength}
             disabled={busy}
           />
           <PasswordField
             label="รหัสผ่านใหม่"
+            showStrength
             name="password"
             autoComplete="new-password"
-            hint="12–128 ตัวอักษร"
+            hint={`อย่างน้อย ${passwordPolicy.minLength} ตัวอักษร`}
             required
-            minLength={12}
-            maxLength={128}
+            minLength={passwordPolicy.minLength}
+            maxLength={passwordPolicy.maxLength}
             disabled={busy}
           />
           <PasswordField
@@ -83,8 +87,8 @@ export function CredentialAccount({
             name="passwordConfirmation"
             autoComplete="new-password"
             required
-            minLength={12}
-            maxLength={128}
+            minLength={passwordPolicy.minLength}
+            maxLength={passwordPolicy.maxLength}
             disabled={busy}
           />
           {error && <Text role="alert">{error}</Text>}

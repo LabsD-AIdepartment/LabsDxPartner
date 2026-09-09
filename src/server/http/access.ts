@@ -63,6 +63,7 @@ export function createAccessHttp(
   const limit = attemptLimiter(sql, config.BETTER_AUTH_SECRET);
   const authenticatedActions = new Set([
     'staff/access',
+    'memberships/change',
     'session',
     'invitations/accept',
     'invitations/issue',
@@ -72,6 +73,7 @@ export function createAccessHttp(
   ]);
   const actions: Record<string, (headers: Headers, input: unknown) => Promise<unknown>> = {
     'staff/access': createStaffAccessReader(partners),
+    'memberships/change': (headers, input) => partners.changeMembership(headers, input),
     session: async (headers, input) =>
       partners.session(headers, sessionInput.parse(input).partnerId),
     'invitations/inspect': async (_, input) => invites.inspect(tokenInput.parse(input).token),

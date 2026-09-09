@@ -118,6 +118,133 @@ afterAll(async () => {
   }
 });
 describe('access HTTP on native credentials and actual isolated PostgreSQL', () => {
+  it('accepts eight-character passwords across invitation, change, reset and native login', async () => {
+    const invite = await issue();
+    const username = 'simple_' + randomUUID().slice(0, 8);
+    const setup = {
+      token: invite.token,
+      username,
+      password: 'abcdefgh',
+      passwordConfirmation: 'abcdefgh',
+    };
+    expect(
+      (
+        await handle(
+          request('invitations/register', {
+            ...setup,
+            password: 'abcdefg',
+            passwordConfirmation: 'abcdefg',
+          }),
+        )
+      ).status,
+    ).toBe(400);
+    const registered = await handle(request('invitations/register', setup));
+    expect(registered.status).toBe(200);
+    const account = await registered.json();
+    const signedIn = await login(username, setup.password);
+    expect(signedIn.status).toBe(200);
+    const changed = await handle(
+      request(
+        'passwords/change',
+        {
+          currentPassword: setup.password,
+          password: 'ijklmnop',
+          passwordConfirmation: 'ijklmnop',
+          idempotencyKey: randomUUID(),
+        },
+        cookies(signedIn),
+      ),
+    );
+    expect(changed.status).toBe(200);
+    expect((await login(username, 'ijklmnop')).status).toBe(200);
+    const issued = await handle(
+      request(
+        'passwords/issue',
+        {
+          partnerId: invite.partnerId,
+          userId: account.userId,
+          expectedRevision: '1',
+          verifiedContactRef: 'contact-http',
+          verificationEvidenceRef: 'synthetic-verified',
+          idempotencyKey: randomUUID(),
+        },
+        staff,
+      ),
+    );
+    expect(issued.status).toBe(200);
+    const reset = await issued.json();
+    expect(
+      (
+        await handle(
+          request('passwords/reset', {
+            token: reset.token,
+            password: 'qrstuvwx',
+            passwordConfirmation: 'qrstuvwx',
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect((await login(username, 'qrstuvwx')).status).toBe(200);
+    expect((await login(username, 'ijklmnop')).status).toBe(401);
+  });
+  it('changes only the selected membership, revokes its sessions and rejects stale or unauthorized changes', async () => {
+    const invite = await issue();
+    const username = 'member_' + randomUUID().slice(0, 8);
+    const activated = await handle(
+      request('invitations/register', {
+        token: invite.token,
+        username,
+        password,
+        passwordConfirmation: password,
+      }),
+    );
+    expect(activated.status).toBe(200);
+    const account = await activated.json();
+    const recipient = cookies(await login(username));
+    const other = await issue();
+    const command = {
+      partnerId: invite.partnerId,
+      userId: account.userId,
+      expectedRevision: '1',
+      status: 'active',
+      capabilities: ['view_content'],
+      verifiedContactRef: 'contact-http',
+      idempotencyKey: randomUUID(),
+    };
+    expect((await handle(request('memberships/change', command))).status).toBe(401);
+    expect((await handle(request('memberships/change', command, recipient))).status).toBe(403);
+    expect(
+      (
+        await handle(
+          request('memberships/change', { ...command, partnerId: other.partnerId }, staff),
+        )
+      ).status,
+    ).toBe(409);
+    const changed = await handle(request('memberships/change', command, staff));
+    expect(changed.status).toBe(200);
+    expect(await changed.json()).toMatchObject({
+      membershipId: account.membershipId,
+      revision: '2',
+      replayed: false,
+    });
+    expect((await handle(request('session', {}, recipient))).status).toBe(401);
+    const replay = await handle(request('memberships/change', command, staff));
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toMatchObject({ revision: '2', replayed: true });
+    expect(
+      (
+        await handle(
+          request('memberships/change', { ...command, idempotencyKey: randomUUID() }, staff),
+        )
+      ).status,
+    ).toBe(409);
+    const [row] =
+      await sql`select capabilities,permission_revision::text as revision from portal_access.memberships where id=${account.membershipId}`;
+    expect(row).toMatchObject({ capabilities: ['view_content'], revision: '2' });
+    const [audits] =
+      await sql`select count(*)::int as count from portal_access.audit where action='membership' and target_id=${account.membershipId}`;
+    expect(audits.count).toBe(1);
+  });
   it('authenticated attempts stay scoped to the verified user when unrelated cookies change', async () => {
     const statuses: number[] = [];
     for (let n = 0; n < 10; n++) {

@@ -13,10 +13,11 @@ export const Username = z
       .regex(/^[a-z0-9_.]+$/),
   );
 // Do not trim/normalize passwords: password managers must round-trip them exactly.
-export const NewPassword = z.string().min(12).max(128);
+export const passwordPolicy = { minLength: 8, maxLength: 128 } as const;
+export const NewPassword = z.string().min(passwordPolicy.minLength).max(passwordPolicy.maxLength);
 export const CredentialLogin = z.strictObject({
   username: Username,
-  password: z.string().min(1).max(128),
+  password: z.string().min(1).max(passwordPolicy.maxLength),
   callbackURL: z.string().optional(),
   rememberMe: z.boolean().optional(),
 });

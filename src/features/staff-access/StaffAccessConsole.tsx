@@ -6,9 +6,11 @@ import {
   IssuedInvitation,
   RevokedInvitation,
   IssuedReset,
+  ChangedMembership,
   type StaffAccessSessionValue,
 } from '@/contracts/staff-access';
 import { credentialRequest } from '@/features/login/credential-client';
+import { MemberAccessForm } from '@/shared/access/MemberAccessForm';
 import { IsolatedQueryProvider } from '@/shared/query/provider';
 import { AppShell } from '@/features/shell/AppShell';
 import { Card } from '@/shared/ui/Card';
@@ -96,6 +98,18 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
   };
   async function execute(signal: AbortSignal, idempotencyKey: string) {
     if (!draft || !selected) throw new Error('กรุณาเลือกพาร์ทเนอร์ใหม่');
+    if (draft.action === 'membership') {
+      const result = await credentialRequest(
+        '/api/access/memberships/change',
+        { ...draft.input, idempotencyKey },
+        ChangedMembership,
+        signal,
+      );
+      const target = selected.members.items.find((member) => member.userId === draft.input.userId);
+      if (!target || result.membershipId !== target.id)
+        throw new Error('ผลรายการไม่ตรงกับสมาชิกที่ตรวจสอบ');
+      return { message: 'บันทึกสถานะและสิทธิ์สมาชิกแล้ว' };
+    }
     if (draft.action === 'invite') {
       const result = await credentialRequest(
         '/api/access/invitations/issue',
@@ -293,12 +307,23 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
                 )}
                 <div className={forms.stack}>
                   {selected.members.items.map((member) => (
-                    <ResetForm
-                      key={`${member.id}:${member.revision}`}
-                      partnerId={selected.partner.id}
-                      member={member}
-                      onReview={review}
-                    />
+                    <div key={`${member.id}:${member.revision}`} className={forms.stack}>
+                      <details>
+                        <summary>จัดการสิทธิ์ {member.displayName}</summary>
+                        <MemberAccessForm
+                          partnerId={selected.partner.id}
+                          member={member}
+                          onReview={(input) =>
+                            review({ action: 'membership', input, recipient: member.displayName })
+                          }
+                        />
+                      </details>
+                      <ResetForm
+                        partnerId={selected.partner.id}
+                        member={member}
+                        onReview={review}
+                      />
+                    </div>
                   ))}
                 </div>
                 <PageControls
@@ -316,11 +341,13 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
           {draft && selected && (
             <ConfirmAction
               title={
-                draft.action === 'invite'
-                  ? 'ตรวจคำเชิญ'
-                  : draft.action === 'reset'
-                    ? 'ตรวจลิงก์ตั้งรหัสใหม่'
-                    : 'ตรวจการยกเลิกคำเชิญ'
+                draft.action === 'membership'
+                  ? 'ตรวจสิทธิ์สมาชิก'
+                  : draft.action === 'invite'
+                    ? 'ตรวจคำเชิญ'
+                    : draft.action === 'reset'
+                      ? 'ตรวจลิงก์ตั้งรหัสใหม่'
+                      : 'ตรวจการยกเลิกคำเชิญ'
               }
               onClose={() => setDraft(null)}
               onConfirm={execute}
@@ -344,6 +371,24 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
                   </Text>
                   <Text>หมดอายุ {timestamp(draft.input.expiresAt)}</Text>
                   <Text>ลิงก์ใหม่จะยกเลิกลิงก์ที่ยังไม่ได้ใช้ของผู้ติดต่อเดียวกัน</Text>
+                </>
+              )}
+              {draft.action === 'membership' && (
+                <>
+                  <Text>บัญชี: {draft.input.userId}</Text>
+                  <Text>
+                    สถานะ: {draft.input.status === 'active' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
+                  </Text>
+                  <Text>
+                    ข้อมูลที่ดูได้:{' '}
+                    {draft.input.capabilities.map((c) => capabilityLabels[c]).join(' · ') ||
+                      'ไม่มี'}
+                  </Text>
+                  <Text>ช่องทางที่ตรวจสอบ: {draft.input.verifiedContactRef}</Text>
+                  <Text tone="muted">
+                    การเปลี่ยนสิทธิ์หรือช่องทางติดต่อจะยกเลิกการเข้าสู่ระบบเดิม
+                    ผู้รับต้องเข้าสู่ระบบใหม่
+                  </Text>
                 </>
               )}
               {draft.action === 'reset' && (

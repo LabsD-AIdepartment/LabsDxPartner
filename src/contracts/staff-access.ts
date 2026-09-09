@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Id, Instant, page } from './common';
-import { EvidenceRef, MemberCapabilities, PermissionRevision } from './access';
+import { EvidenceRef, MemberCapabilities, PermissionRevision, MembershipSummary } from './access';
 import { InviteToken } from './invitations';
 export const StaffAccessSession = z.strictObject({
   userId: Id,
@@ -19,15 +19,8 @@ const Partner = z.strictObject({
   name: z.string().min(1),
   status: z.enum(['active', 'suspended']),
 });
-export const AccessMember = z.strictObject({
-  id: Id,
-  userId: Id,
-  displayName: z.string().min(1),
+export const AccessMember = MembershipSummary.extend({
   username: z.string().nullable(),
-  status: z.enum(['active', 'pending', 'suspended']),
-  revision: PermissionRevision,
-  verifiedContactRef: EvidenceRef.nullable(),
-  capabilities: MemberCapabilities,
   resetAllowed: z.boolean(),
 });
 export const AccessInvitation = z.strictObject({
@@ -63,3 +56,9 @@ export const IssuedReset = z.strictObject({
 });
 export type StaffAccessSessionValue = z.infer<typeof StaffAccessSession>;
 export type StaffAccessSnapshotValue = z.infer<typeof StaffAccessSnapshot>;
+
+export const ChangedMembership = z.strictObject({
+  membershipId: Id,
+  revision: PermissionRevision,
+  replayed: z.boolean(),
+});

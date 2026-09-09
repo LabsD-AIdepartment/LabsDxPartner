@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Id } from './common';
 import { EvidenceRef, PermissionRevision } from './access';
-import { NewPassword } from './credentials';
+import { NewPassword, passwordPolicy } from './credentials';
 import { InviteToken } from './invitations';
 export const IssuePasswordReset = z.strictObject({
   partnerId: Id,
@@ -16,7 +16,7 @@ export const ResetPassword = z
   .refine((v) => v.password === v.passwordConfirmation);
 export const ChangePassword = z
   .strictObject({
-    currentPassword: z.string().min(1).max(128),
+    currentPassword: z.string().min(1).max(passwordPolicy.maxLength),
     password: NewPassword,
     passwordConfirmation: NewPassword,
     idempotencyKey: Id,

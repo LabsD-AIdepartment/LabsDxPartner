@@ -1,4 +1,5 @@
 'use client';
+import { passwordPolicy } from '@/contracts/credentials';
 import { useCredentialEnvironment } from './CredentialEnvironment';
 import { useState, type FormEvent } from 'react';
 import { ResetPassword } from '@/contracts/passwords';
@@ -26,7 +27,7 @@ export function ResetPasswordPage() {
       passwordConfirmation: values.get('passwordConfirmation'),
     });
     if (!input.success) {
-      setError('ใช้รหัสผ่านอย่างน้อย 12 ตัวอักษร และยืนยันให้ตรงกัน');
+      setError(`ใช้รหัสผ่านอย่างน้อย ${passwordPolicy.minLength} ตัวอักษร และยืนยันให้ตรงกัน`);
       return;
     }
     setBusy(true);
@@ -70,12 +71,13 @@ export function ResetPasswordPage() {
             />
             <PasswordField
               label="รหัสผ่านใหม่"
+              showStrength
               name="password"
-              hint="อย่างน้อย 12 ตัวอักษร"
+              hint={`อย่างน้อย ${passwordPolicy.minLength} ตัวอักษร`}
               autoComplete="new-password"
               required
-              minLength={12}
-              maxLength={128}
+              minLength={passwordPolicy.minLength}
+              maxLength={passwordPolicy.maxLength}
               disabled={busy}
             />
             <PasswordField
@@ -83,8 +85,8 @@ export function ResetPasswordPage() {
               name="passwordConfirmation"
               autoComplete="new-password"
               required
-              minLength={12}
-              maxLength={128}
+              minLength={passwordPolicy.minLength}
+              maxLength={passwordPolicy.maxLength}
               disabled={busy}
             />
             {error && <Text role="alert">{error}</Text>}

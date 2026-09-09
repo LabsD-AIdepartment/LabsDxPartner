@@ -3,7 +3,12 @@ import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { username } from 'better-auth/plugins/username';
 import { z } from 'zod';
-import { CredentialLogin, Username, normalizeUsername } from '@/contracts/credentials';
+import {
+  CredentialLogin,
+  Username,
+  normalizeUsername,
+  passwordPolicy,
+} from '@/contracts/credentials';
 import { safeReturnTo } from '@/shared/routing/partner-paths';
 import { baseIdentityConfigSchema, IdentityConfigurationError } from './provider-config';
 import { FRESH_SESSION_SECONDS } from './policy';
@@ -47,8 +52,8 @@ export function credentialOptions(
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,
-      minPasswordLength: 12,
-      maxPasswordLength: 128,
+      minPasswordLength: passwordPolicy.minLength,
+      maxPasswordLength: passwordPolicy.maxLength,
     },
     plugins: [
       username({

@@ -1,4 +1,5 @@
 'use client';
+import { passwordPolicy } from '@/contracts/credentials';
 import { useCredentialEnvironment } from './CredentialEnvironment';
 import { useState, type FormEvent } from 'react';
 import { ActivateAccount } from '@/contracts/invitations';
@@ -35,7 +36,7 @@ export function InvitePage() {
       setError(
         existing
           ? 'กรุณากรอกชื่อผู้ใช้และรหัสผ่านให้ถูกต้อง'
-          : 'ตรวจสอบชื่อผู้ใช้ รหัสผ่านอย่างน้อย 12 ตัวอักษร และยืนยันรหัสผ่านให้ตรงกัน',
+          : `ตรวจสอบชื่อผู้ใช้ รหัสผ่านอย่างน้อย ${passwordPolicy.minLength} ตัวอักษร และยืนยันรหัสผ่านให้ตรงกัน`,
       );
       return;
     }
@@ -107,12 +108,13 @@ export function InvitePage() {
             />
             <PasswordField
               label="รหัสผ่าน"
-              hint={existing ? undefined : 'อย่างน้อย 12 ตัวอักษร'}
+              showStrength={!existing}
+              hint={existing ? undefined : `อย่างน้อย ${passwordPolicy.minLength} ตัวอักษร`}
               name="password"
               autoComplete={existing ? 'current-password' : 'new-password'}
               required
-              minLength={existing ? 1 : 12}
-              maxLength={128}
+              minLength={existing ? 1 : passwordPolicy.minLength}
+              maxLength={passwordPolicy.maxLength}
               disabled={busy}
             />
             {!existing && (
@@ -121,8 +123,8 @@ export function InvitePage() {
                 name="passwordConfirmation"
                 autoComplete="new-password"
                 required
-                minLength={12}
-                maxLength={128}
+                minLength={passwordPolicy.minLength}
+                maxLength={passwordPolicy.maxLength}
                 disabled={busy}
               />
             )}

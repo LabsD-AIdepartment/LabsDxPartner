@@ -38,7 +38,6 @@ export class OpsError extends Error {
   }
 }
 export const capabilityFor: Record<Command['action'], z.infer<typeof OpsCapability>> = {
-  invite: 'manage_partners',
   membership: 'manage_partners',
   terms: 'manage_partners',
   import: 'review_imports',
@@ -52,7 +51,9 @@ export const commandTarget = (c: Command) =>
       ? c.statementId
       : c.action === 'import'
         ? c.source
-        : c.partnerId;
+        : c.action === 'membership'
+          ? c.userId
+          : c.partnerId;
 export function moneyInput(text: string): MoneyValue {
   if (!/^(?:0|[1-9]\d{0,17})(?:\.\d{1,2})?$/.test(text.trim()))
     throw new Error('กรอกจำนวนเงินไม่ติดลบและทศนิยมไม่เกิน 2 ตำแหน่ง');
@@ -74,6 +75,13 @@ export async function loadOps(
     value.permissionRevision !== request.scope.permissionRevision
   )
     throw new OpsError('forbidden', 'สิทธิ์เจ้าหน้าที่เปลี่ยน กรุณาเข้าสู่ระบบอีกครั้ง');
+  for (const partner of value.partners.items) {
+    if (
+      new Set(partner.members.map((m) => m.id)).size !== partner.members.length ||
+      new Set(partner.members.map((m) => m.userId)).size !== partner.members.length
+    )
+      throw new OpsError('invalid', 'ข้อมูลสมาชิกซ้ำกัน');
+  }
   const statementIds = new Set<string>();
   for (const period of value.periods.items) {
     const statement = period.statement;
@@ -119,8 +127,13 @@ export function validateCommand(c: Command, value: OpsValue) {
     [c.contentRefs, c.skuRefs].some((rows) => new Set(rows).size !== rows.length)
   )
     throw new OpsError('invalid', 'รหัสผูกข้อมูลซ้ำกัน');
-  if (c.action === 'invite' && Date.parse(c.expiresAt) <= Date.now())
-    throw new OpsError('invalid', 'คำเชิญต้องมีวันหมดอายุในอนาคต');
+  if (c.action === 'membership') {
+    const member = value.partners.items
+      .find((p) => p.id === c.partnerId)
+      ?.members.find((m) => m.userId === c.userId);
+    if (!member || member.revision !== c.expectedRevision)
+      throw new OpsError('changed', 'สมาชิกหรือสิทธิ์เปลี่ยน กรุณารีเฟรชก่อนทำรายการ');
+  }
   if (c.action === 'publish') {
     const p = value.periods.items.find((p) => p.id === c.periodId && p.partnerId === c.partnerId);
     if (

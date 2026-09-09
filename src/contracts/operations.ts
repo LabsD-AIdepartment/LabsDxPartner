@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Id, Instant, Money, Count, Period, Freshness, page } from './common';
 import { AgreementVersion } from './earnings';
 import { Statement } from './statements';
+import { MembershipSummary, MembershipChange } from './access';
 export const InviteRequest = z.strictObject({
   partnerId: Id,
   expiresAt: Instant,
@@ -43,8 +44,7 @@ export const OpsCapability = z.enum([
 export const StaffPartner = z.strictObject({
   id: Id,
   name: z.string().min(1),
-  membership: z.enum(['pending', 'active', 'suspended']),
-  verifiedContactRef: Id.nullable(),
+  members: z.array(MembershipSummary),
   agreementVersion: Id.nullable(),
   contentRefs: z.array(Id).max(100),
   skuRefs: z.array(Id).max(100),
@@ -73,14 +73,7 @@ export const OpsSnapshot = Freshness.extend({
   agreements: z.array(AgreementVersion).max(100),
 });
 export const OpsCommand = z.discriminatedUnion('action', [
-  InviteRequest.extend({ action: z.literal('invite') }),
-  z.strictObject({
-    action: z.literal('membership'),
-    partnerId: Id,
-    status: z.enum(['active', 'suspended']),
-    verifiedContactRef: Id,
-    idempotencyKey: Id,
-  }),
+  MembershipChange.safeExtend({ action: z.literal('membership') }),
   z.strictObject({
     action: z.literal('terms'),
     partnerId: Id,

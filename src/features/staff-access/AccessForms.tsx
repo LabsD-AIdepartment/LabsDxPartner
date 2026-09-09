@@ -4,7 +4,9 @@ import type { z } from 'zod';
 import { ActivationInviteRequest } from '@/contracts/invitations';
 import { IssuePasswordReset } from '@/contracts/passwords';
 import type { AccessMember, AccessInvitation } from '@/contracts/staff-access';
-import type { PartnerCapability } from '@/contracts/access';
+import { CapabilityPicker, type Capability } from '@/shared/access/CapabilityPicker';
+export { capabilityLabels } from '@/shared/access/CapabilityPicker';
+import type { MemberDraft } from '@/shared/access/MemberAccessForm';
 import { Field } from '@/shared/ui/Field';
 import { Text } from '@/shared/ui/Text';
 import { Button } from '@/shared/ui/Button';
@@ -13,16 +15,10 @@ import forms from '@/shared/ui/forms.module.css';
 export type InviteDraft = Omit<z.infer<typeof ActivationInviteRequest>, 'idempotencyKey'>;
 export type ResetDraft = Omit<z.infer<typeof IssuePasswordReset>, 'idempotencyKey'>;
 export type AccessDraft =
+  | { action: 'membership'; input: MemberDraft; recipient: string }
   | { action: 'invite'; input: InviteDraft }
   | { action: 'reset'; input: ResetDraft; recipient: string }
   | { action: 'revoke'; input: { partnerId: string; inviteId: string }; recipient: string };
-type Capability = z.infer<typeof PartnerCapability>;
-export const capabilityLabels: Record<Capability, string> = {
-  view_earnings: 'รายได้และคอมมิชชัน',
-  view_content: 'คลิปและผลงาน',
-  view_statements: 'รอบจ่ายและเอกสาร',
-  view_ad_spend: 'ค่าใช้จ่ายโฆษณา',
-};
 export function InvitationForm({
   partnerId,
   previous,
@@ -73,23 +69,11 @@ export function InvitationForm({
         required
         hint="ใช้รหัสอ้างอิงผู้ติดต่อหรือบันทึกดีลที่ตรวจสอบกลับได้"
       />
-      <fieldset>
-        <legend>ข้อมูลที่ผู้รับดูได้</legend>
-        {Object.entries(capabilityLabels).map(([key, label]) => (
-          <label className={forms.row} key={key}>
-            <input
-              type="checkbox"
-              checked={capabilities.includes(key as Capability)}
-              onChange={(e) =>
-                setCapabilities((old) =>
-                  e.target.checked ? [...old, key as Capability] : old.filter((v) => v !== key),
-                )
-              }
-            />
-            {label}
-          </label>
-        ))}
-      </fieldset>
+      <CapabilityPicker
+        value={capabilities}
+        onChange={setCapabilities}
+        legend="ข้อมูลที่ผู้รับดูได้"
+      />
       <label className={forms.field}>
         ลิงก์ใช้งานได้
         <select value={days} onChange={(e) => setDays(e.target.value)}>
