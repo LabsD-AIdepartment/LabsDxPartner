@@ -5,6 +5,7 @@ import { ScopedQueryProvider } from '@/shared/query/provider';
 import { ChangeWatcher } from '@/shared/query/ChangeWatcher';
 import { loadChanges } from '@/shared/query/changes-http';
 import { contentHttp } from '@/features/content/http';
+import { NotificationCenter } from '@/features/notifications/NotificationCenter';
 import { PartnerShell } from '@/features/shell/PartnerShell';
 import { OverviewPage } from '@/features/overview/OverviewPage';
 import { overviewHttp } from '@/features/overview/http';
@@ -141,103 +142,120 @@ export function PartnerApplication({
         ? 'view_statements'
         : 'view_earnings';
   const canView = screen.kind === 'account' || member?.capabilities.includes(capability);
+  const scope = {
+    userId: session.userId,
+    partnerId: member?.partnerId ?? 'none',
+    permissionRevision: member?.permissionRevision ?? 'none',
+  };
   return (
-    <PartnerShell active={screen.kind === 'account' ? null : active} accountHref="/account">
-      <div className={forms.row}>
-        <div>
-          {session.displayName}
-          {member && <> · {member.partnerName}</>}
+    <ScopedQueryProvider scope={scope}>
+      <PartnerShell
+        active={screen.kind === 'account' ? null : active}
+        accountHref="/account"
+        notifications={
+          state === 'ready' &&
+          session.access === 'active' &&
+          member?.capabilities.includes('view_statements') ? (
+            <NotificationCenter key={JSON.stringify(scope)} scope={scope} onAccessLost={finish} />
+          ) : null
+        }
+      >
+        {state === 'ready' &&
+          session.access === 'active' &&
+          member &&
+          (canView || member.capabilities.includes('view_statements')) &&
+          (screen.kind !== 'account' || member.capabilities.includes('view_statements')) && (
+            <ChangeWatcher
+              scope={{
+                userId: session.userId,
+                partnerId: member.partnerId,
+                permissionRevision: member.permissionRevision,
+              }}
+              reconcileInitial
+              load={(signal) =>
+                loadChanges(
+                  {
+                    userId: session.userId,
+                    partnerId: member.partnerId,
+                    permissionRevision: member.permissionRevision,
+                  },
+                  member.capabilities.includes(capability) ? capability : 'view_statements',
+                  signal,
+                )
+              }
+              onAccessLost={() => {
+                setState('checking');
+                setRetry((value) => value + 1);
+              }}
+            />
+          )}
+        <div className={forms.row}>
+          <div>
+            {session.displayName}
+            {member && <> · {member.partnerName}</>}
+          </div>
+          {session.memberships.length > 1 && (
+            <label className={forms.field}>
+              พาร์ทเนอร์
+              <select
+                aria-label="เลือกพาร์ทเนอร์"
+                value={session.activePartnerId ?? ''}
+                disabled={state !== 'ready'}
+                onChange={(e) => void switchPartner(e.target.value)}
+              >
+                {session.memberships.map((m) => (
+                  <option key={m.partnerId} value={m.partnerId}>
+                    {m.partnerName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <LinkButton href="/account">บัญชีของคุณ</LinkButton>
+          <Button disabled={state === 'changing'} onClick={() => void logout()}>
+            ออกจากระบบ
+          </Button>
         </div>
-        {session.memberships.length > 1 && (
-          <label className={forms.field}>
-            พาร์ทเนอร์
-            <select
-              aria-label="เลือกพาร์ทเนอร์"
-              value={session.activePartnerId ?? ''}
-              disabled={state !== 'ready'}
-              onChange={(e) => void switchPartner(e.target.value)}
-            >
-              {session.memberships.map((m) => (
-                <option key={m.partnerId} value={m.partnerId}>
-                  {m.partnerName}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <LinkButton href="/account">บัญชีของคุณ</LinkButton>
-        <Button disabled={state === 'changing'} onClick={() => void logout()}>
-          ออกจากระบบ
-        </Button>
-      </div>
-      {state === 'error' ? (
-        <DataState
-          state="error"
-          message="ตรวจสอบการเข้าถึงไม่สำเร็จ กรุณาลองใหม่"
-          onRetry={() => {
-            mutating.current = false;
-            setState('checking');
-            setRetry((v) => v + 1);
-          }}
-        />
-      ) : state !== 'ready' ? (
-        <DataState state="loading" />
-      ) : screen.kind === 'account' ? (
-        <CredentialAccount name={session.displayName} onChanged={finish} />
-      ) : session.access !== 'active' || !member ? (
-        <DataState
-          state="unavailable"
-          message={
-            session.access === 'suspended'
-              ? 'สิทธิ์เข้าถึงถูกระงับ กรุณาติดต่อผู้ดูแล Labs D'
-              : 'บัญชีนี้ยังไม่มีสิทธิ์พาร์ทเนอร์ กรุณาติดต่อผู้ดูแล Labs D'
-          }
-        />
-      ) : !canView ? (
-        <DataState
-          state="unavailable"
-          message="บัญชีนี้ไม่มีสิทธิ์ดูข้อมูลส่วนนี้ ติดต่อผู้ดูแล Labs D หากต้องการตรวจสอบสิทธิ์"
-        />
-      ) : (
-        <ScopedQueryProvider
-          scope={{
-            userId: session.userId,
-            partnerId: member.partnerId,
-            permissionRevision: member.permissionRevision,
-          }}
-        >
-          <ChangeWatcher
-            scope={{
-              userId: session.userId,
-              partnerId: member.partnerId,
-              permissionRevision: member.permissionRevision,
-            }}
-            reconcileInitial
-            load={(signal) =>
-              loadChanges(
-                {
-                  userId: session.userId,
-                  partnerId: member.partnerId,
-                  permissionRevision: member.permissionRevision,
-                },
-                capability,
-                signal,
-              )
-            }
-            onAccessLost={() => {
+        {state === 'error' ? (
+          <DataState
+            state="error"
+            message="ตรวจสอบการเข้าถึงไม่สำเร็จ กรุณาลองใหม่"
+            onRetry={() => {
+              mutating.current = false;
               setState('checking');
-              setRetry((value) => value + 1);
+              setRetry((v) => v + 1);
             }}
           />
-          <PartnerFeatures
-            key={`${session.userId}:${member.partnerId}:${member.permissionRevision}`}
-            session={session}
-            screen={screen}
-            initialContext={initialContext}
+        ) : state !== 'ready' ? (
+          <DataState state="loading" />
+        ) : screen.kind === 'account' ? (
+          <CredentialAccount name={session.displayName} onChanged={finish} />
+        ) : session.access !== 'active' || !member ? (
+          <DataState
+            state="unavailable"
+            message={
+              session.access === 'suspended'
+                ? 'สิทธิ์เข้าถึงถูกระงับ กรุณาติดต่อผู้ดูแล Labs D'
+                : 'บัญชีนี้ยังไม่มีสิทธิ์พาร์ทเนอร์ กรุณาติดต่อผู้ดูแล Labs D'
+            }
           />
-        </ScopedQueryProvider>
-      )}
-    </PartnerShell>
+        ) : !canView ? (
+          <DataState
+            state="unavailable"
+            message="บัญชีนี้ไม่มีสิทธิ์ดูข้อมูลส่วนนี้ ติดต่อผู้ดูแล Labs D หากต้องการตรวจสอบสิทธิ์"
+          />
+        ) : (
+          <>
+            <PartnerFeatures
+              key={`${session.userId}:${member.partnerId}:${member.permissionRevision}`}
+              session={session}
+              screen={screen}
+              initialContext={initialContext}
+            />
+          </>
+        )}
+      </PartnerShell>
+    </ScopedQueryProvider>
   );
 }
 function PartnerFeatures({

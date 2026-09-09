@@ -4,7 +4,7 @@ export const Notice = z.strictObject({
   id: Id,
   statementId: Id,
   title: z.string().min(1),
-  kind: z.enum(['statement-published', 'payment-recorded']),
+  kind: z.enum(['statement-published', 'payment-recorded', 'payment-reversed']),
   createdAt: Instant,
   seen: z.boolean(),
 });

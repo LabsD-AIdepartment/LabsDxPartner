@@ -41,7 +41,11 @@ describe('authenticated partner application', () => {
   });
   it('keeps the overview layout with unavailable amounts and does not show fixture earnings', async () => {
     fetcher.mockImplementation(async (url: string) => {
-      if (url.startsWith('/api/v1/partner/overview?')) return response({}, 503);
+      if (
+        url.startsWith('/api/v1/partner/overview?') ||
+        url.startsWith('/api/v1/partner/notifications?')
+      )
+        return response({}, 503);
       return response(
         url.startsWith('/api/v1/partner/changes?')
           ? {
@@ -80,7 +84,11 @@ describe('authenticated partner application', () => {
     );
     expect(
       fetcher.mock.calls.every(
-        ([url]) => url === '/api/partner/session' || url.startsWith('/api/v1/partner/changes?') || url.startsWith('/api/v1/partner/overview?'),
+        ([url]) =>
+          url === '/api/partner/session' ||
+          url.startsWith('/api/v1/partner/changes?') ||
+          url.startsWith('/api/v1/partner/overview?') ||
+          url.startsWith('/api/v1/partner/notifications?'),
       ),
     ).toBe(true);
   });

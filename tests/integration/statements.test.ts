@@ -280,7 +280,7 @@ describe('native authorized approval to immutable statement on PostgreSQL', () =
       earningsRevision: '2',
       settlementsRevision: '2',
       metricsRevision: '0',
-      noticesRevision: '0',
+      noticesRevision: '2',
     });
     await expect(
       sql.begin(async (tx) => {
@@ -291,7 +291,7 @@ describe('native authorized approval to immutable statement on PostgreSQL', () =
     expect(await read()).toMatchObject({
       earningsRevision: '2',
       metricsRevision: '0',
-      noticesRevision: '0',
+      noticesRevision: '2',
     });
     // Counter storage supports future independent owners, without claiming their services exist.
     await Promise.all(
@@ -308,7 +308,7 @@ describe('native authorized approval to immutable statement on PostgreSQL', () =
       earningsRevision: '2',
       settlementsRevision: '2',
       metricsRevision: '5',
-      noticesRevision: '1',
+      noticesRevision: '3',
     });
     expect((await http(new Request(url))).status).toBe(401);
     url.searchParams.set('partnerId', randomUUID());
