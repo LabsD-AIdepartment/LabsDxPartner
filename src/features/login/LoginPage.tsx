@@ -4,6 +4,7 @@ import { ArrowRight, Ticket, MailCheck } from 'lucide-react';
 import { Button } from '@/shared/ui/Button';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { accessHref, type AccessReason } from './access';
+import { Text } from '@/shared/ui/Text';
 import styles from './login.module.css';
 export function LoginPage({
   next,
@@ -19,11 +20,11 @@ export function LoginPage({
         <ArrowRight aria-hidden size={25} />
       </div>
       <h2>ยินดีต้อนรับ พาร์ทเนอร์</h2>
-      <p className={styles.description}>
+      <Text variant="caption" tone="muted" className={styles.description}>
         เข้าสู่ระบบด้วยบัญชีที่คุณใช้รับคำเชิญ
         <br />
         เพื่อดูผลงานและรายได้ของคุณ
-      </p>
+      </Text>
       <div className={styles.providers} aria-label="เลือกบัญชีเข้าสู่ระบบ">
         {(['Google', 'LINE', 'Apple'] as const).map((provider) =>
           onPreview ? (
@@ -49,11 +50,11 @@ export function LoginPage({
           ),
         )}
       </div>
-      <p className={styles.availability} role="status">
+      <Text variant="caption" tone="muted" className={styles.availability} role="status">
         {onPreview
           ? 'ตัวอย่างการเข้าสู่ระบบ · ไม่เชื่อมบัญชีจริง'
           : 'กำลังเตรียมเปิดใช้งานการเชื่อมบัญชี'}
-      </p>
+      </Text>
       <div className={styles.divider} />
       <Button
         className={styles.invite}
@@ -74,11 +75,11 @@ export function LoginPage({
           </p>
         </div>
       )}
-      <p className={styles.support}>
+      <Text variant="caption" tone="muted" className={styles.support}>
         ยังไม่มีคำเชิญ หรือมีปัญหาการเข้าถึง
         <br />
         <strong>ติดต่อผู้ดูแล Labs D ที่ประสานงานกับคุณ</strong>
-      </p>
+      </Text>
     </>
   );
 }

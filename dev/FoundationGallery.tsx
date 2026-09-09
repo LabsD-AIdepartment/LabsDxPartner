@@ -22,6 +22,7 @@ import { ChangeWatcher } from '@/shared/query/ChangeWatcher';
 import { scenario, scenarioNames, type ScenarioName } from './scenarios';
 import { money } from './scenarios/ready';
 import type { ChangesValue } from '@/contracts/changes';
+import { Text } from '@/shared/ui/Text';
 import styles from './gallery.module.css';
 const scope = { userId: 'user-1', partnerId: 'partner-1', permissionRevision: '1' };
 const defaultFilter = { from: '2026-07-01', toExclusive: '2026-09-01', brand: null };
@@ -260,6 +261,18 @@ function Gallery() {
           </Button>
         </Card>
       )}
+      <Card title="Typography" description="ชุดข้อความกลางที่ทุกหน้าใช้ร่วมกัน">
+        <Text variant="sectionTitle" as="h3">
+          หัวข้อส่วน · Section title
+        </Text>
+        <Text>เนื้อหาหลัก 16px · อ่านรายละเอียดรายได้และคอมมิชชันได้ชัดเจน</Text>
+        <Text variant="label" as="span">
+          ป้ายกำกับ 14px
+        </Text>
+        <Text variant="caption" tone="muted">
+          ข้อความประกอบขั้นต่ำ 14px · ใช้ขนาดเดียวกันในทุกหน้าจอ
+        </Text>
+      </Card>
       <section className={styles.scenarioPanel} aria-label="ชุดตรวจส่วนประกอบ">
         <h2>Foundation components</h2>
         <p className="muted small">Development only · ตัวเลือกนี้ไม่เปิดใน production</p>

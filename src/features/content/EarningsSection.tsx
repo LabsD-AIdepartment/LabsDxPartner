@@ -8,6 +8,7 @@ import { dateLabel } from '@/shared/ui/format-date';
 import { ContentState, DataEnvelope } from './ContentState';
 import { useContent } from './useContent';
 import type { ContentProps } from './types';
+import { Text } from '@/shared/ui/Text';
 import styles from './content.module.css';
 export function EarningsSection(props: ContentProps & { contentId: string }) {
   const [cursor, setCursor] = useState<string | null>(null);
@@ -30,9 +31,9 @@ export function EarningsSection(props: ContentProps & { contentId: string }) {
       />
       {data && !query.error && (
         <DataEnvelope data={data}>
-          <p className={styles.meta}>
+          <Text variant="caption" tone="muted" className={styles.meta}>
             รายการจากต้นทางในรุ่นข้อมูลเดียวกัน ยอดสรุปของคลิปแสดงด้านบน ไม่ต้องบวกรายการนี้ซ้ำ
-          </p>
+          </Text>
           {data.data.items.length === 0 ? (
             <DataState
               state="empty"

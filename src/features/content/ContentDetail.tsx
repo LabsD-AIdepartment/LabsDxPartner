@@ -13,6 +13,7 @@ import { MetricSections } from './MetricDefinition';
 import { EarningsSection } from './EarningsSection';
 import { AdList } from './AdList';
 import type { ContentProps } from './types';
+import { Text } from '@/shared/ui/Text';
 import styles from './content.module.css';
 export function ContentDetail(props: ContentProps & { contentId: string }) {
   const { context: c, routes } = props;
@@ -64,9 +65,9 @@ export function ContentDetail(props: ContentProps & { contentId: string }) {
                 />
               </div>
               <div className={styles.detailSummary}>
-                <p className={styles.meta}>
+                <Text variant="caption" tone="muted" className={styles.meta}>
                   {detail.content.brand} · เผยแพร่ {dateLabel(detail.content.publishedAt)}
-                </p>
+                </Text>
                 <h2>{detail.content.title}</h2>
                 {detail.content.removed && (
                   <p className={styles.notice}>
@@ -118,9 +119,9 @@ export function ContentDetail(props: ContentProps & { contentId: string }) {
                     </strong>
                   </div>
                 </div>
-                <p className={styles.meta}>
+                <Text variant="caption" tone="muted" className={styles.meta}>
                   ยอดของคลิปนี้ ไม่ใช่ยอดโอน และไม่รวมผลลัพธ์ที่แพลตฟอร์มนับแยกต่างหาก
-                </p>
+                </Text>
                 {detail.sourceUrl && !detail.content.removed && (
                   <LinkButton href={detail.sourceUrl} target="_blank" rel="noopener noreferrer">
                     เปิดคลิปต้นฉบับ ↗
@@ -135,9 +136,9 @@ export function ContentDetail(props: ContentProps & { contentId: string }) {
               onToggle={(e) => setEarningsOpen(e.currentTarget.open)}
             >
               <summary>รายได้และวิธีคำนวณ</summary>
-              <p className={styles.meta}>
+              <Text variant="caption" tone="muted" className={styles.meta}>
                 เวอร์ชันข้อตกลง {detail.agreementVersion ?? 'ยังไม่มีข้อมูล'}
-              </p>
+              </Text>
               {earningsOpen &&
                 (mapped ? (
                   <EarningsSection {...props} context={pinned} />

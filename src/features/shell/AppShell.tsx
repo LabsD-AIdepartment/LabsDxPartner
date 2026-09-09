@@ -5,6 +5,7 @@ import { LinkButton } from '@/shared/ui/LinkButton';
 import { Button } from '@/shared/ui/Button';
 import { ThemeToggle } from './ThemeToggle';
 import { Navigation, type Menu } from './Navigation';
+import { Text } from '@/shared/ui/Text';
 import styles from './shell.module.css';
 export function AppShell({
   active,
@@ -81,11 +82,19 @@ export function AppShell({
         <h1 className={styles.title}>
           {title} <span>{accent}</span>
         </h1>
-        <p className={styles.subtitle}>{subtitle}</p>
+        <Text tone="muted" className={styles.subtitle}>
+          {subtitle}
+        </Text>
         {children}
         <footer className={styles.footer}>
-          <span>LABS D × PARTNER / Your creativity, rewarded</span>
-          {footerNote && <span>{footerNote}</span>}
+          <Text as="span" variant="caption">
+            LABS D × PARTNER / Your creativity, rewarded
+          </Text>
+          {footerNote && (
+            <Text as="span" variant="caption">
+              {footerNote}
+            </Text>
+          )}
         </footer>
       </main>
       <div className={styles.mobileNav}>

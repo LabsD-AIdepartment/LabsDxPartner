@@ -223,3 +223,21 @@ Preservation checklist for future changes:
 - Before shipping: validate contrast comprehensively, physical iOS behavior, real data contracts and account boundaries, audio behavior/rights, asset delivery and production infrastructure.
 
 No repository is currently initialized at this workspace root; commit, branch, deployed SHA and push status are unavailable. This capture does not initialize Git or authorize deployment. Git setup and production work remain separate owner-directed tasks.
+
+## Shared typography implementation — 2026-09-09
+
+Source of truth: `src/shared/theme/typography.css`, loaded once in `app/layout.tsx` before theme colors. It owns families (Inter for brand/navigation; DM Sans + Noto Sans Thai for body), size scale, responsive display/metric presets, weights and line heights. Theme colors remain in `tokens.css`; Day/Dark use the same readable type scale.
+
+| Role | Shared preset | Size / line height |
+| --- | --- | --- |
+| Main text / clip title | `body` / `--text-body-size` | 16px / 1.6 |
+| Supporting text / chart labels | `caption` / `--text-caption-size` | 14px minimum / 1.6 |
+| Labels | `label` | 14px / 1.5 |
+| Card heading | `cardTitle` | 20px / 1.4 |
+| Section heading | `sectionTitle` | 22px / 1.4 |
+
+Use `src/shared/ui/Text.tsx` for text blocks. Select semantic HTML independently from visual size, e.g. `<Text as="h2" variant="cardTitle">…</Text>` or `<Text variant="caption" tone="muted">…</Text>`. `Card` and `DataState` already use it; shell, content metadata and the foundation gallery consume the same component. Text defaults to a body paragraph and zero margins; the owning layout controls spacing.
+
+Controls, numeric figures and SVG labels use the same CSS tokens directly where a text wrapper is inappropriate. Existing larger display sizes remain in the central scale to preserve the approved visual hierarchy; new code should prefer semantic presets. Feature CSS must not introduce literal font sizes, font-family stacks or smaller mobile overrides. Reflow/wrap or reduce chart tick density when space is tight. SVG viewBox width must match the rendered plot so a 14px label does not shrink through scaling. No blanket `!important` minimum or browser zoom workaround.
+
+`/foundation` includes live Thai/English typography samples. `tests/unit/typography.test.tsx` checks semantic labels/headings and rejects page-local font literals; browser verification checks the actual computed sizes and overflow, which static tests cannot prove. Later F06/F07 pages inherit these presets and must use the same components.

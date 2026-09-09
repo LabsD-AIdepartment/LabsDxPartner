@@ -14,12 +14,12 @@
   padding: 32px 0;
 }
 .logo {
-  font-family: 'Inter Variable', sans-serif;
-  font-weight: 800;
-  font-size: clamp(24px, 2.6vw, 36px);
+  font-family: var(--font-family-brand);
+  font-weight: var(--weight-brand);
+  font-size: var(--text-brand-compact);
   letter-spacing: -1px;
   text-decoration: none;
-  line-height: 1.2;
+  line-height: var(--leading-display);
 }
 .main {
   flex: 1;
@@ -33,15 +33,15 @@
   min-width: 0;
 }
 .eyebrow {
-  font-size: 13px;
+  font-size: var(--text-caption-size);
   letter-spacing: 0.08em;
   color: var(--muted);
 }
 .story h1 {
-  font-size: clamp(42px, 5.1vw, 72px);
+  font-size: var(--text-hero);
   letter-spacing: -2.6px;
-  line-height: 1.1;
-  font-weight: 550;
+  line-height: var(--leading-tight);
+  font-weight: var(--weight-emphasis);
   margin: 24px 0;
 }
 .story h1 span {
@@ -49,7 +49,7 @@
 }
 .story > p {
   color: var(--muted);
-  font-size: 19px;
+  font-size: var(--font-size-19);
 }
 .promise {
   display: flex;
@@ -66,13 +66,13 @@
   flex-shrink: 0;
 }
 .promise strong {
-  font-size: 17px;
-  font-weight: 550;
+  font-size: var(--font-size-17);
+  font-weight: var(--weight-emphasis);
 }
 .promise p {
   margin: 8px 0 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-caption-size);
 }
 .panel {
   background: var(--card);
@@ -84,9 +84,9 @@
 }
 .panel h2 {
   margin: 20px 0 12px;
-  font-size: clamp(24px, 2.2vw, 30px);
-  font-weight: 550;
-  line-height: 1.4;
+  font-size: var(--text-section-title);
+  font-weight: var(--weight-emphasis);
+  line-height: var(--leading-heading);
   letter-spacing: -0.5px;
 }
 .description {
@@ -119,16 +119,16 @@
   flex-shrink: 0;
 }
 .providerMark {
-  font-family: 'Inter Variable', sans-serif;
-  font-size: 19px;
-  font-weight: 700;
+  font-family: var(--font-family-brand);
+  font-size: var(--font-size-19);
+  font-weight: var(--weight-bold);
   width: 24px;
   text-align: center;
   flex-shrink: 0;
 }
 .availability {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-caption-size);
   margin: 14px 0 0;
 }
 .divider {
@@ -145,7 +145,7 @@
   gap: 12px;
   padding-top: 18px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-caption-size);
 }
 .help p {
   margin: 0;
@@ -154,12 +154,12 @@
   flex-shrink: 0;
 }
 .support {
-  font-size: 13px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
   margin: 24px 0 0;
 }
 .support strong {
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: var(--text);
 }
 .footer {
@@ -168,7 +168,7 @@
   gap: 16px;
   flex-wrap: wrap;
   padding: 24px 0;
-  font-size: 12px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
 }
 .footer > span:last-child {
@@ -193,7 +193,7 @@
     gap: 28px;
   }
   .story h1 {
-    font-size: 44px;
+    font-size: var(--font-size-44);
     margin: 16px 0;
   }
   .story h1 br {
@@ -203,7 +203,7 @@
     content: ' ';
   }
   .story > p {
-    font-size: 16px;
+    font-size: var(--text-body-size);
   }
   .promise {
     display: none;
@@ -225,10 +225,10 @@
   .provider {
     padding: 12px;
     gap: 8px;
-    font-size: 15px;
+    font-size: var(--font-size-15);
   }
   .story h1 {
-    font-size: 38px;
+    font-size: var(--font-size-38);
     letter-spacing: -1.5px;
   }
 }

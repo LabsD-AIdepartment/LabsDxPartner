@@ -8,6 +8,7 @@ import { timestamp } from '@/shared/ui/format-date';
 import { ContentState, DataEnvelope } from './ContentState';
 import { useContent } from './useContent';
 import type { ContentProps } from './types';
+import { Text } from '@/shared/ui/Text';
 import styles from './content.module.css';
 export const adStatus = {
   active: 'กำลังแสดง',
@@ -36,9 +37,9 @@ export function AdList(props: ContentProps & { contentId: string }) {
       />
       {data && !query.error && (
         <DataEnvelope data={data}>
-          <p className={styles.meta}>
+          <Text variant="caption" tone="muted" className={styles.meta}>
             หลายโฆษณาใช้คลิปเดียวกันได้ รายได้ของคลิปแสดงครั้งเดียว ไม่กระจายหรือคูณซ้ำตามจำนวนโฆษณา
-          </p>
+          </Text>
           {data.data.items.length ? (
             <div className={styles.adList}>
               {data.data.items.map((ad) => (

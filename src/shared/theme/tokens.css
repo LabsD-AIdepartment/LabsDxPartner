@@ -20,7 +20,7 @@
   --chart-dot: #32432d;
   --ring-track: #315d4c;
   --ring-text: #084c3c;
-  font-family: 'DM Sans Variable', 'Noto Sans Thai Variable', sans-serif;
+  font-family: var(--font-family-body);
   background: var(--canvas);
   color: var(--text);
 }
@@ -54,8 +54,8 @@
 }
 body {
   margin: 0;
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: var(--text-body-size);
+  line-height: var(--leading-body);
   min-height: 100vh;
 }
 button,
@@ -67,7 +67,10 @@ textarea {
 button,
 input,
 select {
-  font-size: 16px;
+  font-size: var(--text-body-size);
+}
+small {
+  font-size: var(--text-caption-size);
 }
 button svg {
   flex-shrink: 0;
@@ -97,7 +100,7 @@ p {
   color: var(--muted);
 }
 .small {
-  font-size: 14px;
+  font-size: var(--text-caption-size);
 }
 .skip-link {
   position: fixed;

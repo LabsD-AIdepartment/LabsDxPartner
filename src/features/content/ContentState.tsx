@@ -3,6 +3,7 @@ import { DataState } from '@/shared/ui/DataState';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { timestamp, dateLabel } from '@/shared/ui/format-date';
 import { ContentError } from './model';
+import { Text } from '@/shared/ui/Text';
 import styles from './content.module.css';
 export function ContentState({
   pending,
@@ -54,10 +55,12 @@ export function DataEnvelope({
     <>
       {showFreshness && (
         <div className={styles.freshness}>
-          <span>
+          <Text as="span" variant="caption" tone="muted">
             ช่วงรายได้ {dateLabel(data.period.from)} – ก่อน {dateLabel(data.period.toExclusive)}
-          </span>
-          <span>ข้อมูลถึง {timestamp(data.dataThrough)}</span>
+          </Text>
+          <Text as="span" variant="caption" tone="muted">
+            ข้อมูลถึง {timestamp(data.dataThrough)}
+          </Text>
         </div>
       )}
       {data.dataState !== 'ready' && (

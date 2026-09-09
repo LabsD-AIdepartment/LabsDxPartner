@@ -11,7 +11,7 @@
   align-items: center;
   gap: 10px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-caption-size);
 }
 .spark {
   color: #91bf62;
@@ -60,30 +60,30 @@
   object-fit: cover;
 }
 .identity strong {
-  font-size: 16px;
+  font-size: var(--text-body-size);
   display: block;
-  line-height: 1.4;
+  line-height: var(--leading-heading);
 }
 .identity span {
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
 }
 .profileBody {
   padding: 24px;
 }
 .profileBody h2 {
-  font-size: 18px;
+  font-size: var(--font-size-18);
   margin: 0;
 }
 .figure {
-  font-size: 38px;
-  font-weight: 500;
+  font-size: var(--font-size-38);
+  font-weight: var(--weight-medium);
   letter-spacing: -1px;
   display: block;
   margin: 14px 0 8px;
 }
 .profileFigure {
-  font-size: 46px;
+  font-size: var(--font-size-46);
 }
 .divider {
   height: 1px;
@@ -96,13 +96,13 @@
   gap: 16px;
 }
 .breakdown p {
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
   margin: 0;
 }
 .breakdown strong {
-  font-weight: 500;
-  font-size: 24px;
+  font-weight: var(--weight-medium);
+  font-size: var(--font-size-24);
 }
 .payout {
   background: var(--payout);
@@ -131,7 +131,7 @@
 .progressLabels {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
   margin-top: 6px;
 }
@@ -180,16 +180,16 @@
 }
 .clipText p {
   margin: 0;
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: var(--text-body-size);
+  line-height: var(--leading-heading);
 }
 .clipText small {
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
 }
 .clipRow strong {
-  font-size: 20px;
-  font-weight: 500;
+  font-size: var(--font-size-20);
+  font-weight: var(--weight-medium);
 }
 .scenarioPanel {
   margin-top: 32px;
@@ -230,7 +230,7 @@
   border-radius: 16px;
 }
 .tileTitle {
-  font-size: 16px;
+  font-size: var(--text-body-size);
   min-height: 3em;
   margin: 12px 0;
 }
@@ -242,10 +242,10 @@
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  font-size: 16px;
+  font-size: var(--text-body-size);
 }
 .galleryLabel {
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
 }
 .detailImage {
@@ -285,7 +285,7 @@
     padding: 24px;
   }
   .figure {
-    font-size: 34px;
+    font-size: var(--font-size-34);
   }
 }
 @media (max-width: 700px) {
@@ -309,19 +309,19 @@
     gap: 16px;
   }
   .figure {
-    font-size: 34px;
+    font-size: var(--font-size-34);
   }
   .profileFigure {
-    font-size: 42px;
+    font-size: var(--font-size-42);
   }
   .stateGrid {
     grid-template-columns: 1fr;
   }
   .clipRow strong {
-    font-size: 18px;
+    font-size: var(--font-size-18);
   }
   .clipText p {
-    font-size: 14px;
+    font-size: var(--text-caption-size);
   }
   .library {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -331,10 +331,10 @@
   }
   .earnPanel {
     flex-wrap: wrap;
-    font-size: 14px;
+    font-size: var(--text-caption-size);
   }
   .tileTitle {
-    font-size: 14px;
+    font-size: var(--text-caption-size);
   }
   .identity {
     left: 16px;
@@ -346,10 +346,10 @@
     grid-template-columns: 1fr;
   }
   .figure {
-    font-size: 30px;
+    font-size: var(--font-size-30);
   }
   .profileFigure {
-    font-size: 36px;
+    font-size: var(--font-size-36);
   }
   .breakdown {
     flex-wrap: wrap;
@@ -370,5 +370,5 @@
 .stress > span:last-child {
   min-width: 0;
   max-width: 100%;
-  font-size: 28px;
+  font-size: var(--font-size-28);
 }

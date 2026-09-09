@@ -13,7 +13,7 @@
   cursor: pointer;
   max-width: 100%;
   text-decoration: none;
-  line-height: 1.4;
+  line-height: var(--leading-heading);
   transition:
     background 0.15s,
     transform 0.15s;
@@ -54,22 +54,13 @@
 .heading > div {
   min-width: 0;
 }
-.heading h2 {
-  font-size: 20px;
-  font-weight: 550;
-  letter-spacing: -0.4px;
-  line-height: 1.4;
-  margin: 0;
-}
 .description {
-  color: var(--muted);
-  font-size: 14px;
   margin: 6px 0 0;
 }
 .money {
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
-  line-height: 1.2;
+  line-height: var(--leading-display);
 }
 .unknown {
   color: var(--muted);
@@ -82,8 +73,8 @@
   color: var(--badge-text);
   border-radius: 999px;
   padding: 4px 10px;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: var(--text-caption-size);
+  line-height: var(--leading-label);
 }
 .dataState {
   display: flex;
@@ -92,7 +83,7 @@
   padding: 14px 16px;
   border-radius: 16px;
   background: var(--control);
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
 }
 .dataState p {
@@ -116,10 +107,6 @@
 .dialog::backdrop {
   background: #00120bbb;
   backdrop-filter: blur(5px);
-}
-.dialog h2 {
-  margin: 0;
-  font-size: 22px;
 }
 .dialogBody {
   margin-top: 20px;
@@ -151,7 +138,7 @@
 .field {
   display: grid;
   gap: 4px;
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   min-width: 0;
 }
 .input {
@@ -174,11 +161,11 @@
   width: 152px;
   min-height: 46px;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   padding: 10px 12px;
 }
 .note {
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
 }
 @keyframes spin {

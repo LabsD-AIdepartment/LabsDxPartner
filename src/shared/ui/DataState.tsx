@@ -1,5 +1,6 @@
 import { CircleAlert, Clock3, LoaderCircle, Inbox } from 'lucide-react';
 import { Button } from './Button';
+import { Text } from './Text';
 import styles from './ui.module.css';
 export type DisplayState =
   'ready' | 'loading' | 'empty' | 'error' | 'partial' | 'stale' | 'unavailable';
@@ -32,7 +33,7 @@ export function DataState({
   return (
     <div className={styles.dataState} role={state === 'error' ? 'alert' : 'status'}>
       <Icon size={20} aria-hidden className={state === 'loading' ? styles.spinner : ''} />
-      <p>{message ?? labels[state]}</p>
+      <Text variant="caption">{message ?? labels[state]}</Text>
       {onRetry && ['error', 'stale', 'unavailable'].includes(state) && (
         <Button onClick={onRetry}>ลองอีกครั้ง</Button>
       )}

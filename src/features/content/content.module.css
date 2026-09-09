@@ -15,7 +15,7 @@
   display: grid;
   gap: 6px;
   max-width: 520px;
-  font-size: 14px;
+  font-size: var(--text-caption-size);
 }
 .search > div {
   display: flex;
@@ -38,7 +38,7 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
   margin: 16px 0;
 }
@@ -82,9 +82,9 @@
   border-color: var(--accent);
 }
 .clipCard > strong {
-  font-size: 15px;
-  font-weight: 550;
-  line-height: 1.6;
+  font-size: var(--text-body-size);
+  font-weight: var(--weight-emphasis);
+  line-height: var(--leading-body);
   overflow-wrap: anywhere;
 }
 .coverWrap {
@@ -110,15 +110,15 @@
   background: #132219cc;
   color: #fff;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--text-caption-size);
   padding: 4px 8px;
   overflow-wrap: anywhere;
 }
 .meta,
 .removed {
-  font-size: 13px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
-  line-height: 1.7;
+  line-height: var(--leading-relaxed);
   overflow-wrap: anywhere;
 }
 .earned {
@@ -134,10 +134,10 @@
   color: #103d22;
 }
 .earned > span:first-child {
-  font-size: 12px;
+  font-size: var(--text-caption-size);
 }
 .earned > span:last-child {
-  font-size: 22px;
+  font-size: var(--font-size-22);
 }
 .pagination {
   display: flex;
@@ -145,10 +145,10 @@
   justify-content: space-between;
   gap: 8px;
   margin-top: 24px;
-  font-size: 13px;
+  font-size: var(--text-caption-size);
 }
 .pagination button {
-  font-size: 14px;
+  font-size: var(--text-caption-size);
 }
 .back {
   display: flex;
@@ -172,8 +172,8 @@
   container: clip-summary / inline-size;
 }
 .detailSummary h2 {
-  font-size: clamp(24px, 4vw, 34px);
-  line-height: 1.5;
+  font-size: var(--text-detail-title);
+  line-height: var(--leading-label);
   margin: 6px 0 20px;
   overflow-wrap: anywhere;
 }
@@ -192,24 +192,24 @@
   min-width: 0;
 }
 .kpis > div > span:first-child {
-  font-size: 13px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
 }
 .kpis > div > :nth-child(2) {
-  font-size: clamp(24px, 6cqi, 34px);
-  font-weight: 500;
+  font-size: var(--text-metric);
+  font-weight: var(--weight-medium);
 }
 .kpis > div > .status {
-  font-size: 20px;
+  font-size: var(--font-size-20);
 }
 .kpis small {
-  font-size: 12px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
 }
 .disclosure > summary {
   cursor: pointer;
-  font-size: 18px;
-  font-weight: 550;
+  font-size: var(--font-size-18);
+  font-weight: var(--weight-emphasis);
   min-height: 28px;
 }
 .disclosure[open] > summary {
@@ -220,8 +220,8 @@
   border-radius: 14px;
   background: var(--badge);
   color: var(--text);
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: var(--text-caption-size);
+  line-height: var(--leading-relaxed);
 }
 .metrics {
   display: grid;
@@ -236,15 +236,15 @@
   min-width: 0;
 }
 .metric h3 {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--text-caption-size);
+  font-weight: var(--weight-medium);
   color: var(--muted);
   margin: 0 0 12px;
 }
 .metric > strong {
   display: block;
-  font-size: 30px;
-  font-weight: 500;
+  font-size: var(--font-size-30);
+  font-weight: var(--weight-medium);
   overflow-wrap: anywhere;
   margin-bottom: 12px;
 }
@@ -252,9 +252,9 @@
 .metric summary,
 .earningRows p,
 .earningRows summary {
-  font-size: 13px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
-  line-height: 1.7;
+  line-height: var(--leading-relaxed);
   overflow-wrap: anywhere;
 }
 .metric summary,
@@ -267,10 +267,10 @@
   border-top: 1px solid var(--line);
 }
 .platform > h3 {
-  font-size: 18px;
+  font-size: var(--font-size-18);
 }
 .platform > p {
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
 }
 .earningRows {
@@ -289,7 +289,7 @@
   gap: 10px;
 }
 .rowHeading > span {
-  font-size: 22px;
+  font-size: var(--font-size-22);
 }
 .adList {
   display: grid;
@@ -310,7 +310,7 @@
   overflow-wrap: anywhere;
 }
 .adList p {
-  font-size: 13px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
   margin: 6px 0 0;
 }
@@ -329,7 +329,7 @@
     justify-self: center;
   }
   .detailSummary h2 {
-    font-size: 24px;
+    font-size: var(--font-size-24);
   }
 }
 @media (max-width: 360px) {

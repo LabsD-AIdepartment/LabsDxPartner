@@ -2,6 +2,7 @@ import { Clock3, ShieldAlert, CircleAlert, Ticket, LogIn } from 'lucide-react';
 import { Button } from '@/shared/ui/Button';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { accessCopy, loginHref, type AccessReason } from './access';
+import { Text } from '@/shared/ui/Text';
 import styles from './login.module.css';
 export function AccessPage({
   reason,
@@ -27,7 +28,9 @@ export function AccessPage({
         <Icon size={28} aria-hidden />
       </div>
       <h2>{copy.title}</h2>
-      <p className={styles.description}>{copy.description}</p>
+      <Text variant="caption" tone="muted" className={styles.description}>
+        {copy.description}
+      </Text>
       {onRetry ? (
         <Button variant="primary" onClick={onRetry}>
           {copy.action}
@@ -40,11 +43,11 @@ export function AccessPage({
         </LinkButton>
       )}
       <div className={styles.divider} />
-      <p className={styles.support}>
+      <Text variant="caption" tone="muted" className={styles.support}>
         ต้องการความช่วยเหลือ
         <br />
         <strong>ติดต่อผู้ดูแล Labs D ที่ประสานงานกับคุณ</strong>
-      </p>
+      </Text>
     </div>
   );
 }

@@ -8,11 +8,11 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  font-family: 'Inter Variable', 'Noto Sans Thai Variable', sans-serif;
+  font-family: var(--font-family-brand);
 }
 .logo {
-  font-size: clamp(28px, 2.8vw, 40.32px);
-  font-weight: 800;
+  font-size: var(--text-brand);
+  font-weight: var(--weight-brand);
   letter-spacing: -1px;
   white-space: nowrap;
   color: inherit;
@@ -23,7 +23,7 @@
   gap: 6px;
 }
 .nav :is(button, a) {
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   white-space: nowrap;
 }
 .controls {
@@ -43,10 +43,10 @@
   min-width: 0;
 }
 .title {
-  font-size: clamp(30px, 3.5vw, 48px);
-  font-weight: 550;
+  font-size: var(--text-page-title);
+  font-weight: var(--weight-emphasis);
   letter-spacing: -1.6px;
-  line-height: 1.2;
+  line-height: var(--leading-display);
   margin: 0 0 14px;
 }
 .title span {
@@ -54,7 +54,7 @@
 }
 .subtitle {
   color: var(--muted);
-  font-size: 16px;
+  font-size: var(--text-body-size);
   margin: 0;
 }
 .noticeWrap {
@@ -73,8 +73,8 @@
   border-radius: 999px;
   background: var(--green);
   color: #103d22;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--text-caption-size);
+  font-weight: var(--weight-bold);
   pointer-events: none;
 }
 .notices {
@@ -107,7 +107,7 @@
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  font-size: 14px;
+  font-size: var(--text-caption-size);
   color: var(--muted);
   margin-top: 30px;
 }
@@ -120,7 +120,7 @@
     gap: 14px;
   }
   .logo {
-    font-size: 32px;
+    font-size: var(--font-size-32);
   }
   .nav :is(button, a) {
     padding: 10px 12px;
@@ -145,7 +145,7 @@
     justify-content: center;
   }
   .title {
-    font-size: 40px;
+    font-size: var(--font-size-40);
   }
 }
 @media (max-width: 600px) {
@@ -155,9 +155,9 @@
     gap: 8px;
   }
   .logo {
-    font-size: 28px;
+    font-size: var(--font-size-28);
     white-space: normal;
-    line-height: 1.1;
+    line-height: var(--leading-tight);
     max-width: 100%;
     flex: 1 1 200px;
   }
@@ -175,11 +175,11 @@
     padding: 20px 16px 110px;
   }
   .title {
-    font-size: 34px;
+    font-size: var(--font-size-34);
     letter-spacing: -1.2px;
   }
   .subtitle {
-    font-size: 14px;
+    font-size: var(--text-caption-size);
   }
   .mobileNav {
     display: flex;
@@ -198,7 +198,7 @@
     width: 100%;
   }
   .mobileNav .nav :is(button, a) {
-    font-size: 12px;
+    font-size: var(--text-caption-size);
     gap: 5px;
     padding: 8px 6px;
     flex-direction: column;
@@ -206,7 +206,7 @@
   }
   .footer {
     display: grid;
-    font-size: 12px;
+    font-size: var(--text-caption-size);
   }
   .music {
     right: 16px;
@@ -216,16 +216,16 @@
 
 @media (max-width: 360px) {
   .logo {
-    font-size: 26px;
+    font-size: var(--font-size-26);
   }
   .title {
-    font-size: 30px;
+    font-size: var(--font-size-30);
   }
   .mobileNav .nav {
     gap: 2px;
   }
   .mobileNav .nav :is(button, a) {
-    font-size: 11px;
+    font-size: var(--text-caption-size);
     padding-inline: 2px;
   }
 }

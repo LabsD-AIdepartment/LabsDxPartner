@@ -1,0 +1,52 @@
+/* Single typography source for the portal, previews, controls and charts.
+   Body = 16px; supporting text never below 14px, at any breakpoint. */
+:root {
+  --font-family-body: 'DM Sans Variable', 'Noto Sans Thai Variable', sans-serif;
+  --font-family-brand: 'Inter Variable', 'Noto Sans Thai Variable', sans-serif;
+  --text-caption-size: 14px;
+  --text-body-size: 16px;
+  --text-label-size: var(--text-caption-size);
+  --text-card-title-size: var(--font-size-20);
+  --text-section-title-size: var(--font-size-22);
+  --font-size-15: 15px;
+  --font-size-17: 17px;
+  --font-size-18: 18px;
+  --font-size-19: 19px;
+  --font-size-20: 20px;
+  --font-size-22: 22px;
+  --font-size-24: 24px;
+  --font-size-25: 25px;
+  --font-size-26: 26px;
+  --font-size-28: 28px;
+  --font-size-30: 30px;
+  --font-size-32: 32px;
+  --font-size-34: 34px;
+  --font-size-36: 36px;
+  --font-size-38: 38px;
+  --font-size-40: 40px;
+  --font-size-42: 42px;
+  --font-size-44: 44px;
+  --font-size-46: 46px;
+  --text-brand: clamp(28px, 2.8vw, 40.32px);
+  --text-page-title: clamp(30px, 3.5vw, 48px);
+  --text-brand-compact: clamp(24px, 2.6vw, 36px);
+  --text-hero: clamp(42px, 5.1vw, 72px);
+  --text-section-title: clamp(24px, 2.2vw, 30px);
+  --text-detail-title: clamp(24px, 4vw, 34px);
+  --text-metric: clamp(24px, 6cqi, 34px);
+  --text-metric-large: clamp(30px, 8cqi, 38px);
+  --text-metric-responsive: clamp(26px, 2.8vw, 38px);
+  --text-metric-compact: clamp(20px, 6cqi, 26px);
+  --leading-tight: 1.1;
+  --leading-display: 1.2;
+  --leading-heading: 1.4;
+  --leading-label: 1.5;
+  --leading-body: 1.6;
+  --leading-relaxed: 1.7;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-emphasis: 550;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-brand: 800;
+}

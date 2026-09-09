@@ -1,0 +1,37 @@
+.text {
+  margin: 0;
+  font-family: var(--font-family-body);
+  overflow-wrap: anywhere;
+}
+.body {
+  font-size: var(--text-body-size);
+  line-height: var(--leading-body);
+  font-weight: var(--weight-regular);
+}
+.caption {
+  font-size: var(--text-caption-size);
+  line-height: var(--leading-body);
+  font-weight: var(--weight-regular);
+}
+.label {
+  font-size: var(--text-label-size);
+  line-height: var(--leading-label);
+  font-weight: var(--weight-medium);
+}
+.cardTitle {
+  font-size: var(--text-card-title-size);
+  line-height: var(--leading-heading);
+  font-weight: var(--weight-emphasis);
+  letter-spacing: -0.4px;
+}
+.sectionTitle {
+  font-size: var(--text-section-title-size);
+  line-height: var(--leading-heading);
+  font-weight: var(--weight-emphasis);
+}
+.default {
+  color: inherit;
+}
+.muted {
+  color: var(--muted);
+}

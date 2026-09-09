@@ -2,6 +2,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './Button';
+import { Text } from './Text';
 import styles from './ui.module.css';
 export function Dialog({
   open,
@@ -72,7 +73,9 @@ export function Dialog({
       }}
     >
       <div className={styles.heading}>
-        <h2 id={id}>{title}</h2>
+        <Text as="h2" variant="sectionTitle" id={id}>
+          {title}
+        </Text>
         <Button icon aria-label="ปิดหน้าต่าง" onClick={onClose}>
           <X size={20} />
         </Button>

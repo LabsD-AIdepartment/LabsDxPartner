@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import type { Metric } from '@/contracts/content';
 import { timestamp, dateLabel } from '@/shared/ui/format-date';
+import { Text } from '@/shared/ui/Text';
 import styles from './content.module.css';
 const labels: Record<z.infer<typeof Metric>['key'], string> = {
   eligible_orders: 'ออเดอร์เข้าเงื่อนไข',
@@ -55,7 +56,11 @@ export function MetricSections({
   const conversions = visible.filter((x) => ['platform_orders', 'platform_value'].includes(x.key));
   return (
     <>
-      {!visible.length && <p className={styles.meta}>ยังไม่มีข้อมูลประสิทธิภาพจากต้นทาง</p>}
+      {!visible.length && (
+        <Text variant="caption" tone="muted" className={styles.meta}>
+          ยังไม่มีข้อมูลประสิทธิภาพจากต้นทาง
+        </Text>
+      )}
       <div className={styles.metrics}>
         {response.map((m) => (
           <MetricDefinition key={m.key} metric={m} />
