@@ -80,6 +80,7 @@ export function readyScenario() {
     earnings: {
       generation: '1',
       period,
+      coverage: { status: 'complete', periods: [period] },
       estimated: money('0'),
       confirmed: money('3736000'),
       eligibleSales: money('55000000'),

@@ -1,14 +1,17 @@
 'use client';
 import { useId, useEffect, useRef, useState } from 'react';
 import type { MoneyValue } from '@/contracts/common';
+import { coverageSegmentForDay, type PeriodCoverageValue } from '@/contracts/coverage';
 import { formatMinor } from '@/shared/ui/format-money';
 import { displayRatio } from './display-ratio';
 import { DataState } from '@/shared/ui/DataState';
 import styles from './chart.module.css';
 export function TrendChart({
   points,
+  coverage,
 }: {
   points: readonly { date: string; amount: MoneyValue }[];
+  coverage?: PeriodCoverageValue;
 }) {
   const id = useId().replaceAll(':', '');
   const ref = useRef<HTMLDivElement>(null);
@@ -29,13 +32,28 @@ export function TrendChart({
   const range = max - min || 1n;
   const x = (i: number) => 24 + (i * (width - 48)) / Math.max(1, points.length - 1);
   const y = (v: bigint) => 136 - displayRatio(v - min, range) * 100;
-  const path = values
-    .map((v, i) =>
-      i === 0
-        ? `M${x(i)},${y(v)}`
-        : `C${(x(i - 1) + x(i)) / 2},${y(values[i - 1])} ${(x(i - 1) + x(i)) / 2},${y(v)} ${x(i)},${y(v)}`,
-    )
-    .join(' ');
+  // Missing published windows are gaps, not interpolated earnings. A daily bucket
+  // can contain partial coverage, but a line must never bridge separate windows.
+  const segment = (date: string) => {
+    if (!coverage) return 0;
+    return coverageSegmentForDay(coverage, date);
+  };
+  const groups: number[][] = [];
+  points.forEach((point, i) => {
+    if (!i || segment(point.date) !== segment(points[i - 1].date)) groups.push([]);
+    groups.at(-1)!.push(i);
+  });
+  const paths = groups.map((group) => ({
+    group,
+    path: group
+      .map((i, position) => {
+        const v = values[i];
+        return position === 0
+          ? `M${x(i)},${y(v)}`
+          : `C${(x(i - 1) + x(i)) / 2},${y(values[i - 1])} ${(x(i - 1) + x(i)) / 2},${y(v)} ${x(i)},${y(v)}`;
+      })
+      .join(' '),
+  }));
   const last = points[points.length - 1];
   const zeroY = y(0n);
   return (
@@ -63,11 +81,15 @@ export function TrendChart({
             strokeDasharray="2 5"
           />
         ))}
-        <path
-          d={`${path} L${x(values.length - 1)},${zeroY} L${x(0)},${zeroY} Z`}
-          fill={`url(#${id}-area)`}
-        />
-        <path d={path} fill="none" stroke={`url(#${id}-line)`} strokeWidth="2" />
+        {paths.map(({ group, path }) => (
+          <g key={group[0]}>
+            <path
+              d={`${path} L${x(group.at(-1)!)},${zeroY} L${x(group[0])},${zeroY} Z`}
+              fill={`url(#${id}-area)`}
+            />
+            <path d={path} fill="none" stroke={`url(#${id}-line)`} strokeWidth="2" />
+          </g>
+        ))}
         {points.map((point, i) => (
           <g key={`${point.date}-${i}`}>
             <circle cx={x(i)} cy={y(values[i])} r="3" fill="var(--chart-dot)">

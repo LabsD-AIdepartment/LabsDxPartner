@@ -16,7 +16,7 @@ export function EarningMix({ data }: { data: OverviewValue }) {
       className={styles.mixCard}
       action={<Sparkles size={18} aria-hidden />}
     >
-      {comparable ? (
+      {comparable && data.earnings.confirmed ? (
         <DonutChart primary={split.organic.minor} total={data.earnings.confirmed.minor} />
       ) : (
         <>

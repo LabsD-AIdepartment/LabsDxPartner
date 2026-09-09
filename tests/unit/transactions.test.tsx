@@ -59,7 +59,7 @@ describe('F06 exact statements and independent settlement boundary', () => {
     const before = overviewFixture(filters),
       after = overviewFixture(filters, 'ready', true);
     const detail = await loadTransactions(async () => transactionFixture('ready', true), request);
-    expect(before.earnings.confirmed.minor).toBe('1592000');
+    expect(before.earnings.confirmed!.minor).toBe('1592000');
     expect(after.earnings.confirmed).toEqual(before.earnings.confirmed);
     expect(detail.data.statement.newEarnings.minor).toBe('3736000');
     expect(detail.data.statement.version).toBe('1');

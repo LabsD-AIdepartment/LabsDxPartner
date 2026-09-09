@@ -7,16 +7,15 @@ import { OverviewPage } from '@/features/overview/OverviewPage';
 import { ScopedQueryProvider } from '@/shared/query/provider';
 import { invalidateChanges } from '@/shared/query/invalidate-changes';
 import { Button } from '@/shared/ui/Button';
-import { createOverviewTransport } from './overview-transport';
+import { createOverviewTransport, type OverviewScenario } from './overview-transport';
 import { NotificationButton } from '@/features/shell/NotificationButton';
 import { readyScenario } from './scenarios/ready';
-import type { ScenarioName } from './scenarios';
 import { usePreviewPayment } from './preview-payment';
 import styles from './access-preview.module.css';
 const scope = { userId: 'preview-user', partnerId: 'preview-partner', permissionRevision: '1' };
 export function OverviewPreview({ search = '' }: { search?: string }) {
   const report = readReportContext(new URLSearchParams(search));
-  const [mode, setMode] = useState<ScenarioName | 'loading' | 'error'>('ready');
+  const [mode, setMode] = useState<OverviewScenario | 'loading' | 'error'>('ready');
   const [paid, setPaid] = usePreviewPayment();
   const [notices, setNotices] = useState(() => readyScenario().notifications);
   const transport = useMemo(() => createOverviewTransport(mode, paid), [mode, paid]);
@@ -32,6 +31,8 @@ export function OverviewPreview({ search = '' }: { search?: string }) {
               'ready',
               'empty',
               'partial',
+              'partial-period',
+              'confirmed-only',
               'stale',
               'unavailable',
               'adjustments',

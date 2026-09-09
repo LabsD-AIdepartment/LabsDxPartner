@@ -11,6 +11,7 @@ import {
 import { OverviewPage } from '@/features/overview/OverviewPage';
 import { ScopedQueryProvider } from '@/shared/query/provider';
 import { OverviewPreview } from '../../dev/OverviewPreview';
+import { TrendChart } from '@/shared/charts/TrendChart';
 beforeEach(() =>
   vi.stubGlobal(
     'ResizeObserver',
@@ -34,7 +35,7 @@ describe('Overview contract and snapshot semantics', () => {
       const data = overviewFixture(filters, name);
       expect(
         data.earnings.salesByBrand!.reduce((n, b) => n + BigInt(b.value.minor), 0n).toString(),
-      ).toBe(data.earnings.eligibleSales.minor);
+      ).toBe(data.earnings.eligibleSales!.minor);
       const channels = data.earnings.channelBreakdown!;
       expect(
         (
@@ -42,7 +43,7 @@ describe('Overview contract and snapshot semantics', () => {
           BigInt(channels.brandAds.minor) +
           BigInt(channels.other.minor)
         ).toString(),
-      ).toBe(data.earnings.confirmed.minor);
+      ).toBe(data.earnings.confirmed!.minor);
     }
   });
   it('old payloads retain visual slots without inventing missing breakdowns', async () => {
@@ -78,12 +79,12 @@ describe('Overview contract and snapshot semantics', () => {
   it('filters earnings at source and preserves obligation; earned date differs from publication', () => {
     const all = overviewFixture(filters);
     const axtion = overviewFixture({ ...filters, brand: 'Axtion' });
-    expect(all.earnings.confirmed.minor).toBe('3736000');
-    expect(all.earnings.eligibleSales.minor).toBe('55000000');
+    expect(all.earnings.confirmed!.minor).toBe('3736000');
+    expect(all.earnings.eligibleSales!.minor).toBe('55000000');
     expect(all.earnings.channelBreakdown?.organicRatePpm).toBe(100000);
     expect(all.earnings.channelBreakdown?.brandAdsRatePpm).toBe(30000);
-    expect(axtion.earnings.confirmed.minor).toBe('1592000');
-    expect(axtion.earnings.eligibleSales.minor).toBe('23200000');
+    expect(axtion.earnings.confirmed!.minor).toBe('1592000');
+    expect(axtion.earnings.eligibleSales!.minor).toBe('23200000');
     expect(axtion.obligation).toEqual(all.obligation);
     expect(all.earnings.trend.at(-1)?.date).toBe('2026-08-30');
     expect(all.earnings.topContent[0].publishedAt.slice(0, 10)).toBe('2026-08-28');
@@ -91,20 +92,20 @@ describe('Overview contract and snapshot semantics', () => {
   });
   it('partial assigned + unassigned reconciles and adjustments do not rewrite issued payouts', () => {
     const partial = overviewFixture({ ...filters, brand: 'Axtion' }, 'partial');
-    expect(partial.earnings.unassignedAmount.minor).toBe('1280000');
+    expect(partial.earnings.unassignedAmount!.minor).toBe('1280000');
     expect(
       partial.earnings.topContent.reduce((s, c) => s + BigInt(c.earned!.minor), 0n) +
-        BigInt(partial.earnings.unassignedAmount.minor),
+        BigInt(partial.earnings.unassignedAmount!.minor),
     ).toBe(1592000n);
     const adjusted = overviewFixture(filters, 'adjustments');
-    expect(adjusted.earnings.confirmed.minor).toBe('3536000');
-    expect(adjusted.obligation.confirmedUnpaid.minor).toBe('2552000');
+    expect(adjusted.earnings.confirmed!.minor).toBe('3536000');
+    expect(adjusted.obligation.confirmedUnpaid!.minor).toBe('2552000');
   });
   it('new payment changes obligation as-of without changing earnings generation or producing generation conflict', () => {
     const before = overviewFixture(filters);
     const after = overviewFixture(filters, 'ready', true);
     expect(after.earnings).toEqual(before.earnings);
-    expect(after.obligation.confirmedUnpaid.minor).toBe('1552000');
+    expect(after.obligation.confirmedUnpaid!.minor).toBe('1552000');
     expect(obligationHref(after)).not.toContain('generation');
     expect(obligationHref(after)).not.toEqual(obligationHref(before));
     expect(earningsHref('/content', before, filters)).toContain('generation=1');
@@ -121,6 +122,84 @@ describe('Overview contract and snapshot semantics', () => {
   });
 });
 describe('Overview loading, errors and exact display', () => {
+  it('does not draw a continuous curve across an unpublished window', () => {
+    const { container } = render(
+      <TrendChart
+        points={[
+          { date: '2026-08-01', amount: { currency: 'THB', minor: '100' } },
+          { date: '2026-08-02', amount: { currency: 'THB', minor: '200' } },
+          { date: '2026-08-10', amount: { currency: 'THB', minor: '300' } },
+        ]}
+        coverage={{
+          status: 'partial',
+          periods: [
+            {
+              from: '2026-08-01T00:00:00+07:00',
+              toExclusive: '2026-08-03T00:00:00+07:00',
+              timezone: 'Asia/Bangkok',
+            },
+            {
+              from: '2026-08-10T00:00:00+07:00',
+              toExclusive: '2026-08-11T00:00:00+07:00',
+              timezone: 'Asia/Bangkok',
+            },
+          ],
+        }}
+      />,
+    );
+    const curves = container.querySelectorAll('path[fill="none"]');
+    expect(curves).toHaveLength(2);
+    expect(curves[0].getAttribute('d')).toContain('C');
+    expect(curves[1].getAttribute('d')).not.toContain('C');
+    expect(container.querySelectorAll('circle')).toHaveLength(3);
+  });
+  it('keeps all six cards and approved portrait when published data is unavailable', async () => {
+    render(<OverviewPreview />);
+    fireEvent.change(screen.getByLabelText('สถานการณ์ภาพรวม'), {
+      target: { value: 'unavailable' },
+    });
+    await screen.findByText('ต้นทางยังไม่พร้อมให้ข้อมูล');
+    expect(screen.getAllByRole('article')).toHaveLength(6);
+    expect(screen.getByRole('img', { name: 'ภาพโปรไฟล์ มดดำ คชาภา' })).toHaveAttribute(
+      'src',
+      '/media/celebrity-thumbnail.png',
+    );
+    expect(screen.queryByText('฿0')).toBeNull();
+    expect(screen.queryByText('ยังไม่มีกำหนดจ่ายรอบถัดไป')).toBeNull();
+    expect(screen.getByText('ยังไม่มีข้อมูลสถานะการจ่าย')).toBeVisible();
+    expect(screen.queryByRole('img', { name: 'คอมมิชชันตามวันที่เกิดรายได้' })).toBeNull();
+  });
+  it('shows confirmed money without guessing an estimate', async () => {
+    renderPage(async () => overviewFixture(filters, 'confirmed-only'));
+    await screen.findAllByText('฿37,360');
+    expect(screen.getByText('ยังไม่มีข้อมูลยอดประมาณการ')).toBeVisible();
+    expect(screen.queryByText('฿0')).toBeNull();
+    expect(screen.getByRole('img', { name: 'Organic 80%' })).toBeVisible();
+  });
+  it('discloses partial coverage and preserves independently known payout when selected earnings have no coverage', async () => {
+    const source = overviewFixture(filters, 'partial-period');
+    const { rerender } = renderPage(async () => source);
+    await screen.findAllByText('฿21,440');
+    expect(
+      screen.getByText('ยอดนี้รวมเฉพาะช่วงที่เผยแพร่แล้ว ยังไม่ครบช่วงวันที่เลือก'),
+    ).toBeVisible();
+    expect(screen.getByText('ดูช่วงที่รวมในยอดนี้')).toBeVisible();
+    const unknown = overviewFixture(filters, 'unavailable');
+    unknown.dataState = 'partial';
+    unknown.obligation = source.obligation;
+    rerender(
+      <ScopedQueryProvider scope={{ ...scope, partnerId: 'other' }}>
+        <OverviewPage
+          scope={{ ...scope, partnerId: 'other' }}
+          transport={async () => unknown}
+          brands={[]}
+        />
+      </ScopedQueryProvider>,
+    );
+    await screen.findByText('ยังไม่มีข้อมูลคอมมิชชันรายวัน');
+    expect(screen.getAllByText('฿25,520')).toHaveLength(2);
+    expect(screen.getAllByRole('article')).toHaveLength(6);
+  });
   it('a payment during the initial request cancels the older in-flight balance', async () => {
     render(<OverviewPreview />);
     fireEvent.click(screen.getByRole('button', { name: 'จำลองบันทึกจ่าย 10,000 บาท' }));
@@ -148,7 +227,7 @@ describe('Overview loading, errors and exact display', () => {
     await waitFor(() => expect(screen.getAllByText('฿15,520')).toHaveLength(2));
     expect(screen.getByLabelText('แบรนด์')).toHaveValue('Axtion');
     expect(screen.getAllByText('฿15,920')[0]).toBeVisible();
-    expect(overviewFixture(filters, 'empty', true).obligation.confirmedUnpaid.minor).toBe('0');
+    expect(overviewFixture(filters, 'empty', true).obligation.confirmedUnpaid!.minor).toBe('0');
   });
   it('shows loading then exact confirmed and estimated values from the same response', async () => {
     let finish!: (v: unknown) => void;
@@ -160,7 +239,7 @@ describe('Overview loading, errors and exact display', () => {
     );
     expect(screen.getByRole('status')).toHaveTextContent('กำลังโหลดข้อมูล');
     const data = overviewFixture(filters);
-    data.earnings.estimated.minor = '900719925474099301';
+    data.earnings.estimated!.minor = '900719925474099301';
     finish(data);
     expect(await screen.findByText('฿9,007,199,254,740,993.01')).toBeVisible();
     expect(screen.getAllByText('฿37,360')[0]).toBeVisible();

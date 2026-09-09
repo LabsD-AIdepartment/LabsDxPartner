@@ -50,9 +50,16 @@ export function TopContent({
           ))}
         </div>
       ) : (
-        <DataState state="empty" message="ยังไม่มีคลิปที่จับคู่รายได้ในช่วงนี้" />
+        <DataState
+          state={data.earnings.confirmed === null ? 'unavailable' : 'empty'}
+          message={
+            data.earnings.confirmed === null
+              ? 'ยังไม่มีข้อมูลรายได้เพื่อจัดอันดับคลิป'
+              : 'ยังไม่มีคลิปที่จับคู่รายได้ในช่วงนี้'
+          }
+        />
       )}
-      {data.earnings.unassignedAmount.minor !== '0' && (
+      {data.earnings.unassignedAmount && data.earnings.unassignedAmount.minor !== '0' && (
         <div className={styles.explanation}>
           <strong>มีรายได้ที่ยังไม่จับคู่กับคลิป</strong>
           <p>
@@ -61,7 +68,7 @@ export function TopContent({
           </p>
         </div>
       )}
-      {data.earnings.excludedCount > 0 && (
+      {data.earnings.excludedCount !== null && data.earnings.excludedCount > 0 && (
         <p className="small muted">
           {data.earnings.excludedCount} รายการยังไม่ผ่านเงื่อนไขและไม่รวมในยอดนี้
         </p>

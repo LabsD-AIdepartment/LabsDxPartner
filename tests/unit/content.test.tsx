@@ -170,8 +170,8 @@ describe('F05 reporting context and source boundaries', () => {
           cursor = page.data.nextCursor;
         } while (cursor);
         const overview = overviewFixture(c, mode);
-        expect(sum + BigInt(overview.earnings.unassignedAmount.minor)).toBe(
-          BigInt(overview.earnings.confirmed.minor),
+        expect(sum + BigInt(overview.earnings.unassignedAmount!.minor)).toBe(
+          BigInt(overview.earnings.confirmed!.minor),
         );
         if (mode === 'ready' && c === context) expect(covers.size).toBe(6);
       }

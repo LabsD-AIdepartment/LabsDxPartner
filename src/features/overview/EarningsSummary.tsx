@@ -72,7 +72,11 @@ export function EarningsSummary({
         <div className={styles.estimate}>
           <span>ประมาณการ · ยังไม่ยืนยัน</span>
           <Money value={data.earnings.estimated} />
-          <p className="small muted">ยอดประมาณการอาจเปลี่ยนหลังตรวจสอบ ไม่ใช่ยอดพร้อมจ่าย</p>
+          <p className="small muted">
+            {data.earnings.estimated === null
+              ? 'ยังไม่มีข้อมูลยอดประมาณการ'
+              : 'ยอดประมาณการอาจเปลี่ยนหลังตรวจสอบ ไม่ใช่ยอดพร้อมจ่าย'}
+          </p>
         </div>
         <div className={styles.earningsFooter}>
           <p className="small muted">ยอดยืนยันอาจรวมรายการปรับปรุงหรือคืนสินค้า</p>

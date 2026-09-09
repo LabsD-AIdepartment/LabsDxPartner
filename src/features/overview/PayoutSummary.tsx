@@ -40,7 +40,11 @@ export function PayoutSummary({
           </LinkButton>
         </div>
       ) : (
-        <p className="muted">ยังไม่มีกำหนดจ่ายรอบถัดไป</p>
+        <p className="muted">
+          {obligation.confirmedUnpaid === null
+            ? 'ยังไม่มีข้อมูลสถานะการจ่าย'
+            : 'ยังไม่มีกำหนดจ่ายรอบถัดไป'}
+        </p>
       )}
       <p className={styles.label}>สถานะการจ่าย ณ {timestamp(obligation.asOf)}</p>
       <p className={styles.label}>
@@ -48,7 +52,9 @@ export function PayoutSummary({
       </p>
       <div
         className={styles.payoutTrack}
-        data-confirmed={BigInt(obligation.confirmedUnpaid.minor) > 0n}
+        data-confirmed={
+          obligation.confirmedUnpaid !== null && BigInt(obligation.confirmedUnpaid.minor) > 0n
+        }
         aria-hidden
       >
         <i />

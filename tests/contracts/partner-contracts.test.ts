@@ -40,9 +40,14 @@ describe('public partner wire contract', () => {
   it('all scenario summary earnings reconcile to the same-generation rows', () => {
     for (const name of scenarioNames) {
       const s = scenario(name);
+      if (name === 'unavailable') {
+        expect(s.overview.earnings.confirmed).toBeNull();
+        expect(s.overview.earnings.coverage.status).toBe('unavailable');
+        continue;
+      }
       expect(
         s.earnings.data.items.reduce((a, x) => a + BigInt(x.amount.minor), 0n).toString(),
-      ).toBe(s.overview.earnings.confirmed.minor);
+      ).toBe(s.overview.earnings.confirmed?.minor);
     }
   });
   it('rejects float, malformed, unknown currency and leaked internal fields', () => {

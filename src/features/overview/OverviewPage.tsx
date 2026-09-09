@@ -27,6 +27,7 @@ import {
 import styles from './overview.module.css';
 import { SourceUnavailableError } from '@/shared/query/source-unavailable';
 import { UnavailableOverview } from './UnavailableOverview';
+import { CoverageNotice } from './CoverageNotice';
 export function OverviewPage({
   scope,
   transport,
@@ -117,52 +118,57 @@ export function OverviewPage({
                 onRetry={() => void query.refetch()}
               />
             )}
-            {data.dataState !== 'unavailable' && (
-              <>
-                <div className={styles.contentBands}>
-                  <div className={styles.grid}>
-                    <EarningsSummary
-                      data={data}
-                      filters={filters}
-                      partner={partner}
-                      contentBasePath={contentBasePath}
-                    />
-                    <Card
-                      className={styles.sales}
-                      title="Sales in motion"
-                      description="ยอดขายที่เข้าเงื่อนไขคอมมิชชันในช่วงที่เลือก"
-                      action={<ArrowUpRight size={18} aria-hidden />}
-                    >
-                      <Money value={data.earnings.eligibleSales} className={styles.largeMoney} />
-                      {data.earnings.salesByBrand ? (
-                        <BarChart items={data.earnings.salesByBrand} />
-                      ) : (
-                        <DataState state="unavailable" message="ยังไม่มีข้อมูลยอดขายแยกตามแบรนด์" />
-                      )}
-                      <div className={styles.cardBottom}>
-                        <span>แยกตามแบรนด์</span>
-                        <span>Eligible sales</span>
-                      </div>
-                      <p className="small muted">ใช้เป็นฐานคำนวณรายได้ ไม่ใช่ยอดเงินที่จะได้รับ</p>
-                    </Card>
-                    <PayoutSummary
-                      data={data}
-                      basePath={transactionsBasePath}
-                      returnTo={earningsHref(overviewBasePath, data, filters)}
-                    />
-                    <Card
-                      className={styles.trend}
-                      title="Every clip counts"
-                      description="คอมมิชชันยืนยันตามวันที่เกิดรายได้ รวมรายการปรับปรุง"
-                    >
-                      <div className={styles.trendSummary}>
-                        <Money value={data.earnings.confirmed} />
-                        <span>
-                          <Video size={15} aria-hidden />
-                          {data.earnings.contentCount ?? '—'} คลิปที่สร้างรายได้
-                        </span>
-                      </div>
-                      <TrendChart points={data.earnings.trend} />
+            <CoverageNotice coverage={data.earnings.coverage} />
+            <>
+              <div className={styles.contentBands}>
+                <div className={styles.grid}>
+                  <EarningsSummary
+                    data={data}
+                    filters={filters}
+                    partner={partner}
+                    contentBasePath={contentBasePath}
+                  />
+                  <Card
+                    className={styles.sales}
+                    title="Sales in motion"
+                    description="ยอดขายที่เข้าเงื่อนไขคอมมิชชันในช่วงที่เลือก"
+                    action={<ArrowUpRight size={18} aria-hidden />}
+                  >
+                    <Money value={data.earnings.eligibleSales} className={styles.largeMoney} />
+                    {data.earnings.salesByBrand ? (
+                      <BarChart items={data.earnings.salesByBrand} />
+                    ) : (
+                      <DataState state="unavailable" message="ยังไม่มีข้อมูลยอดขายแยกตามแบรนด์" />
+                    )}
+                    <div className={styles.cardBottom}>
+                      <span>แยกตามแบรนด์</span>
+                      <span>Eligible sales</span>
+                    </div>
+                    <p className="small muted">ใช้เป็นฐานคำนวณรายได้ ไม่ใช่ยอดเงินที่จะได้รับ</p>
+                  </Card>
+                  <PayoutSummary
+                    data={data}
+                    basePath={transactionsBasePath}
+                    returnTo={earningsHref(overviewBasePath, data, filters)}
+                  />
+                  <Card
+                    className={styles.trend}
+                    title="Every clip counts"
+                    description="คอมมิชชันยืนยันตามวันที่เกิดรายได้ รวมรายการปรับปรุง"
+                  >
+                    <div className={styles.trendSummary}>
+                      <Money value={data.earnings.confirmed} />
+                      <span>
+                        <Video size={15} aria-hidden />
+                        {data.earnings.contentCount ?? '—'} คลิปที่สร้างรายได้
+                      </span>
+                    </div>
+                    {data.earnings.confirmed === null ? (
+                      <DataState state="unavailable" message="ยังไม่มีข้อมูลคอมมิชชันรายวัน" />
+                    ) : (
+                      <TrendChart points={data.earnings.trend} coverage={data.earnings.coverage} />
+                    )}
+                    {data.earnings.trend.length > 0 && (
                       <details>
                         <summary>ดูตัวเลขรายวัน</summary>
                         <div className={styles.daily}>
@@ -174,15 +180,15 @@ export function OverviewPage({
                           ))}
                         </div>
                       </details>
-                    </Card>
-                  </div>
-                  <div className={styles.lower}>
-                    <TopContent data={data} filters={filters} contentBasePath={contentBasePath} />
-                    <EarningMix data={data} />
-                  </div>
+                    )}
+                  </Card>
                 </div>
-              </>
-            )}
+                <div className={styles.lower}>
+                  <TopContent data={data} filters={filters} contentBasePath={contentBasePath} />
+                  <EarningMix data={data} />
+                </div>
+              </div>
+            </>
           </>
         )
       )}

@@ -75,6 +75,23 @@ export function scenario(name: ScenarioName): Scenario {
     s.overview.earnings.topContent[0].earned = money('1080000');
     // Issued statement remains unchanged; correction is not yet published to a new statement.
   }
+  if (name === 'unavailable') {
+    s.overview.earnings = {
+      ...s.overview.earnings,
+      coverage: { status: 'unavailable', periods: [] },
+      estimated: null,
+      confirmed: null,
+      eligibleSales: null,
+      unassignedAmount: null,
+      excludedCount: null,
+      salesByBrand: null,
+      channelBreakdown: null,
+      contentCount: null,
+      trend: [],
+      topContent: [],
+    };
+    s.overview.obligation = { ...s.overview.obligation, confirmedUnpaid: null, nextPayout: null };
+  }
   if (name === 'access') {
     s.session.access = 'suspended';
     s.session.activePartnerId = null;

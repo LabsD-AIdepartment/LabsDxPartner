@@ -3,9 +3,31 @@ import type { FilterValue } from '@/shared/ui/FilterBar';
 import type { OverviewTransport } from '@/features/overview/model';
 import { scenario, type ScenarioName } from './scenarios';
 import { money } from './scenarios/ready';
+import { coverageForPeriod } from '@/contracts/coverage';
+export type OverviewScenario = ScenarioName | 'partial-period' | 'confirmed-only';
 /** Synthetic upstream aggregation. Never imported by the product Overview feature. */
-export function overviewRows(filters: FilterValue, name: ScenarioName = 'ready') {
-  const s = scenario(name);
+export function overviewRows(filters: FilterValue, name: OverviewScenario = 'ready') {
+  const s = scenario(name === 'partial-period' || name === 'confirmed-only' ? 'ready' : name);
+  const period = {
+    from: filters.from + 'T00:00:00+07:00',
+    toExclusive: filters.toExclusive + 'T00:00:00+07:00',
+    timezone: 'Asia/Bangkok' as const,
+  };
+  // Explicit synthetic coverage, never inferred from a last earning date.
+  const coverage = coverageForPeriod(
+    period,
+    name === 'unavailable'
+      ? []
+      : name === 'partial-period'
+        ? [
+            {
+              from: '2026-08-01T00:00:00+07:00',
+              toExclusive: '2026-08-25T00:00:00+07:00',
+              timezone: 'Asia/Bangkok',
+            },
+          ]
+        : [period],
+  );
   const base = scenario('ready');
   const bySource = new Map(
     base.earnings.data.items.map((line) => [
@@ -23,12 +45,21 @@ export function overviewRows(filters: FilterValue, name: ScenarioName = 'ready')
       (line) =>
         line.earnedAt.slice(0, 10) >= filters.from &&
         line.earnedAt.slice(0, 10) < filters.toExclusive &&
-        (!filters.brand || bySource.get(line.sourceRef)?.brand === filters.brand),
+        (!filters.brand || bySource.get(line.sourceRef)?.brand === filters.brand) &&
+        coverage.periods.some(
+          (p) =>
+            Date.parse(line.earnedAt) >= Date.parse(p.from) &&
+            Date.parse(line.earnedAt) < Date.parse(p.toExclusive),
+        ),
     );
-  return { s, rows, bySource };
+  return { s, rows, bySource, period, coverage };
 }
-export function overviewFixture(filters: FilterValue, name: ScenarioName = 'ready', paid = false) {
-  const { s, rows, bySource } = overviewRows(filters, name);
+export function overviewFixture(
+  filters: FilterValue,
+  name: OverviewScenario = 'ready',
+  paid = false,
+) {
+  const { s, rows, bySource, period, coverage } = overviewRows(filters, name);
   const sum = (selected: typeof rows) =>
     money(selected.reduce((total, line) => total + BigInt(line.amount.minor), 0n).toString());
   const confirmed = rows.filter((line) => line.status !== 'estimated');
@@ -95,11 +126,8 @@ export function overviewFixture(filters: FilterValue, name: ScenarioName = 'read
     dataThrough: name === 'stale' ? '2026-08-31T00:00:00+07:00' : s.overview.dataThrough,
     earnings: {
       ...s.overview.earnings,
-      period: {
-        from: filters.from + 'T00:00:00+07:00',
-        toExclusive: filters.toExclusive + 'T00:00:00+07:00',
-        timezone: 'Asia/Bangkok',
-      },
+      period,
+      coverage,
       confirmed: sum(confirmed),
       salesByBrand: brandSales,
       channelBreakdown: {
@@ -122,11 +150,31 @@ export function overviewFixture(filters: FilterValue, name: ScenarioName = 'read
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([date, amount]) => ({ date, amount: money(amount.toString()) })),
       topContent: content,
+      ...(coverage.status === 'unavailable'
+        ? {
+            confirmed: null,
+            eligibleSales: null,
+            unassignedAmount: null,
+            excludedCount: null,
+            channelBreakdown: null,
+            contentCount: null,
+            salesByBrand: null,
+            trend: [],
+            topContent: [],
+          }
+        : {}),
+      ...(['unavailable', 'confirmed-only', 'partial-period'].includes(name)
+        ? { estimated: null }
+        : {}),
     },
+    ...(name === 'partial-period'
+      ? { dataState: 'partial', reasons: ['มีข้อมูลเฉพาะงวดที่เผยแพร่แล้ว'] }
+      : {}),
   });
   if (
     paid &&
     result.obligation.nextPayout &&
+    result.obligation.confirmedUnpaid &&
     BigInt(result.obligation.confirmedUnpaid.minor) >= 1000000n
   ) {
     result.obligation.asOf = '2026-09-02T12:00:00+07:00';
@@ -140,7 +188,7 @@ export function overviewFixture(filters: FilterValue, name: ScenarioName = 'read
   return result;
 }
 export function createOverviewTransport(
-  mode: ScenarioName | 'loading' | 'error',
+  mode: OverviewScenario | 'loading' | 'error',
   paid = false,
 ): OverviewTransport {
   return async ({ filters, signal }) => {
