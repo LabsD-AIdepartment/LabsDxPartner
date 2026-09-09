@@ -40,8 +40,9 @@ describe('authenticated partner application', () => {
       expect(selectSessionPartner(session, cookie)).toEqual(session);
   });
   it('keeps the overview layout with unavailable amounts and does not show fixture earnings', async () => {
-    fetcher.mockImplementation(async (url: string) =>
-      response(
+    fetcher.mockImplementation(async (url: string) => {
+      if (url.startsWith('/api/v1/partner/overview?')) return response({}, 503);
+      return response(
         url.startsWith('/api/v1/partner/changes?')
           ? {
               partnerId: 'partner-one',
@@ -54,8 +55,8 @@ describe('authenticated partner application', () => {
               sources: [],
             }
           : session,
-      ),
-    );
+      );
+    });
     render(
       <PartnerApplication
         initialSession={session}
@@ -79,7 +80,7 @@ describe('authenticated partner application', () => {
     );
     expect(
       fetcher.mock.calls.every(
-        ([url]) => url === '/api/partner/session' || url.startsWith('/api/v1/partner/changes?'),
+        ([url]) => url === '/api/partner/session' || url.startsWith('/api/v1/partner/changes?') || url.startsWith('/api/v1/partner/overview?'),
       ),
     ).toBe(true);
   });
@@ -87,6 +88,7 @@ describe('authenticated partner application', () => {
     let sessionReads = 0;
     fetcher.mockImplementation(async (url: string) => {
       if (url.startsWith('/api/v1/partner/changes?')) return response({}, 403);
+      if (url.startsWith('/api/v1/partner/overview?')) return response({}, 403);
       sessionReads++;
       return response(
         sessionReads === 1 ? session : { ...session, access: 'suspended', memberships: [] },

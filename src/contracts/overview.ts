@@ -3,10 +3,12 @@ import { Freshness, Id, Instant, Money, Period, Count } from './common';
 import { ContentCard } from './content';
 import { Rate } from './earnings';
 import { PeriodCoverage, coverageMatchesPeriod, coverageSegmentForDay } from './coverage';
+import { ProfilePresentation } from './catalogue';
 export const Obligation = z
   .strictObject({
     asOf: Instant,
     confirmedUnpaid: Money.nullable(),
+    nextPayoutReason: z.string().min(1).max(300).nullable().default(null),
     nextPayout: z
       .strictObject({
         statementId: Id,
@@ -21,6 +23,8 @@ export const Obligation = z
     'Unknown obligation cannot establish a next payout',
   );
 export const Overview = Freshness.extend({
+  profile: ProfilePresentation.nullable().optional(),
+  brands: z.array(Id).max(100).optional(),
   earnings: z
     .strictObject({
       generation: Id,
@@ -72,12 +76,7 @@ export const Overview = Freshness.extend({
           message: 'Coverage must match the requested period',
         });
       const unknown = value.coverage.status === 'unavailable';
-      for (const key of [
-        'confirmed',
-        'eligibleSales',
-        'unassignedAmount',
-        'excludedCount',
-      ] as const)
+      for (const key of ['confirmed', 'eligibleSales', 'unassignedAmount'] as const)
         if ((value[key] === null) !== unknown)
           ctx.addIssue({
             code: 'custom',
@@ -90,7 +89,7 @@ export const Overview = Freshness.extend({
           value.topContent.length ||
           value.salesByBrand !== null ||
           value.channelBreakdown !== null ||
-          value.contentCount !== null)
+          value.contentCount !== null || value.excludedCount !== null)
       )
         ctx.addIssue({
           code: 'custom',

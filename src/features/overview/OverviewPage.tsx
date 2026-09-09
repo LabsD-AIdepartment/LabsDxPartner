@@ -28,6 +28,8 @@ import styles from './overview.module.css';
 import { SourceUnavailableError } from '@/shared/query/source-unavailable';
 import { UnavailableOverview } from './UnavailableOverview';
 import { CoverageNotice } from './CoverageNotice';
+import { AccessLost } from '@/shared/query/revision-watcher';
+import { LinkButton } from '@/shared/ui/LinkButton';
 export function OverviewPage({
   scope,
   transport,
@@ -57,16 +59,21 @@ export function OverviewPage({
     enabled: valid,
   });
   const data = query.data;
+  if (query.error instanceof AccessLost) return <>
+    <DataState state="error" message="สิทธิ์เข้าถึงข้อมูลเปลี่ยนแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" />
+    <LinkButton href="/login">ไปหน้าเข้าสู่ระบบ</LinkButton>
+  </>;
+  const presentation = data?.profile ? { ...data.profile, greeting: `คุณ ${data.profile.name}` } : partner;
   return (
     <>
       <div className={styles.toolbar}>
         <div className={styles.welcome}>
-          สวัสดี {partner?.greeting ?? 'คุณพาร์ทเนอร์'} <span>✦</span>
+          สวัสดี {presentation?.greeting ?? 'คุณพาร์ทเนอร์'} <span>✦</span>
           <small>นี่คือผลงานของคุณ</small>
         </div>
         <FilterBar
           value={filters}
-          brands={brands}
+          brands={data?.brands ?? brands}
           onChange={setFilters}
           onReset={() => setFilters(initialFilters)}
           onExport={() => setExportOpen(true)}
@@ -90,7 +97,7 @@ export function OverviewPage({
       ) : query.isPending ? (
         <DataState state="loading" />
       ) : query.error instanceof SourceUnavailableError && !data ? (
-        <UnavailableOverview partner={partner} />
+        <UnavailableOverview partner={presentation} />
       ) : query.isError && !data ? (
         <DataState state="error" onRetry={() => void query.refetch()} />
       ) : (
@@ -125,7 +132,7 @@ export function OverviewPage({
                   <EarningsSummary
                     data={data}
                     filters={filters}
-                    partner={partner}
+                    partner={presentation}
                     contentBasePath={contentBasePath}
                   />
                   <Card

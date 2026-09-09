@@ -48,6 +48,7 @@ export function FilterBar({
             onChange={(e) => onChange({ ...value, brand: e.target.value || null })}
           >
             <option value="">All brands</option>
+            {value.brand && !brands.includes(value.brand) && <option value={value.brand}>{value.brand} (ที่เลือก)</option>}
             {brands.map((brand) => (
               <option key={brand}>{brand}</option>
             ))}

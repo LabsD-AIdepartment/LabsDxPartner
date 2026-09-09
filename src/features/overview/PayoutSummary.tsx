@@ -41,9 +41,9 @@ export function PayoutSummary({
         </div>
       ) : (
         <p className="muted">
-          {obligation.confirmedUnpaid === null
+          {obligation.nextPayoutReason ?? (obligation.confirmedUnpaid === null
             ? 'ยังไม่มีข้อมูลสถานะการจ่าย'
-            : 'ยังไม่มีกำหนดจ่ายรอบถัดไป'}
+            : 'ยังไม่มีกำหนดจ่ายรอบถัดไป')}
         </p>
       )}
       <p className={styles.label}>สถานะการจ่าย ณ {timestamp(obligation.asOf)}</p>

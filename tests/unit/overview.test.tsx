@@ -12,6 +12,8 @@ import { OverviewPage } from '@/features/overview/OverviewPage';
 import { ScopedQueryProvider } from '@/shared/query/provider';
 import { OverviewPreview } from '../../dev/OverviewPreview';
 import { TrendChart } from '@/shared/charts/TrendChart';
+import { AccessLost } from '@/shared/query/revision-watcher';
+import { celebrityCatalogue } from '../../dev/financial/celebrity-catalogue';
 beforeEach(() =>
   vi.stubGlobal(
     'ResizeObserver',
@@ -122,6 +124,33 @@ describe('Overview contract and snapshot semantics', () => {
   });
 });
 describe('Overview loading, errors and exact display', () => {
+  it('uses the returned profile and brand options while retaining a selected brand absent from the next period', async () => {
+    const data = overviewFixture(filters);
+    data.profile = { ...celebrityCatalogue(scope.partnerId).profile, name: 'พาร์ทเนอร์จาก API' };
+    data.brands = ['Axtion'];
+    const transport = vi.fn().mockResolvedValueOnce(data).mockImplementation(async ({ filters: selected }) => ({
+      ...overviewFixture(selected), profile: data.profile, brands: [],
+    }));
+    renderPage(transport);
+    expect(await screen.findByRole('img', { name: 'ภาพโปรไฟล์ พาร์ทเนอร์จาก API' })).toHaveAttribute('src', data.profile.portrait);
+    expect(screen.queryByRole('option', { name: 'Tendrix' })).toBeNull();
+    fireEvent.change(screen.getByLabelText('แบรนด์'), { target: { value: 'Axtion' } });
+    await screen.findByRole('option', { name: 'Axtion (ที่เลือก)' });
+    expect(screen.getByLabelText('แบรนด์')).toHaveValue('Axtion');
+    expect(screen.getAllByRole('article')).toHaveLength(6);
+  });
+  it('removes previously loaded figures and profile after an access-denied refresh', async () => {
+    const data = overviewFixture(filters);
+    data.profile = celebrityCatalogue(scope.partnerId).profile;
+    const transport = vi.fn().mockResolvedValueOnce(data).mockRejectedValue(new AccessLost('Revoked'));
+    renderPage(transport);
+    await screen.findAllByText('฿37,360');
+    fireEvent.click(screen.getByRole('button', { name: 'อัปเดตข้อมูลภาพรวม' }));
+    expect(await screen.findByRole('link', { name: 'ไปหน้าเข้าสู่ระบบ' })).toHaveAttribute('href', '/login');
+    expect(screen.queryByText('฿37,360')).toBeNull();
+    expect(screen.queryByRole('img', { name: /ภาพโปรไฟล์/ })).toBeNull();
+    expect(screen.queryByText('อัปเดตไม่สำเร็จ กำลังแสดงข้อมูลครั้งล่าสุด')).toBeNull();
+  });
   it('does not draw a continuous curve across an unpublished window', () => {
     const { container } = render(
       <TrendChart

@@ -7,6 +7,7 @@ import { loadChanges } from '@/shared/query/changes-http';
 import { sourceUnavailable } from '@/shared/query/source-unavailable';
 import { PartnerShell } from '@/features/shell/PartnerShell';
 import { OverviewPage } from '@/features/overview/OverviewPage';
+import { overviewHttp } from '@/features/overview/http';
 import { ContentList } from '@/features/content/ContentList';
 import { ContentDetail } from '@/features/content/ContentDetail';
 import { AdDetail } from '@/features/content/AdDetail';
@@ -274,7 +275,7 @@ function PartnerFeatures({
       return (
         <OverviewPage
           scope={scope}
-          transport={sourceUnavailable}
+          transport={overviewHttp}
           brands={[]}
           initialFilters={{
             from: context.from,
