@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const ignored = spawnSync('git', ['check-ignore', '-q', '.agent-work'], { cwd: root });
+const ignored = spawnSync('git', ['check-ignore', '-q', '.agent-work/'], { cwd: root });
 const tracked = spawnSync('git', ['ls-files', '--', '.agent-work'], {
   cwd: root,
   encoding: 'utf8',
