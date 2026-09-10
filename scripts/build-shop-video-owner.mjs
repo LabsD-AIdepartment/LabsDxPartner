@@ -49,7 +49,7 @@ const result = await build({
   bundle: true,
   platform: 'node',
   format: 'esm',
-  target: 'node24',
+  target: 'node22',
   tsconfig: 'tsconfig.shop-video-owner.json',
   sourcemap: false,
   legalComments: 'eof',
@@ -71,10 +71,10 @@ writeFileSync(
   JSON.stringify(
     {
       name: '@labsd/shop-video-owner',
-      version: '0.2.0',
+      version: '0.2.1',
       private: true,
       type: 'module',
-      engines: { node: '>=24' },
+      engines: { node: '>=22' },
       exports: { '.': { types: './index.d.ts', import: './index.mjs' } },
       files: ['index.mjs', 'index.d.ts', 'THIRD_PARTY_LICENSES.txt', 'build-receipt.json'],
     },
