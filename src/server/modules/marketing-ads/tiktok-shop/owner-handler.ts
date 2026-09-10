@@ -4,11 +4,13 @@ import { Id } from '@/contracts/common';
 import { parseShopVideoProfiles, type VideoProfile } from './video-config';
 import { createShopVideoVerifier } from './video-verifier';
 import { createShopVideoCollector } from './video-collector';
+import { createShopVideoPageReader } from './video-page';
 import { createShopVideoTransport, type VideoTransportDependencies } from './video-transport';
 import {
   OwnerRequest,
   OwnerResponse,
   OWNER_PATH,
+  OWNER_PAGE_BODY_LIMIT,
   ServiceToken,
   boundedOwnerJson,
 } from './owner-protocol';
@@ -49,10 +51,12 @@ export function createShopVideoOwnerHandler(
     timezone,
   }));
   const verifier = createShopVideoVerifier(profiles, deps);
-  const collect = createShopVideoCollector(connections, {
+  const collectorDeps = {
     request: createShopVideoTransport(connections, deps),
     now: deps.now,
-  });
+  };
+  const collect = createShopVideoCollector(connections, collectorDeps);
+  const readPage = createShopVideoPageReader(connections, collectorDeps);
   const headers = {
     'Cache-Control': 'private, no-store',
     'Referrer-Policy': 'no-referrer',
@@ -89,10 +93,13 @@ export function createShopVideoOwnerHandler(
       const result =
         cmd.action === 'verify'
           ? await verifier.verify(cmd.connectionId, signal)
-          : await collect(cmd.connectionId, cmd.period, signal);
+          : cmd.action === 'page'
+            ? await readPage(cmd.connectionId, cmd.period, cmd.pageToken, signal)
+            : await collect(cmd.connectionId, cmd.period, signal);
       const body = OwnerResponse.parse({ requestId: cmd.requestId, action: cmd.action, result });
       const encoded = JSON.stringify(body);
-      if (Buffer.byteLength(encoded) > 12000000) throw new SourceReadError('invalid-source');
+      if (Buffer.byteLength(encoded) > (cmd.action === 'page' ? OWNER_PAGE_BODY_LIMIT : 12000000))
+        throw new SourceReadError('invalid-source');
       return new Response(encoded, {
         status: 200,
         headers: { ...headers, 'Content-Type': 'application/json' },

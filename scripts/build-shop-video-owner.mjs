@@ -71,7 +71,7 @@ writeFileSync(
   JSON.stringify(
     {
       name: '@labsd/shop-video-owner',
-      version: '0.2.1',
+      version: '0.3.0',
       private: true,
       type: 'module',
       engines: { node: '>=22' },

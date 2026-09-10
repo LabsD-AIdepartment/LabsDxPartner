@@ -39,8 +39,9 @@ it('loads the actual bundle in clean Node and preserves auth, collection and quo
   expect(JSON.parse(result.stdout)).toMatchObject({
     verify: true,
     collect: true,
+    page: true,
     quotaDenied: true,
-    upstreamCalls: 3,
+    upstreamCalls: 4,
   });
 });
 it('ships generated public types that work for a separate package consumer', () => {

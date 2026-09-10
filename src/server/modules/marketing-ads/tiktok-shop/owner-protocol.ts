@@ -4,9 +4,23 @@ import { CompleteVideoCollection, ShopVideoPeriod } from './video-contract';
 import { VerifiedShopVideo } from './video-verifier';
 import { SourceReadError } from '../source-error';
 import { abortable } from './video-transport';
+import { ShopVideoPageEvidence, VideoPageToken } from './video-page';
 
 export const OWNER_PATH = '/internal/partner/shop-videos';
+// One 2 MB source page plus the fixed owner evidence envelope.
+export const OWNER_PAGE_BODY_LIMIT = 2_004_096;
 export const OwnerRequest = z.discriminatedUnion('action', [
+  z.strictObject({
+    requestId: z.uuid(),
+    action: z.literal('page'),
+    connectionId: Id,
+    sourceConnectionRef: Id,
+    period: ShopVideoPeriod.refine((p) => {
+      const days = (Date.parse(p.toExclusive) - Date.parse(p.from)) / 86400000;
+      return days >= 1 && days <= 31;
+    }),
+    pageToken: VideoPageToken,
+  }),
   z.strictObject({
     requestId: z.uuid(),
     action: z.literal('verify'),
@@ -34,6 +48,7 @@ export const OwnerCollection = z.union([
   }),
 ]);
 export const OwnerResponse = z.discriminatedUnion('action', [
+  z.strictObject({ requestId: z.uuid(), action: z.literal('page'), result: ShopVideoPageEvidence }),
   z.strictObject({ requestId: z.uuid(), action: z.literal('verify'), result: VerifiedShopVideo }),
   z.strictObject({ requestId: z.uuid(), action: z.literal('collect'), result: OwnerCollection }),
 ]);

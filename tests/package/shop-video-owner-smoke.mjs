@@ -98,9 +98,10 @@ const request = (auth = token, action = 'verify') =>
       connectionId: 'video-1',
       sourceConnectionRef: 'source-1',
       action,
-      ...(action === 'collect'
+      ...(action !== 'verify'
         ? { period: { from: '2026-09-09', toExclusive: '2026-09-10' } }
         : {}),
+      ...(action === 'page' ? { pageToken: null } : {}),
     }),
   });
 assert.equal((await createOwner(options)(request())).status, 404);
@@ -132,12 +133,22 @@ assert.throws(
   () => createOwner({ ...options, enabled: true, connect: () => ({ reserveRequest: null }) }),
   /Invalid shop video owner configuration/,
 );
+reservation = { allowed: true };
+response = await handler(request(token, 'page'));
+assert.equal(response.status, 200);
+const page = (await response.json()).result;
+assert.equal(page.kind, 'shop-video-page');
+assert.equal(page.requestedPageToken, null);
+assert.equal(page.connection.shopId, 'shop-1');
+assert.equal(page.page.data.total_count, 0);
+assert.equal(calls, 4);
 console.log(
   JSON.stringify({
     disabled: true,
     authorization: true,
     verify: true,
     collect: true,
+    page: true,
     quotaDenied: true,
     malformedQuotaDenied: true,
     upstreamCalls: calls,
