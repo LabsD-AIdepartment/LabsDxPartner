@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": ["node"],
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "incremental": false,
+    "rootDir": "src",
+    "outDir": ".agent-work/owner-package/types",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src/server/modules/marketing-ads/tiktok-shop/package-entry.ts"]
+}

@@ -18,7 +18,8 @@
     "test:performance": "node scripts/run.mjs test:performance",
     "verify:no-demo": "node scripts/run.mjs verify:no-demo",
     "db:migrate:test": "node scripts/run.mjs db:migrate:test",
-    "import:once": "node scripts/run.mjs import:once"
+    "import:once": "node scripts/run.mjs import:once",
+    "build:shop-video-owner": "node scripts/build-shop-video-owner.mjs"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "5.3.0",
@@ -46,6 +47,7 @@
     "prettier": "3.9.6",
     "tsx": "4.23.13",
     "typescript": "7.0.2",
-    "vitest": "4.1.11"
+    "vitest": "4.1.11",
+    "esbuild": "0.28.2"
   }
 }
