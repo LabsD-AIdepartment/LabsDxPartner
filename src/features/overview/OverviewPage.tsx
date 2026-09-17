@@ -89,6 +89,8 @@ export function OverviewPage({
     queryKey: partnerKey(scope, 'earnings', 'overview', filters),
     queryFn: ({ signal }) => loadOverview(transport, { scope, filters, signal }),
     enabled: valid,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
   const data = query.data;
   const reportIdentity = JSON.stringify([scope, filters.from, filters.toExclusive, filters.brand]);

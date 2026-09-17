@@ -81,6 +81,17 @@ export function EarningsSummary({
             </p>
           </div>
         )}
+        {!!data.earnings.connectedAdEarnings?.length && (
+          <div className={styles.estimate}>
+            <span>ค่าคอมจากโฆษณาที่เชื่อมต่อ · รวมในยอดรอยืนยัน</span>
+            {data.earnings.connectedAdEarnings.map(entry => (
+              <p key={entry.clipId} className="small">
+                {entry.title} · <Money value={entry.amount} reason={entry.reason ?? undefined} />
+                {entry.ratePpm !== null && ` (${entry.ratePpm / 10000}%)`}
+              </p>
+            ))}
+          </div>
+        )}
         <div className={styles.earningsFooter}>
           <LinkButton href={earningsHref(contentBasePath, data, filters)}>
             ดูรายละเอียดของรายได้ <ActionArrow />

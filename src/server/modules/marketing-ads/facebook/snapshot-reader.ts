@@ -113,25 +113,25 @@ function localDate(time: number, timezone: string) {
 }
 
 /** Inclusive Graph calendar dates for a bounded snapshot window (1..93 days). Rejects UTC slicing. */
-export function facebookSnapshotDateRange(raw: z.infer<typeof SourcePeriod>, now: number) {
+export function facebookSnapshotDateRange(raw: z.infer<typeof SourcePeriod>, now: number, includeCurrentDay = false) {
   const period = valid(SourcePeriod, raw),
     from = Date.parse(period.from),
     to = Date.parse(period.toExclusive);
   const start = localDate(from, period.timezone),
     end = localDate(to, period.timezone);
   const calendarDays = (Date.parse(end.date) - Date.parse(start.date)) / 86400_000;
-  // The window must be fully in the past: its exclusive end may not fall after the current completed
-  // calendar boundary (today's local date). Otherwise it would include an in-progress day and could
-  // be mis-presented as a complete full-period aggregate. `until` (= end - 1 day) is thus always a
-  // completed day.
+  // Default reads require closed calendar days. Live visits may query today as an as-of snapshot;
+  // projection labels that report intraday, and no provider watermark or settlement is inferred.
+  // Neither mode admits a wholly future calendar day.
   const today = localDate(now, period.timezone).date;
+  const latestEnd = includeCurrentDay ? localDate(now + 86_400_000, period.timezone).date : today;
   if (
     !start.midnight ||
     !end.midnight ||
     calendarDays < 1 ||
     calendarDays > 93 ||
     from > now ||
-    end.date > today
+    end.date > latestEnd
   )
     throw new FacebookReadError('invalid-source');
   return { since: start.date, until: localDate(to - 1, period.timezone).date };
@@ -147,7 +147,7 @@ function action(rows: z.infer<typeof Stats> | undefined, type: string): string |
  * Create a bounded snapshot reader for one configured connection. `report` returns a single
  * full-period SourceReportV2 carrying only Celeb-safe economics (never audience counts).
  */
-export function createFacebookSnapshotReader(rawConnection: Connection, deps: FacebookReadDependencies) {
+export function createFacebookSnapshotReader(rawConnection: Connection, deps: FacebookReadDependencies, includeCurrentDay = false) {
   const c = valid(FacebookConnection, rawConnection);
   const graph = createFacebookGraph(deps),
     now = deps.now ?? Date.now;
@@ -210,7 +210,7 @@ export function createFacebookSnapshotReader(rawConnection: Connection, deps: Fa
       )
         throw new FacebookReadError('access');
       if (period.timezone !== c.timezone) throw new FacebookReadError('invalid-source');
-      const range = facebookSnapshotDateRange(period, now());
+      const range = facebookSnapshotDateRange(period, now(), includeCurrentDay);
       await account(signal);
       await ad(identity, signal, expected);
       const path = identity.externalId + '/insights';

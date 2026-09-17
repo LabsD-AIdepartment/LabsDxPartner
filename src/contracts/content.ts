@@ -4,6 +4,7 @@ import { PeriodCoverage } from './coverage';
 import { PartnerAdPerformance } from './partner-ad-performance';
 import { AdPlatform, ExternalId } from './platform-capabilities';
 import { MediaPath } from './catalogue';
+import { AdCommission } from './connected-ad-earnings';
 
 /** A source-owned platform ad identity shown on a card; never an internal association UUID. */
 export const AdReference = z.strictObject({
@@ -78,6 +79,7 @@ export const ContentCard = z
     removed: z.boolean(),
     views: Count.nullable(),
     earned: Money.nullable(),
+    adCommission: AdCommission.optional(),
     unavailableReason: z.string().nullable(),
     // Optional/null = ad linkage unknown; [] = verified none. Old payloads omit this field.
     adReferences: z.array(AdReference).max(100).nullish(),
@@ -120,6 +122,7 @@ export const ContentDetailResponse = envelope(
     // Optional Celeb-safe ad performance for the clip. Absent = no snapshot/native report; it never
     // carries prohibited counts and never gates the financial fields above.
     performance: PartnerAdPerformance.optional(),
+    adCommission: AdCommission.optional(),
   }),
 ).extend({ coverage: PeriodCoverage.optional() });
 export const AdListResponse = envelope(page(Ad));

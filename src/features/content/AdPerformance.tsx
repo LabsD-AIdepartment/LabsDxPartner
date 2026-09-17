@@ -39,6 +39,7 @@ export function AdPerformance({
         อัปเดต {p.fetchedAt ? <time dateTime={p.fetchedAt}>{timestamp(p.fetchedAt)}</time> : '—'}
         {p.state === 'stale' && ' · ข้อมูลล่าสุดที่บันทึกไว้'}
         {p.state === 'partial' && ' · ข้อมูลบางส่วน'}
+        {p.intraday && ' · ข้อมูลระหว่างวัน ยอดยังเปลี่ยนแปลงได้'}
       </Text>
       {p.state === 'unavailable' ? (
         <DataState state="unavailable" message={p.reasons.join(' · ') || 'ยังไม่มีข้อมูลผลโฆษณา'} />
@@ -96,12 +97,6 @@ export function AdPerformance({
             </Text>
           )}
           {p.dataThrough && <Text variant="caption">ข้อมูลถึง {timestamp(p.dataThrough)}</Text>}
-          {p.automaticRefreshFrom &&
-            Date.parse(p.period.from) < Date.parse(p.automaticRefreshFrom) && (
-              <Text variant="caption" tone="muted">
-                ข้อมูลก่อน {timestamp(p.automaticRefreshFrom)} เป็นรายงานย้อนหลังที่เก็บไว้
-              </Text>
-            )}
         </details>
       )}
     </section>

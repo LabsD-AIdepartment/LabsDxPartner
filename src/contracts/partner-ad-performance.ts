@@ -20,6 +20,7 @@ export const PartnerAdPerformance = z
     fetchedAt: Instant.nullable(),
     dataThrough: Instant.nullable(),
     automaticRefreshFrom: Instant.nullable().optional(),
+    intraday: z.boolean().optional(),
     state: z.enum(['ready', 'partial', 'stale', 'unavailable']),
     reasons: z.array(z.string().min(1).max(300)).max(20),
     metrics: z.array(PlatformMetricV2).max(100),

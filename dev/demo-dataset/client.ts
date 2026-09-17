@@ -10,6 +10,11 @@ import {
 } from './projections';
 import { assertIdentityMatchesDataset, datasetScope } from './scope';
 import { loadAdPerformance } from '../ad-performance/client';
+import { loadConnectedAds } from '../ad-performance/connected-client';
+import { accountingCommission, withoutConnectedSamples } from './connected-earnings';
+import { applyAdSample } from '../ad-sample-media';
+import { Overview } from '@/contracts/overview';
+import { ContentDetailResponse, ContentListResponse, AdListResponse, AdDetailResponse } from '@/contracts/content';
 import { bootstrapWithdrawal, withdrawalRowsFromRecords } from './bootstrap';
 import { browserWithdrawalStorage } from '../withdrawals/browser-storage';
 import { getWithdrawalRuntime, type WithdrawalRuntime } from '../withdrawals/transport';
@@ -38,7 +43,7 @@ export async function loadDemoDataset(
   return records;
 }
 
-export function createDemoSession(dataset: DatasetRecords, identity: PreviewIdentity) {
+export function createDemoSession(dataset: DatasetRecords, identity: PreviewIdentity, connectedAds = false) {
   const scope = datasetScope(dataset, identity);
   const runtime = getWithdrawalRuntime({
     scope,
@@ -58,14 +63,70 @@ export function createDemoSession(dataset: DatasetRecords, identity: PreviewIden
   const overlay = () => currentWithdrawalRows(runtime);
   const overview: OverviewTransport = async (request) => {
     assertRequest(request);
-    return projectOverview(dataset, request.filters, overlay());
+    const original = projectOverview(dataset, request.filters, overlay());
+    if (!connectedAds) return original;
+    const ads = await loadConnectedAds({ identity, ...request.filters }, request.signal);
+    const projected = projectOverview(withoutConnectedSamples(dataset, ads), request.filters);
+    const entries = ads.connections.filter(c => !request.filters.brand ||
+      dataset.clips.find(clip => clip.contentId === c.clipId)?.brand === request.filters.brand).map(c => ({
+      ...accountingCommission(dataset, c, ads.period), clipId: c.clipId,
+      title: applyAdSample({ id: c.clipId, title: dataset.clips.find(clip => clip.contentId === c.clipId)?.title ?? c.clipId, cover: null }).title,
+      fetchedAt: c.performance?.fetchedAt ?? null,
+    }));
+    const allKnown = entries.every(c => c.amount !== null);
+    return Overview.parse({ ...projected, obligation: original.obligation,
+      dataState: allKnown ? projected.dataState : 'partial',
+      reasons: [...projected.reasons, ...new Set(entries.flatMap(c => c.reason ? [c.reason] : []))],
+      earnings: { ...projected.earnings, connectedAdEarnings: entries,
+        estimated: allKnown && projected.earnings.estimated ? {
+          currency: 'THB', minor: (BigInt(projected.earnings.estimated.minor) + entries.reduce((sum, c) => sum + BigInt(c.amount!.minor), 0n)).toString(),
+        } : null,
+      },
+    });
   };
   const content: ContentTransport = async (request) => {
     assertRequest(request);
-    const result = projectContent(dataset, {
+    const ads = connectedAds ? await loadConnectedAds({ identity, ...request.context }, request.signal) : null;
+    const linked = ads?.connections.find(c => c.clipId === request.contentId);
+    const sourceDataset = ads ? withoutConnectedSamples(dataset, ads) : dataset;
+    const result = projectContent(sourceDataset, {
       ...request,
+      ...(linked && (request.resource === 'ads' || request.resource === 'ad') ? { resource: 'detail' as const } : {}),
       context: { ...request.context, generation: request.context.generation ?? undefined },
     });
+    if (ads) {
+      if (request.resource === 'list' && 'items' in result.data) {
+        return ContentListResponse.parse({ ...result, data: { ...result.data, items: result.data.items.map(item => {
+          const connection = ads.connections.find(c => c.clipId === item.id);
+          if (!connection) return item;
+          const commission = accountingCommission(dataset, connection, ads.period);
+          return { ...item, adCommission: commission };
+        }) } });
+      }
+      if (linked && 'content' in result.data) {
+        if (request.resource === 'ads' || request.resource === 'ad') {
+          const envelope = { dataState: result.dataState, generatedAt: result.generatedAt,
+            dataThrough: result.dataThrough, reasons: result.reasons, requestId: result.requestId,
+            generation: result.generation, period: result.period };
+          const ad = { id: linked.adId, contentId: linked.clipId, title: `Facebook · Ad ${linked.adId}`,
+            status: 'unknown', asOf: linked.performance?.fetchedAt ?? dataset.meta.asOf, metrics: [],
+            ...(linked.performance ? { performance: linked.performance } : {}),
+          };
+          if (request.resource === 'ad') {
+            if (request.adId !== linked.adId) throw new Error('Ad is not linked to this clip');
+            return AdDetailResponse.parse({ ...envelope, data: ad });
+          }
+          return AdListResponse.parse({ ...envelope, data: { items: [ad], nextCursor: null, totalCount: 1 } });
+        }
+        const commission = accountingCommission(dataset, linked, ads.period);
+        return ContentDetailResponse.parse({ ...result, data: { ...result.data,
+          content: { ...result.data.content, adCommission: commission },
+          adCount: 1,
+          adCommission: commission, ...(linked.performance ? { performance: linked.performance } : {}),
+        } });
+      }
+      return result;
+    }
     // Optional Celeb-safe ad performance overlay for a clip detail. It is best-effort: the endpoint is
     // off by default and returns null unless a matching server binding + snapshot exist. A null result
     // (disabled, missing snapshot, aborted, or any failure) leaves the financial detail untouched.

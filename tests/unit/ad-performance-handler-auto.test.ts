@@ -127,6 +127,35 @@ beforeEach(() => vi.stubEnv('NODE_ENV', 'development'));
 afterEach(() => vi.unstubAllEnvs());
 
 describe('dev ad-performance handler — auto-refresh ON', () => {
+  it('refreshes every visit even with a fresh cache, and marks failed refresh as stale', async () => {
+    const store = makeStore({ 'a__clip-3.json': snapshotFor('2026-07-01', '2026-09-01', fresh) });
+    let clock = NOW + 1;
+    const autoRefresh = vi.fn(async () => {});
+    const deps = { env: { ...env, LABSD_AD_SNAPSHOT_REFRESH_ON_VISIT: '1' }, dir: '/tmp',
+      now: () => clock, readSnapshot: store.read, autoRefresh };
+    for (let visit = 0; visit < 2; visit++) {
+      const response = await handleAdPerformanceRequest(req(CONFIGURED), deps);
+      const body = await response.json();
+      expect(body.performance.state).toBe('stale');
+      expect(body.performance.fetchedAt).toBe(fresh);
+      clock += 100;
+    }
+    expect(autoRefresh).toHaveBeenCalledTimes(2);
+  });
+
+  it('batch reads only identity-owned bindings and returns no credential metadata', async () => {
+    const store = makeStore({ 'a__clip-3.json': snapshotFor('2026-07-01', '2026-09-01', fresh) });
+    const response = await handleAdPerformanceRequest(req({ ...CONFIGURED, clip: 'all' }), {
+      env: { ...env, LABSD_AD_COMMISSION_RATES_PPM: '{"a:clip-3":30000}' }, dir: '/tmp', now, readSnapshot: store.read,
+    });
+    const body = await response.json();
+    expect(body.connections).toHaveLength(1);
+    expect(body.connections[0]).toMatchObject({ clipId: 'clip-3', ratePpm: 30000 });
+    expect(JSON.stringify(body)).not.toMatch(/tokenEnv|accountId|namespace|profileId/);
+    const invalid = await handleAdPerformanceRequest(req({ ...CONFIGURED, clip: 'all', to: '2026-06-01' }), { env });
+    expect(invalid.status).toBe(404);
+  });
+
   it('acquires and returns the EXACT requested (non-configured) window', async () => {
     const store = makeStore();
     const autoRefresh = vi.fn(async ({ fileName, binding }: AutoParams) => {

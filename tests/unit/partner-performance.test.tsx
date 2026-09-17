@@ -106,7 +106,7 @@ describe('exact partner performance projection', () => {
         canViewAdSpend
       />,
     );
-    expect(screen.getByText(/เป็นรายงานย้อนหลังที่เก็บไว้/)).toBeInTheDocument();
+    expect(screen.queryByText(/เป็นรายงานย้อนหลังที่เก็บไว้/)).toBeNull();
     expect(screen.getByText('฿18,014,398,509,481,986.02')).toBeInTheDocument();
     expect(screen.queryByText('ดูตัวเลขแยกตามช่วงรายงาน (2)')).toBeNull();
   });

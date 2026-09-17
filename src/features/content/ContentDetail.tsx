@@ -134,10 +134,10 @@ export function ContentDetail(props: ContentProps & { contentId: string }) {
                     {adSummary?.sales === null && <small>{adSummary.salesReason}</small>}
                   </div>
                   <div>
-                    <span>คอมมิชชันจากยอดขาย</span>
+                    <span>{detail.adCommission ? 'คอมมิชชันจากโฆษณา · รอยืนยัน' : 'คอมมิชชันจากยอดขาย'}</span>
                     <Money
-                      value={mapped ? detail.content.earned : null}
-                      reason={detail.content.unavailableReason ?? undefined}
+                      value={detail.adCommission ? detail.adCommission.amount : mapped ? detail.content.earned : null}
+                      reason={detail.adCommission?.reason ?? detail.content.unavailableReason ?? undefined}
                     />
                   </div>
                   <div>
@@ -196,7 +196,16 @@ export function ContentDetail(props: ContentProps & { contentId: string }) {
             >
               <summary>รายได้และวิธีคำนวณ</summary>
               {earningsOpen &&
-                (mapped ? (
+                (detail.adCommission ? (
+                  <div>
+                    <p>ยอดขายจากแพลตฟอร์ม <Money value={detail.adCommission.sales} /></p>
+                    <p>อัตราคอมมิชชัน {detail.adCommission.ratePpm === null ? 'รอยืนยันอัตรา' : `${detail.adCommission.ratePpm / 10000}%`}</p>
+                    <p>คอมมิชชันรอยืนยัน <Money value={detail.adCommission.amount} reason={detail.adCommission.reason ?? undefined} /></p>
+                    <p className="small muted">คำนวณจากยอดขายโฆษณาในช่วงวันที่เลือก ยอดนี้ยังไม่รวมเป็นเงินพร้อมถอน</p>
+                    <p>คอมมิชชันที่ยืนยันแล้ว <Money value={detail.content.earned} /></p>
+                    <EarningsSection {...props} context={pinned} />
+                  </div>
+                ) : mapped ? (
                   <EarningsSection {...props} context={pinned} />
                 ) : (
                   <DataState

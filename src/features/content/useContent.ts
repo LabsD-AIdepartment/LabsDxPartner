@@ -40,9 +40,11 @@ export function useContent<K extends Resource>(
     queryFn: ({ signal }) => loadContent(transport, { ...request, signal }),
     enabled: validContentFilters(request.context),
     retry: false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
     // Portal-only refresh also ages freshness when acquisition is stopped and emits no revision.
-    // `detail` joins ads/ad at 60s so a clip detail picks up a server-side ad-performance acquisition
-    // that finishes AFTER the client's 3s fallback, without any user navigation.
+    // Poll while mounted; every new visit also refetches irrespective of query cache age.
     refetchInterval:
       request.resource === 'ads' || request.resource === 'ad' || request.resource === 'detail'
         ? 60_000
@@ -106,5 +108,7 @@ export function useContentLibrary(
         : undefined,
     enabled: validContentFilters(context),
     retry: false,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 }

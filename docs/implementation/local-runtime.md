@@ -35,7 +35,10 @@ The single HTTPS4443 runtime serves canonical `/overview`, `/content`, `/transac
 `/account`. The approved partner-demo compositions are reused behind native authentication;
 legacy preview links redirect to canonical paths. Old controls and alternate sample identities
 are unavailable. Dataset, stored ad snapshot and exact-file sample media requests require the
-same native session and allowlist. Ad auto-refresh is off in pitch; it reads stored snapshots.
+same native session and allowlist. The owner enabled live read refresh for both existing Facebook bindings. Each page visit requests
+the exact selected window; concurrent reads share one in-flight acquisition, and failed refreshes
+are marked stale. Provider credentials resolve from `LABSD_LOCAL_KEYCHAIN_REFS` at startup and
+are never stored as values in configuration. See `docs/dev/ad-performance-snapshot.md`.
 The account page and password change remain native. Sample withdrawal balances and mutations
 are illustrative and stored separately in user/partner-namespaced browser storage; they never
 transfer money or modify native financial records. A footer identifies the sample presentation.

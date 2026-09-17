@@ -11,6 +11,7 @@ import {
 } from '@/features/withdrawals/BeneficiaryAccountRevealContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { scopeKey } from '@/shared/query/keys';
+import { useApplicationPresentation } from '@/shared/routing/ApplicationPresentation';
 
 type DatasetMap = Readonly<Partial<Record<PreviewIdentity, DemoSession>>>;
 const DatasetContext = createContext<DatasetMap | null>(null);
@@ -24,9 +25,10 @@ export function DatasetBoundary({
   identities?: readonly PreviewIdentity[];
   children: ReactNode;
 }) {
+  const { connectedAds = false } = useApplicationPresentation();
   const identityKey = [...new Set(identities)].sort().join(',');
   const [attempt, setAttempt] = useState(0);
-  const requestKey = `${identityKey}:${attempt}`;
+  const requestKey = `${identityKey}:${attempt}:${connectedAds}`;
   const [result, setResult] = useState<
     { key: string; state: 'ready'; datasets: DatasetMap } | { key: string; state: 'error' } | null
   >(null);
@@ -42,7 +44,7 @@ export function DatasetBoundary({
         async (identity) =>
           [
             identity,
-            createDemoSession(await loadDemoDataset(identity, abort.signal), identity),
+            createDemoSession(await loadDemoDataset(identity, abort.signal), identity, connectedAds),
           ] as const,
       ),
     ).then(
@@ -55,7 +57,7 @@ export function DatasetBoundary({
       },
     );
     return () => abort.abort();
-  }, [identityKey, requestKey]);
+  }, [identityKey, requestKey, connectedAds]);
 
   // Scope changes hide the prior snapshot synchronously, before the next effect begins its fetch.
   if (result?.key !== requestKey)

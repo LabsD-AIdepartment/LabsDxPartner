@@ -155,3 +155,33 @@ The browser client (`dev/ad-performance/client.ts`) merges the optional performa
 detail; it is cancel/race safe and any failure resolves to `null`, never blocking financial data. It
 is also time-bounded: the request carries a **3 s** internal timeout combined with the caller's abort
 signal, so a stalled connection resolves the overlay to `null` and leaves the financial detail intact.
+
+## Authenticated pitch reads (2026-09-18)
+
+The owner enabled acquisition in the canonical HTTPS4443 app. `LABSD_AD_SNAPSHOT_AUTO_REFRESH=1`
+and `LABSD_AD_SNAPSHOT_REFRESH_ON_VISIT=1` bypass the five-minute cache on each visit. A 20-second
+provider deadline fits inside the 25-second client deadline. Concurrent requests for one scope/window
+share an acquisition. Failed refreshes keep their old timestamp and explicitly return `stale`.
+`clip=all` reads only the authenticated identity's configured bindings; each report retains its
+exact requested window and provider identity. No browser ad/account/credential override is accepted.
+
+The local launcher resolves `LABSD_LOCAL_KEYCHAIN_REFS` (JSON env-name → Keychain-service references)
+only for configured Facebook token references. It injects the token in the child environment, never
+argv or a file. A missing credential stops startup with a generic error. Standard production builds
+still exclude this local pitch composition.
+
+`LABSD_AD_COMMISSION_RATES_PPM` is a server-owned JSON map keyed `identity:clipId`. An absent rate is
+unknown, never an implicit 3%. The owner must confirm the rate before activating it. Commission uses
+exact decimal sales × rate, rounded once at satang, and remains an estimate pending accounting.
+Content's ad headline and Overview's connected-ad estimates use the same calculation. Only estimated,
+unreleased Brand ads sample rows are replaced. Organic income and confirmed/settled history remain
+intact. Confirmed ad rows require reconciliation before adding a new gross estimate. Payout storage
+and native finance records are never changed by these reads. Missing, partial, stale or foreign-window
+reports cannot produce a current commission or silently restore a sample amount. Overview explicitly
+reports partial/unknown estimates if a bound ad has no complete report for the selected period.
+
+The reader supports up to 93 calendar days. In live visit mode it may include today (exclusive end
+no later than tomorrow midnight). A complete result means the exact calendar query finished all API
+pages as of fetchedAt; `intraday` explicitly labels a still-open day and the UI says its total may
+change. The provider watermark `dataThrough` stays unknown; fetch time never substitutes for it.
+Later future days are rejected. The default non-live reader retains closed-day-only behavior.

@@ -52,5 +52,9 @@ export function projectAdSnapshot(
   );
   // The UI must not guess the origin platform/ad: label the source authoritatively as the Facebook
   // ad this snapshot is bound to. (Account/namespace/credential identities stay excluded.)
-  return { ...performance, source: `Facebook · Ad ${binding.adId}` };
+  return { ...performance, source: `Facebook · Ad ${binding.adId}`,
+    // Full API response for the calendar range as observed now, not a closed-day total.
+    // Keep dataThrough unknown: fetch time is not a provider completeness watermark.
+    intraday: Date.parse(report.fetchedAt) < Date.parse(period.toExclusive),
+  };
 }

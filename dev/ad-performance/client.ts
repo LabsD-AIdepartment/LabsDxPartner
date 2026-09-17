@@ -1,6 +1,5 @@
 import { PartnerAdPerformance } from '@/contracts/partner-ad-performance';
 import type { z } from 'zod';
-
 // Browser-safe client for the dev ad-performance snapshot endpoint. It sends ONLY identity+clip+
 // from+to (which the server matches against its own binding allowlist) and returns validated
 // Celeb-safe performance, or null. Any failure — disabled feature, missing snapshot, network error,
@@ -8,13 +7,13 @@ import type { z } from 'zod';
 // cancel/race safe: an aborted request resolves to null and its late payload is ignored.
 //
 // It is also TIME-bounded: a stalled/never-resolving connection must not block the already-computed
-// financial detail indefinitely, so the request carries a short internal timeout (3s) combined with
+// financial detail indefinitely, so the request carries a bounded internal timeout (25s) combined with
 // the caller's abort signal. Either firing resolves this overlay to null and leaves the financial
 // detail untouched.
 
 export type AdPerformanceValue = z.infer<typeof PartnerAdPerformance>;
 
-const OVERLAY_TIMEOUT_MS = 3_000;
+const OVERLAY_TIMEOUT_MS = 25_000;
 
 export async function loadAdPerformance(
   request: { identity: string; clipId: string; from: string; toExclusive: string },

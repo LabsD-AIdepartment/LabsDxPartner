@@ -26,7 +26,7 @@ async function handleGET(request: Request): Promise<Response> {
       headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
     });
   const { handleAdPerformanceRequest } = await import('@ad-performance-handler');
-  return handleAdPerformanceRequest(request, pitchModeEnabled() ? { env: { ...process.env, LABSD_AD_SNAPSHOT_AUTO_REFRESH: '0' } } : undefined);
+  return handleAdPerformanceRequest(request);
 }
 
 export const GET = observeApi('/api/dev/ad-performance', handleGET);

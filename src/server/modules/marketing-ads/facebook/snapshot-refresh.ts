@@ -91,7 +91,7 @@ export async function buildAdSnapshot(
         appSecret: profile.appSecretEnv ? env[profile.appSecretEnv] : undefined,
       };
     },
-  });
+  }, env.LABSD_AD_SNAPSHOT_REFRESH_ON_VISIT === '1');
   const identity = SourceIdentityV2.parse({
     schemaVersion: 2,
     platform: 'facebook',

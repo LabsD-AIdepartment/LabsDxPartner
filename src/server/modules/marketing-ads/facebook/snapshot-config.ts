@@ -73,7 +73,8 @@ export function parseAdSnapshotBindings(raw: string | undefined): AdSnapshotBind
   if (!parsed.success) throw new Error('Invalid ad snapshot binding configuration');
   const bindings = parsed.data;
   if (
-    new Set(bindings.map((b) => JSON.stringify([b.identity, b.clipId]))).size !== bindings.length
+    new Set(bindings.map((b) => JSON.stringify([b.identity, b.clipId]))).size !== bindings.length ||
+    new Set(bindings.map((b) => JSON.stringify([b.identity, b.namespace, b.accountId, b.adId]))).size !== bindings.length
   )
     throw new Error('Duplicate ad snapshot binding');
   return bindings;

@@ -7,10 +7,10 @@
 // Guarantees:
 //   * Single-flight per full scope + window: concurrent handler invocations for the same derived
 //     binding + destination file share ONE provider read (no duplicate calls).
-//   * The shared flight owns its OWN bounded provider deadline (default 5s) as a REAL wall-clock race
+//   * The shared flight owns its OWN bounded provider deadline (default 20s) as a REAL wall-clock race
 //     (not merely an AbortController): even a non-compliant build/fetch that never resolves settles the
 //     flight `unavailable` at the deadline, and a build resolving after the deadline never writes. It is
-//     NEVER tied to a single client's abort, so a client that times out at 3s still lets the server
+//     NEVER tied to a single client's abort, so a client that disconnects early still lets the server
 //     finish (within the deadline) and populate the cache for a subsequent normal refetch.
 //   * Absent credentials / provider error / deadline are swallowed to `unavailable`: no env var, token,
 //     Graph URL, raw error or raw count ever leaks. The cache is simply left as-is.
@@ -22,7 +22,7 @@ import { writeSnapshotFile } from './store';
 /** Local-preview cache freshness policy: a cache newer than this is served with no provider call. */
 export const AUTO_CACHE_FRESH_MS = 300_000;
 /** Bounded provider deadline for one automatic acquisition. */
-export const AUTO_PROVIDER_DEADLINE_MS = 5_000;
+export const AUTO_PROVIDER_DEADLINE_MS = 20_000;
 
 export type AutoRefreshOutcome = 'refreshed' | 'unavailable';
 

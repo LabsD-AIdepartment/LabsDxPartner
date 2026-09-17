@@ -4,6 +4,7 @@ import { ContentCard } from './content';
 import { Rate } from './earnings';
 import { PeriodCoverage, coverageMatchesPeriod, coverageSegmentForDay } from './coverage';
 import { ProfilePresentation } from './catalogue';
+import { AdCommission } from './connected-ad-earnings';
 // Named sales sources a confirmed daily sale can be attributed to. 'unattributed' is the honest
 // fallback when the upstream payload carries no authoritative platform for a sale.
 export const SalesPlatform = z.enum([
@@ -56,6 +57,7 @@ export const Overview = Freshness.extend({
       period: Period,
       coverage: PeriodCoverage,
       estimated: Money.nullable(),
+      connectedAdEarnings: z.array(AdCommission.extend({ clipId: Id, title: z.string(), fetchedAt: Instant.nullable() })).optional(),
       confirmed: Money.nullable(),
       eligibleSales: Money.nullable(),
       unassignedAmount: Money.nullable(),

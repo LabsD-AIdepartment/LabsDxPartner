@@ -5,6 +5,7 @@ export type ApplicationPresentation = {
   accountMenu?: ReactNode;
   footerNote?: ReactNode;
   sampleData?: boolean;
+  connectedAds?: boolean;
 };
 const defaultPresentation: ApplicationPresentation = { resolveHref: (href) => href };
 export const ApplicationPresentationContext = createContext(defaultPresentation);

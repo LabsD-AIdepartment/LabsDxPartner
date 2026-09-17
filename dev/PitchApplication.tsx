@@ -130,6 +130,7 @@ export function PitchApplication({
       value={{
         resolveHref: pitchHref,
         sampleData: true,
+        connectedAds: true,
         accountMenu: (
           <ProfileMenu
             accountHref="/account"

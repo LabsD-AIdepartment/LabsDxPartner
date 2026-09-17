@@ -220,6 +220,36 @@ export async function handleAdPerformanceRequest(
     return notFound('configuration unavailable');
   }
   if (!bindings.length) return notFound('preview disabled');
+  // One read generation for every connected clip, including Overview. Browser supplies no ad ids.
+  if (clipId === 'all') {
+    let rates: Record<string, unknown>;
+    try { rates = JSON.parse(env.LABSD_AD_COMMISSION_RATES_PPM || '{}'); }
+    catch { return unavailable('commission policy unavailable'); }
+    if (!rates || typeof rates !== 'object' || Array.isArray(rates))
+      return unavailable('commission policy unavailable');
+    const selected = bindings.filter(b => b.identity === identity);
+    const connections = [];
+    // Bound concurrency to four provider reports. Existing per-scope coordinator deduplicates reads.
+    for (let offset = 0; offset < selected.length; offset += 4) {
+      const chunk = await Promise.all(selected.slice(offset, offset + 4).map(async b => {
+        deriveRequestedWindowBinding(b, from, to);
+        const target = new URL(request.url);
+        target.searchParams.set('clip', b.clipId);
+        const response = await handleAdPerformanceRequest(new Request(target, { headers: request.headers }), deps);
+        const body = response.ok ? await response.json() : null;
+        const rate = rates[`${identity}:${b.clipId}`];
+        return { clipId: b.clipId, adId: b.adId,
+          ratePpm: typeof rate === 'number' && Number.isInteger(rate) && rate >= 0 && rate <= 1_000_000 ? rate : null,
+          performance: body?.performance ?? null };
+      })).catch(() => null);
+      if (!chunk) return notFound('invalid window');
+      connections.push(...chunk);
+    }
+    return new Response(JSON.stringify({
+      period: { from: from + 'T00:00:00+07:00', toExclusive: to + 'T00:00:00+07:00', timezone: 'Asia/Bangkok' },
+      connections,
+    }), { status: 200, headers: JSON_HEADERS });
+  }
   const binding = findAdSnapshotBinding(bindings, identity, clipId);
   if (!binding) return notFound('unknown binding');
 
@@ -263,7 +293,8 @@ export async function handleAdPerformanceRequest(
   // present STALE CacheHit (its `.raw` fallback below would type as `never`). The runtime check is
   // identical — the caller first excludes `Response`, then tests the freshness window.
   const isFresh = (c: CacheHit): boolean =>
-    c.fetchedAt !== null && now() - c.fetchedAt <= AUTO_CACHE_FRESH_MS;
+    env.LABSD_AD_SNAPSHOT_REFRESH_ON_VISIT !== '1' &&
+    c.fetchedAt !== null && now() >= c.fetchedAt && now() - c.fetchedAt <= AUTO_CACHE_FRESH_MS;
 
   // 1. A fresh cache is served with NO provider call (prefer the exact window file). Local-preview
   // freshness policy: AUTO_CACHE_FRESH_MS.
@@ -333,7 +364,16 @@ function serve(
       { identity: request.identity, clipId: request.clipId, from: request.from, toExclusive: request.to },
       binding,
     );
-    const performance = automaticRefreshFrom ? { ...projected, automaticRefreshFrom } : projected;
+    const refreshFailed = automaticRefreshFrom !== null &&
+      (!projected.fetchedAt || Date.parse(projected.fetchedAt) < Date.parse(automaticRefreshFrom));
+    const performance = automaticRefreshFrom ? {
+      ...projected,
+      automaticRefreshFrom,
+      ...(refreshFailed && projected.state !== 'unavailable' ? {
+        state: 'stale',
+        reasons: [...projected.reasons, 'อัปเดตจากแพลตฟอร์มไม่สำเร็จ แสดงข้อมูลล่าสุดที่บันทึกไว้'],
+      } : {}),
+    } : projected;
     return new Response(JSON.stringify({ performance }), { status: 200, headers: JSON_HEADERS });
   } catch (error) {
     // A scope mismatch (e.g. a foreign identity's snapshot on disk) must not leak: report not-found.

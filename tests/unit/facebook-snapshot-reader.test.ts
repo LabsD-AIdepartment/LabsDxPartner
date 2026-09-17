@@ -52,7 +52,7 @@ const row = {
   ],
   action_values: [{ action_type: 'omni_purchase', value: '57820' }],
 };
-function fixture(pages: unknown[] = [{ data: [row] }]) {
+function fixture(pages: unknown[] = [{ data: [row] }], liveNow?: number) {
   const calls: { url: URL }[] = [];
   let index = 0;
   const fetcher: typeof fetch = vi.fn(async (input) => {
@@ -67,12 +67,26 @@ function fixture(pages: unknown[] = [{ data: [row] }]) {
     );
   });
   const credential = vi.fn(async () => ({ token: 'synthetic-token' }));
-  const reader = createFacebookSnapshotReader(connection, { credential, fetch: fetcher, now });
+  const reader = createFacebookSnapshotReader(connection, { credential, fetch: fetcher, now: liveNow === undefined ? now : () => liveNow }, liveNow !== undefined);
   return { calls, credential, reader };
 }
 const signal = () => new AbortController().signal;
 
 describe('Facebook snapshot reader', () => {
+  it('opt-in live reads include today, reject later future days and never invent a source watermark', async () => {
+    const duringDay = Date.parse('2026-08-31T06:00:00Z');
+    expect(facebookSnapshotDateRange(period, duringDay, true)).toEqual({ since: '2026-07-01', until: '2026-08-31' });
+    expect(() => facebookSnapshotDateRange(period, duringDay - 86400000, true)).toThrow();
+    const f = fixture(undefined, duringDay);
+    const report = await f.reader.report(identity, period, signal());
+    expect(report.period).toEqual(period);
+    expect(report.completeness).toBe('complete');
+    expect(report.fetchedAt).toBe(new Date(duringDay).toISOString());
+    expect(report.dataThrough).toBeNull();
+    expect(report.metrics.find(m => m.key === 'platform_value')?.value).toBe('57820');
+    expect(f.calls.find(c => c.url.pathname.endsWith('/insights'))?.url.searchParams.get('time_range')).toBe(JSON.stringify({ since: '2026-07-01', until: '2026-08-31' }));
+  });
+
   it('supports a bounded full-period window up to 93 days but rejects longer or unaligned ranges', () => {
     expect(facebookSnapshotDateRange(period, now())).toEqual({
       since: '2026-07-01',
