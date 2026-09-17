@@ -1,0 +1,31 @@
+/* Small, consistent responses across partner, public and staff surfaces. */
+@media (prefers-reduced-motion: no-preference) {
+  :where(main, dialog) :where(button, a, input, select, textarea, summary) {
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      translate 160ms ease,
+      scale 160ms ease;
+  }
+  :where(main, dialog)
+    :where(button, a, summary):active:not(:disabled):not([aria-disabled='true']) {
+    scale: 0.98;
+  }
+  :where(main, dialog) :where(input, select, textarea):focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    main article {
+      transition:
+        box-shadow 200ms ease,
+        border-color 200ms ease;
+    }
+    main article:has(a[href], button):hover {
+      box-shadow: 0 8px 24px -18px color-mix(in srgb, var(--text) 30%, transparent);
+    }
+    :where(main, dialog) :where(a[href], summary):hover {
+      translate: 0 -1px;
+    }
+  }
+}

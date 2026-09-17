@@ -31,7 +31,11 @@ export function DataState({
           ? Clock3
           : CircleAlert;
   return (
-    <div className={styles.dataState} role={state === 'error' ? 'alert' : 'status'}>
+    <div
+      className={styles.dataState}
+      data-loading={state === 'loading'}
+      role={state === 'error' ? 'alert' : 'status'}
+    >
       <Icon size={20} aria-hidden className={state === 'loading' ? styles.spinner : ''} />
       <Text variant="caption">{message ?? labels[state]}</Text>
       {onRetry && ['error', 'stale', 'unavailable'].includes(state) && (
