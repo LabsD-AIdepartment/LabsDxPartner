@@ -47,12 +47,22 @@
 }
 
 .beneficiaryAccount > .beneficiaryReveal {
+  --button-hover-background: transparent;
+  --button-hover-foreground: var(--text);
   flex-shrink: 0;
   width: 44px;
   min-width: 44px;
   height: 44px;
   min-height: 44px;
   padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+}
+
+.beneficiaryAccount > .beneficiaryReveal:is(:hover, :active):not(:disabled) {
+  transform: none;
 }
 
 .beneficiaryReasons {
