@@ -47,10 +47,34 @@ describe('inclusive date ranges', () => {
     expect(screen.getByRole('button', { name: /^ถึงวันที่/ })).toHaveTextContent('31/08/2026');
     const july = within(screen.getByRole('region', { name: 'ปฏิทินเริ่มต้น' }));
     fireEvent.click(july.getByRole('button', { name: '2026-07-05' }));
-    fireEvent.click(july.getByRole('button', { name: '2026-07-09' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'เดือน 2' }), {
+      target: { value: '07' },
+    });
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'ปฏิทินสิ้นสุด' })).getByRole('button', {
+        name: '2026-07-09',
+      }),
+    );
     expect(july.getByRole('button', { name: '2026-07-07' })).toHaveAttribute(
       'data-in-range',
       'true',
+    );
+    const ending = within(screen.getByRole('region', { name: 'ปฏิทินสิ้นสุด' }));
+    expect(july.getByRole('button', { name: '2026-07-05' })).toHaveAttribute(
+      'data-endpoint',
+      'true',
+    );
+    expect(july.getByRole('button', { name: '2026-07-09' })).toHaveAttribute(
+      'data-endpoint',
+      'false',
+    );
+    expect(ending.getByRole('button', { name: '2026-07-09' })).toHaveAttribute(
+      'data-endpoint',
+      'true',
+    );
+    expect(ending.getByRole('button', { name: '2026-07-05' })).toHaveAttribute(
+      'data-endpoint',
+      'false',
     );
     expect(apply).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'ใช้ช่วงวันที่' }));
@@ -85,29 +109,44 @@ describe('inclusive date ranges', () => {
     fireEvent.click(screen.getByRole('button', { name: '2027-08-02' }));
     expect(screen.getByRole('button', { name: 'ใช้ช่วงวันที่' })).toBeDisabled();
     expect(apply).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: '2027-08-02' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'ปี 1' }), {
+      target: { value: '2027' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'เดือน 1' }), {
+      target: { value: '08' },
+    });
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'ปฏิทินเริ่มต้น' })).getByRole('button', {
+        name: '2027-08-02',
+      }),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'ใช้ช่วงวันที่' }));
     expect(apply).toHaveBeenCalledWith({ from: '2027-08-02', toExclusive: '2027-08-03' });
   });
-  it('uses non-editable endpoint buttons and changes selection intent only on activation', () => {
+  it('edits only the endpoint owned by each calendar, including repeated clicks', () => {
     mount();
     const start = screen.getByRole('button', { name: /^เริ่มวันที่/ });
     const end = screen.getByRole('button', { name: /^ถึงวันที่/ });
     expect(screen.getByRole('dialog').querySelector('input[type="date"]')).toBeNull();
-    expect(start).toHaveAttribute('aria-pressed', 'true');
-    end.focus();
-    expect(start).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(end);
-    expect(end).toHaveAttribute('aria-pressed', 'true');
-    start.focus();
-    expect(end).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: '2026-08-15' }));
+    fireEvent.click(screen.getByRole('button', { name: '2026-08-16' }));
     expect(start).toHaveTextContent('01/07/2026');
-    expect(end).toHaveTextContent('15/08/2026');
-    fireEvent.click(start);
+    expect(end).toHaveTextContent('16/08/2026');
     fireEvent.click(screen.getByRole('button', { name: '2026-07-02' }));
-    expect(start).toHaveTextContent('02/07/2026');
-    expect(end).toHaveTextContent('15/08/2026');
+    fireEvent.click(screen.getByRole('button', { name: '2026-07-03' }));
+    expect(start).toHaveTextContent('03/07/2026');
+    expect(end).toHaveTextContent('16/08/2026');
+  });
+  it('rejects a reversed range without silently replacing either date', () => {
+    const { apply } = mount();
+    fireEvent.change(screen.getByRole('combobox', { name: 'เดือน 2' }), {
+      target: { value: '06' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2026-06-30' }));
+    expect(screen.getByRole('button', { name: /^เริ่มวันที่/ })).toHaveTextContent('01/07/2026');
+    expect(screen.getByRole('button', { name: /^ถึงวันที่/ })).toHaveTextContent('30/06/2026');
+    expect(screen.getByRole('button', { name: 'ใช้ช่วงวันที่' })).toBeDisabled();
+    expect(apply).not.toHaveBeenCalled();
   });
   it('navigates across month boundaries with arrow keys', async () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((fn) => {

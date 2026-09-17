@@ -121,10 +121,9 @@ function WithdrawalTransactionsPreview({
     params.get('returnTo') ?? withWithdrawalPreviewScope('/withdrawal-preview', lane),
     true,
   );
-  const summaryHref =
-    returnTo.split('?')[0] === '/withdrawal-preview'
-      ? withWithdrawalPreviewScope(returnTo, lane)
-      : withWithdrawalPreviewScope('/withdrawal-preview', lane);
+  const summaryHref = ['/withdrawal-preview', '/overview'].includes(returnTo.split('?')[0])
+    ? withWithdrawalPreviewScope(returnTo, lane)
+    : withWithdrawalPreviewScope('/withdrawal-preview', lane);
   params.set('returnTo', returnTo);
   const navigationSearch = params.toString();
   const historyHref = withdrawalHistoryHref(navigationSearch, filters);

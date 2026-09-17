@@ -16,14 +16,10 @@
 .popover::backdrop {
   background: #0001;
 }
-.rangeFields {
+.rangeField {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6.4px;
+  width: 100%;
   margin-bottom: 9.6px;
-}
-.rangeFields button {
-  display: grid;
   gap: 1.6px;
   border: 0;
   padding: 3.2px 6.4px;
@@ -39,10 +35,10 @@
   cursor: pointer;
   user-select: none;
 }
-.rangeFields button > span:last-child {
+.rangeField > span:last-child {
   color: var(--text);
 }
-.rangeFields button:focus:not(:focus-visible) {
+.rangeField:focus:not(:focus-visible) {
   outline: none;
 }
 .months {

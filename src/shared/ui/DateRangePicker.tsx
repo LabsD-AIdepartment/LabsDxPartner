@@ -81,7 +81,6 @@ function RangeDialog({
     dateNumber(from) !== null ? from.slice(0, 7) : fallback,
     dateNumber(end) !== null ? end.slice(0, 7) : fallback,
   ]);
-  const [selecting, setSelecting] = useState<'start' | 'end'>('start');
   const dialog = useRef<HTMLDialogElement>(null);
   const valid = validDateRange(from, end);
   const position = useCallback(() => {
@@ -108,19 +107,20 @@ function RangeDialog({
   useLayoutEffect(position, [position, triggerTarget]);
   const setMonth = (index: number, month: string) =>
     setMonths((current) => current.map((v, i) => (i === index ? month : v)));
-  const choose = (date: string) => {
-    if (selecting === 'start') {
-      setFrom(date);
-      if (date > end) setEnd(date);
-      setSelecting('end');
-    } else if (date < from) {
-      setFrom(date);
-      setEnd(date);
-      setSelecting('end');
-    } else {
-      setEnd(date);
-      setSelecting('start');
-    }
+  // Each labelled calendar owns one endpoint; editing it never silently changes the other.
+  const choose = (date: string, index: number) => {
+    if (index === 0) setFrom(date);
+    else setEnd(date);
+  };
+  const focusEndpoint = (index: number) => {
+    const date = index === 0 ? from : end;
+    if (dateNumber(date) === null) return;
+    setMonth(index, date.slice(0, 7));
+    requestAnimationFrame(() =>
+      dialog.current
+        ?.querySelector<HTMLButtonElement>(`[data-panel="${index}"] [data-date="${date}"]`)
+        ?.focus(),
+    );
   };
   const moveFocus = (event: KeyboardEvent<HTMLButtonElement>, date: string, index: number) => {
     const offsets: Record<string, number> = {
@@ -163,24 +163,6 @@ function RangeDialog({
           onClose();
       }}
     >
-      <div className={styles.rangeFields}>
-        <button
-          type="button"
-          aria-pressed={selecting === 'start'}
-          onClick={() => setSelecting('start')}
-        >
-          <span>เริ่มวันที่</span>
-          <span>{displayDate(from)}</span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={selecting === 'end'}
-          onClick={() => setSelecting('end')}
-        >
-          <span>ถึงวันที่</span>
-          <span>{displayDate(end)}</span>
-        </button>
-      </div>
       <div className={styles.months}>
         {months.map((month, index) => (
           <section
@@ -189,6 +171,14 @@ function RangeDialog({
             data-panel={index}
             aria-label={index === 0 ? 'ปฏิทินเริ่มต้น' : 'ปฏิทินสิ้นสุด'}
           >
+            <button
+              type="button"
+              className={styles.rangeField}
+              onClick={() => focusEndpoint(index)}
+            >
+              <span>{index === 0 ? 'เริ่มวันที่' : 'ถึงวันที่'}</span>
+              <span>{displayDate(index === 0 ? from : end)}</span>
+            </button>
             <div className={styles.navigation}>
               <button
                 type="button"
@@ -245,11 +235,11 @@ function RangeDialog({
                     type="button"
                     data-date={date}
                     aria-label={date}
-                    aria-pressed={date === from || date === end}
-                    data-endpoint={date === from || date === end}
-                    data-in-range={valid && date > from && date < end}
+                    aria-pressed={date === (index === 0 ? from : end)}
+                    data-endpoint={date === (index === 0 ? from : end)}
+                    data-in-range={valid && date >= from && date <= end}
                     onKeyDown={(e) => moveFocus(e, date, index)}
-                    onClick={() => choose(date)}
+                    onClick={() => choose(date, index)}
                   >
                     {Number(date.slice(8))}
                   </button>

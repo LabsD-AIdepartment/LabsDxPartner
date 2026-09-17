@@ -6,6 +6,8 @@ import { buildDataset } from '../../dev/demo-dataset/dataset';
 import { datasetScope } from '../../dev/demo-dataset/scope';
 import { browserWithdrawalStorage } from '../../dev/withdrawals/browser-storage';
 import { releaseWithdrawalRuntime } from '../../dev/withdrawals/transport';
+import { ApplicationPresentationContext } from '@/shared/routing/ApplicationPresentation';
+import { pitchHref, pitchSearch } from '@/features/pitch/routes';
 const { router } = vi.hoisted(() => ({ router: { push: vi.fn(), replace: vi.fn() } }));
 vi.mock('next/navigation', () => ({
   useRouter: () => router,
@@ -65,6 +67,66 @@ beforeEach(() => {
 const returnTo =
   '/withdrawal-preview?scenario=partner-demo&identity=b&from=2026-07-01&toExclusive=2026-10-01&brand=Axtion';
 describe('partner Wallet preview composition', () => {
+  it('filters database-backed credits and withdrawals inclusively on canonical routes and preserves report context', async () => {
+    const report = '/overview?from=2026-07-08&toExclusive=2026-08-25&origin=overview';
+    const search = pitchSearch({
+      view: 'withdrawals',
+      returnTo: report,
+      requestedFrom: '2026-09-01',
+      requestedToExclusive: '2026-09-15',
+    });
+    window.history.replaceState({}, '', '/transactions');
+    render(
+      <ApplicationPresentationContext.Provider value={{ resolveHref: pitchHref, sampleData: true }}>
+        <TransactionsPreview search={search} />
+      </ApplicationPresentationContext.Provider>,
+    );
+    const ledger = await screen.findByRole('list', { name: 'รายการเงินเข้า–ออก' });
+    expect(within(ledger).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(ledger).getByText('คอมมิชชันเข้ายอดพร้อมถอน')).toBeVisible();
+    expect(screen.getAllByRole('link', { name: 'Overview' })[0]).toHaveAttribute('href', report);
+
+    fireEvent.click(screen.getByRole('button', { name: 'เลือกช่วงวันที่' }));
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'ปฏิทินเริ่มต้น' })).getByRole('button', {
+        name: '2026-09-11',
+      }),
+    );
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'ปฏิทินสิ้นสุด' })).getByRole('button', {
+        name: '2026-09-14',
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'ใช้ช่วงวันที่' }));
+    expect(within(ledger).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(ledger).getByRole('link', { name: 'ดูรายการถอน 202609111004' })).toBeVisible();
+    const last = within(ledger).getByRole('link', { name: 'ดูรายการถอน 202609141005' });
+    const detail = new URL(last.getAttribute('href')!, 'https://example.invalid');
+    expect(detail.pathname).toBe('/transactions');
+    expect(detail.searchParams.get('returnTo')).toBe(report);
+    expect(detail.searchParams.get('requestedFrom')).toBe('2026-09-11');
+    expect(detail.searchParams.get('requestedToExclusive')).toBe('2026-09-15');
+    expect(new URLSearchParams(window.location.search).get('requestedToExclusive')).toBe(
+      '2026-09-15',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'เลือกช่วงวันที่' }));
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'ปฏิทินเริ่มต้น' })).getByRole('button', {
+        name: '2026-09-15',
+      }),
+    );
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'ปฏิทินสิ้นสุด' })).getByRole('button', {
+        name: '2026-09-18',
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'ใช้ช่วงวันที่' }));
+    expect(screen.getByText('ไม่มีรายการในช่วงวันที่นี้')).toBeVisible();
+    expect(
+      within(screen.getByRole('article', { name: 'สรุปยอดพร้อมถอน' })).getByText('฿248,600'),
+    ).toBeVisible();
+  });
   it.each([
     { segments: ['statement-1'], view: 'withdrawals' },
     { segments: [], view: 'periods' },
