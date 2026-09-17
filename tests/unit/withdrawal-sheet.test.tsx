@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type {
@@ -106,6 +107,37 @@ function props(
 }
 
 describe('Withdrawal request sheet presentation', () => {
+  it('closes history navigation without relying on a route unmount and preserves modified clicks', () => {
+    const href = '/transactions?view=withdrawals&returnTo=%2Foverview';
+    function Wallet() {
+      const [open, setOpen] = useState(true);
+      return (
+        <>
+          <h2>รายการเงินเข้า–ออก</h2>
+          <button onClick={() => setOpen(true)}>เปิดถอนเงิน</button>
+          <WithdrawalRequestSheet
+            {...props(
+              { state: 'editing', mode: 'partial', amountText: '', canReview: true },
+              { open, onClose: () => setOpen(false), historyHref: href },
+            )}
+          />
+        </>
+      );
+    }
+    window.history.replaceState({}, '', href);
+    render(<Wallet />);
+    const history = screen.getByRole('link', { name: 'ประวัติใน Wallet' });
+    expect(history).toHaveAttribute('href', href);
+    fireEvent.click(history, { ctrlKey: true });
+    expect(screen.getByRole('dialog', { name: 'ถอนเงิน' })).toBeVisible();
+    fireEvent.click(history);
+    expect(screen.queryByRole('dialog', { name: 'ถอนเงิน' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'รายการเงินเข้า–ออก' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'เปิดถอนเงิน' }));
+    expect(screen.getByRole('dialog', { name: 'ถอนเงิน' })).toBeVisible();
+    window.history.replaceState({}, '', '/');
+  });
+
   it('passes raw partial text and all/partial selection to controlled callbacks without parsing it', () => {
     const onAmountChange = vi.fn();
     const onModeChange = vi.fn();
