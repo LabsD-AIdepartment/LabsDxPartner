@@ -515,6 +515,8 @@ describe('proof PDF stays within bounded pages for long valid inputs', () => {
     expect(loaded.getPageCount()).toBe(1);
     const text = draw.mock.calls.map(([value]) => value).join(' ');
     expect(text).toContain('Labs D');
+    expect(text).toContain('ใบสำคัญจ่าย');
+    expect(text).toContain('รายการหักรวม');
     expect(text).toContain('฿5,000.00');
     expect(text).toContain(d.detail.request.requestRef);
     expect(text).toContain(d.detail.documents.documents[0].documentId);
@@ -543,9 +545,9 @@ describe('proof PDF stays within bounded pages for long valid inputs', () => {
     }
     for (const [value, options] of draw.mock.calls) {
       expect(options?.y).toBeGreaterThanOrEqual(42);
-      expect(options?.x).toBeGreaterThanOrEqual(44);
+      expect(options?.x).toBeGreaterThanOrEqual(48 * 1.3);
       const right = options!.x! + options!.font!.widthOfTextAtSize(value, options!.size!);
-      expect(right).toBeLessThanOrEqual(595.28 - 44 + 0.01);
+      expect(right).toBeLessThanOrEqual(595.28 - 48 * 1.3 + 0.01);
     }
     const rendered = draw.mock.calls.map(([value]) => value).join(' ');
     expect(rendered).toContain('฿95,000,000.00');

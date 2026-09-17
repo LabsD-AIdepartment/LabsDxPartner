@@ -104,12 +104,13 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
   ]);
   const doc = await PDFDocument.create();
   const { body, bold } = await embedDocumentFonts(doc);
-  doc.setTitle(`ใบสรุปการเบิกจ่าย - ${request.requestRef}`);
+  doc.setTitle(`ใบสำคัญจ่าย - ${request.requestRef}`);
   doc.setAuthor('Labs D');
   doc.setSubject('รายละเอียดการจ่ายเงินให้พาร์ทเนอร์');
   const W = 595.28,
     H = 841.89,
-    margin = 48,
+    margin = 48 * 1.3,
+    topMargin = 48,
     bottom = 78;
   const right = W - margin,
     contentWidth = W - margin * 2;
@@ -117,7 +118,7 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
   const size = 9.5,
     leading = 15;
   let page = doc.addPage([W, H]);
-  let y = H - margin;
+  let y = H - topMargin;
   let pageBodyTop = y;
   const width = (value: string, font = body, fontSize = size) =>
     font.widthOfTextAtSize(value, fontSize);
@@ -125,47 +126,64 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
     wrapText(value, max, (line) => width(line, font, fontSize));
   const text = (value: string, x: number, top: number, fontSize = size, font = body, color = ink) =>
     page.drawText(value, { x, y: top - fontSize, size: fontSize, font, color });
-  const line = (top: number, x = margin, end = right, color = rule, thickness = 0.6) =>
+  const line = (top: number, x = margin, end = right, color = rule, thickness = 0.4) =>
     page.drawLine({ start: { x, y: top }, end: { x: end, y: top }, color, thickness });
   const header = (continued = false) => {
-    text('Labs D', margin, y, 9, bold, muted);
-    const date = 'วันที่ชำระเงิน ' + bangkokThaiDateTime(document.issuedAt);
-    text(date, right - width(date, body, 8), y, 8, body, muted);
-    y -= 28;
-    text(continued ? 'ใบสรุปการเบิกจ่าย (ต่อ)' : 'ใบสรุปการเบิกจ่าย', margin, y, 24, bold);
-    y -= 39;
-    const ids = wrap('เลขที่เอกสาร ' + document.documentId, contentWidth, body, 8);
-    ids.forEach((value, i) => text(value, margin, y - i * 12, 8, body, muted));
-    y -= ids.length * 12 + 40;
+    text('Labs D', margin, y, 22, bold);
+    text('PARTNER', margin, y - 29, 8, body, muted);
+    const headerX = margin + contentWidth * 0.56;
+    const headerW = right - headerX;
+    text(continued ? 'ใบสำคัญจ่าย (ต่อ)' : 'ใบสำคัญจ่าย', headerX, y, 20, bold);
+    text('PAYMENT VOUCHER', headerX, y - 29, 8, body, muted);
+    const ids = wrap('เลขที่ ' + document.documentId, headerW, body, 8);
+    ids.forEach((value, i) => text(value, headerX, y - 47 - i * 12, 8, body, muted));
+    y -= 68 + ids.length * 12;
     pageBodyTop = y;
   };
   const newPage = () => {
     page = doc.addPage([W, H]);
-    y = H - margin;
+    y = H - topMargin;
     header(true);
   };
   header();
 
-  // A restrained label/value grid, with no card surfaces or decorative fields.
-  const labelW = 104;
-  const fields = [
-    { label: 'ผู้ออกเอกสาร', value: 'Labs D', gap: 14 },
-    { label: 'ผู้รับเงิน', value: input.displayName ?? request.beneficiary.displayName, gap: 14 },
-    { label: 'ธนาคาร', value: request.beneficiary.bankName, gap: 5 },
-    { label: 'เลขที่บัญชี', value: request.beneficiary.maskedAccount, gap: 5 },
-    { label: 'เลขอ้างอิงคำขอ', value: request.requestRef, gap: 0 },
+  const leftW = contentWidth * 0.5;
+  const detailX = margin + contentWidth * 0.56;
+  type Detail = { value: string; heading?: boolean };
+  const details = (label: string, value: string, max: number): Detail[] => [
+    { value: label, heading: true },
+    ...wrap(value, max).map((line) => ({ value: line })),
+    { value: '' },
   ];
-  for (const field of fields) {
-    const values = wrap(field.value, contentWidth - labelW);
-    values.forEach((value, i) => {
-      if (y - leading < bottom) newPage();
-      if (i === 0) text(field.label, margin, y, 8.5, bold);
-      text(value, margin + labelW, y, size, body, muted);
-      y -= leading;
+  const columns = [
+    [
+      ...details('ผู้รับเงิน', input.displayName ?? request.beneficiary.displayName, leftW),
+      ...details('บัญชีรับเงิน', request.beneficiary.bankName, leftW),
+      ...wrap(request.beneficiary.maskedAccount, leftW).map((value) => ({ value })),
+    ] as Detail[],
+    [
+      ...details('วันที่ชำระเงิน', bangkokThaiDateTime(document.issuedAt), right - detailX),
+      ...details('เลขอ้างอิงคำขอ', request.requestRef, right - detailX),
+    ],
+  ];
+  const detailCount = Math.max(...columns.map((column) => column.length));
+  for (let i = 0; i < detailCount; i++) {
+    if (y - leading < bottom) newPage();
+    columns.forEach((column, index) => {
+      const entry = column[i];
+      if (entry?.value)
+        text(
+          entry.value,
+          index === 0 ? margin : detailX,
+          y,
+          entry.heading ? 8 : size,
+          entry.heading ? bold : body,
+          entry.heading ? muted : ink,
+        );
     });
-    y -= field.gap;
+    y -= leading;
   }
-  y -= 50;
+  y -= 24;
 
   // Voucher table: only source rows, without invoice-specific quantity, tax or fabricated services.
   const numberW = 34,
@@ -173,6 +191,7 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
   const descriptionX = margin + numberW;
   const descriptionW = contentWidth - numberW - amountW - 16;
   const tableHeader = () => {
+    line(y);
     text('ลำดับ', margin + 4, y - 9, 8, bold, muted);
     text('รายการ', descriptionX, y - 9, 8, bold, muted);
     const label = 'จำนวนเงิน (บาท)';
@@ -182,6 +201,16 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
   };
   if (y - 62 < bottom) newPage();
   tableHeader();
+  let tableBodyTop = y;
+  const verticals = (top: number, end: number) => {
+    for (const x of [descriptionX - 8, right - amountW])
+      page.drawLine({
+        start: { x, y: top },
+        end: { x, y: end },
+        color: rule,
+        thickness: 0.4,
+      });
+  };
   const rows = [
     { label: 'ยอดเบิกตามคำขอถอนเงิน', amount: thb(request.gross.minor) },
     ...request.deductions.map((d) => ({ label: d.label, amount: `- ${thb(d.amount.minor)}` })),
@@ -192,13 +221,17 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
     const count = Math.max(labels.length, amounts.length);
     const rowHeight = count * leading + 17;
     if (y - rowHeight < bottom && rowHeight <= pageBodyTop - 30 - bottom) {
+      verticals(tableBodyTop, y);
       newPage();
       tableHeader();
+      tableBodyTop = y;
     }
     for (let i = 0; i < count; i++) {
       if (y - leading - 14 < bottom) {
+        verticals(tableBodyTop, y);
         newPage();
         tableHeader();
+        tableBodyTop = y;
       }
       if (i === 0) text(String(index + 1).padStart(2, '0'), margin + 4, y - 9, 8, body, muted);
       if (labels[i]) text(labels[i], descriptionX, y - 9);
@@ -209,23 +242,71 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
     line(y);
   });
 
-  // One right-aligned total, with a quiet label and no decorative box.
-  const totalW = 280;
-  const netLines = wrap(thb(document.net.minor), totalW, body, 24);
-  const totalH = 35 + netLines.length * 32;
-  if (y - totalH - 38 < bottom) newPage();
-  y -= 32;
-  const totalLabel = 'ยอดสุทธิที่โอน';
-  text(totalLabel, right - width(totalLabel, body, 8), y, 8, body, muted);
-  y -= 20;
-  netLines.forEach((value, i) => text(value, right - width(value, body, 24), y - i * 32, 24));
+  // A short voucher retains blank ruled writing space without inventing transaction rows.
+  if (rows.length < 5) {
+    const blankHeight = (5 - rows.length) * 28;
+    if (y - blankHeight >= bottom) {
+      for (let i = rows.length; i < 5; i++) {
+        y -= 28;
+        line(y);
+      }
+    }
+  }
+  verticals(tableBodyTop, y);
+
+  const totalX = right - 224,
+    amountMax = 130;
+  const deductions = request.deductions.reduce((sum, item) => sum + BigInt(item.amount.minor), 0n);
+  const totals = [
+    { label: 'ยอดเบิก', amount: thb(request.gross.minor), strong: false },
+    { label: 'รายการหักรวม', amount: thb(deductions.toString()), strong: false },
+    { label: 'ยอดสุทธิที่โอน', amount: thb(document.net.minor), strong: true },
+  ].map((row) => ({
+    ...row,
+    lines: wrap(row.amount, amountMax, row.strong ? bold : body, row.strong ? 11 : size),
+  }));
+  const totalHeight = totals.reduce((sum, row) => sum + row.lines.length * leading + 12, 12);
+  if (y - totalHeight < bottom) newPage();
+  const totalTop = y - 14;
+  text('ผู้ออกเอกสาร', margin, totalTop, 8, bold);
+  text('Labs D', margin, totalTop - 16, 8.5, body, muted);
+  y = totalTop;
+  for (const row of totals) {
+    if (row.strong) {
+      line(y + 4, totalX, right);
+      y -= 6;
+    }
+    text(row.label, totalX, y, 8, row.strong ? bold : body);
+    row.lines.forEach((value, i) =>
+      text(
+        value,
+        right - width(value, row.strong ? bold : body, row.strong ? 11 : size),
+        y - i * leading,
+        row.strong ? 11 : size,
+        row.strong ? bold : body,
+      ),
+    );
+    y -= row.lines.length * leading + 10;
+  }
+
+  // Empty signing fields are for completion on paper; no signature or approval is asserted.
+  const signatureHeight = 96;
+  if (y - signatureHeight < bottom) newPage();
+  y -= 64;
+  const signatureGap = 24;
+  const signatureW = (contentWidth - signatureGap * 2) / 3;
+  ['ผู้จัดทำ', 'ผู้ตรวจสอบ', 'ผู้รับเงิน'].forEach((label, index) => {
+    const x = margin + index * (signatureW + signatureGap);
+    line(y, x, x + signatureW);
+    text(label, x + (signatureW - width(label, body, 8)) / 2, y - 8, 8, body, muted);
+  });
 
   const pages = doc.getPages();
   pages.forEach((p, i) => {
     p.drawLine({
       start: { x: margin, y: 59 },
       end: { x: right, y: 59 },
-      thickness: 0.6,
+      thickness: 0.4,
       color: rule,
     });
     p.drawText('Labs D · เอกสารอ้างอิงรายการจ่ายเงิน', {
