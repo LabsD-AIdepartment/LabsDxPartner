@@ -1,9 +1,10 @@
+import { observeApi } from '@/server/platform/observability/api';
 import { getIdentityRuntime } from '@/server/modules/identity/runtime';
 import { handleIdentityRequest } from '@/server/modules/identity/http';
 import { createNotificationsHttp } from '@/server/http/notifications';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   return handleIdentityRequest(request, () => {
     const identity = process.env.LABSD_FINANCE_ENABLED === '1' ? getIdentityRuntime() : null;
     return identity
@@ -14,3 +15,5 @@ export async function POST(request: Request) {
       : null;
   });
 }
+
+export const POST = observeApi('/api/v1/partner/notifications/seen', handlePOST);

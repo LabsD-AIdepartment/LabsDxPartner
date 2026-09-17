@@ -1,0 +1,177 @@
+.popover {
+  position: fixed;
+  margin: 0;
+  padding: 11.2px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  border: 0.8px solid var(--border);
+  border-radius: 19.2px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 12.8px 38.4px #0002;
+  font-size: var(--text-calendar-compact);
+  line-height: var(--leading-input);
+}
+.popover::backdrop {
+  background: #0001;
+}
+.rangeFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6.4px;
+  margin-bottom: 9.6px;
+}
+.rangeFields button {
+  display: grid;
+  gap: 1.6px;
+  border: 0;
+  padding: 3.2px 6.4px;
+  border-radius: 11.2px;
+  background: transparent;
+  color: var(--muted);
+  min-width: 0;
+  min-height: 35.2px;
+  appearance: none;
+  font: inherit;
+  line-height: var(--leading-calendar);
+  text-align: start;
+  cursor: pointer;
+  user-select: none;
+}
+.rangeFields button > span:last-child {
+  color: var(--text);
+}
+.rangeFields button:focus:not(:focus-visible) {
+  outline: none;
+}
+.months {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9.6px;
+}
+.month {
+  min-width: 0;
+}
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 2.4px;
+  margin-bottom: 4.8px;
+}
+.navigation button {
+  flex: 0 0 25.6px;
+}
+.navigation input {
+  width: 60px;
+  min-width: 0;
+}
+.navigation select {
+  flex: 1;
+  min-width: 0;
+}
+.navigation button,
+.navigation input,
+.navigation select {
+  min-height: 28.8px;
+  padding: 3.2px;
+  background: var(--control);
+  color: var(--text);
+  border: 0.8px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+}
+.navigation svg {
+  width: 14.4px;
+  height: 14.4px;
+}
+.navigation button {
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 1.2px;
+}
+.days button {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 28.8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.weekday {
+  text-align: center;
+  color: var(--muted);
+  padding: 1.6px 0;
+}
+.days button[data-endpoint='true'] {
+  color: #21421c;
+  font-weight: var(--weight-semibold);
+}
+.days button::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: min(28.8px, 100%);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.days button[data-in-range='true']::before {
+  background: var(--highlight-range);
+}
+.days button[data-endpoint='true']::before {
+  background: var(--green);
+}
+.days button:hover::before {
+  box-shadow: inset 0 0 0 0.8px var(--accent);
+}
+.popover :is(button, select, input):focus-visible {
+  outline: 1.6px solid var(--accent);
+  outline-offset: 1.6px;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 9.6px;
+}
+.actions > button {
+  min-height: 36.8px;
+  padding: 8px 14.4px;
+  gap: 6.4px;
+}
+.error {
+  color: var(--text);
+  margin: 11.2px 0 0;
+}
+@media (max-width: 640px) {
+  .popover {
+    padding: 9.6px;
+  }
+  .months {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .navigation button,
+  .navigation input,
+  .navigation select,
+  .days button {
+    min-height: 30.4px;
+  }
+  .navigation button {
+    flex-basis: 28.8px;
+  }
+}

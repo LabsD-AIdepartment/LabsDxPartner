@@ -1,3 +1,4 @@
+import { afterEach as restoreBrandFlag } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { ScopedQueryProvider } from '@/shared/query/provider';
@@ -55,6 +56,8 @@ describe('F06 exact statements and independent settlement boundary', () => {
     expect(result.data.statement.closing.minor).toBe(closing);
   });
   it('later payment changes unpaid and settlement revision, not old-period earnings/version', async () => {
+    // This regression intentionally exercises the retained opt-in brand return context.
+    vi.stubEnv('NEXT_PUBLIC_PARTNER_BRAND_FILTER_ENABLED', 'true');
     const filters = { from: '2026-07-01', toExclusive: '2026-09-01', brand: 'Axtion' };
     const before = overviewFixture(filters),
       after = overviewFixture(filters, 'ready', true);
@@ -243,3 +246,5 @@ describe('F06 presentation and document lifecycle', () => {
     expect(() => sampleDocumentText('ready', false, 'statement-1', 'another')).toThrow();
   });
 });
+
+restoreBrandFlag(() => vi.unstubAllEnvs());

@@ -1,0 +1,53 @@
+{
+  "status": "draft-input-template-not-runtime-config",
+  "documentSystemOfRecord": "labsd-partner",
+  "payer": {
+    "legalNameTh": null,
+    "legalNameEn": null,
+    "taxId": null,
+    "registeredAddress": null,
+    "branchCode": null,
+    "vatStatus": "unknown",
+    "vatEffectiveFrom": null,
+    "accountingContact": null,
+    "authorizedIssuer": null
+  },
+  "counterpartyExample": {
+    "legalPersonType": "unknown",
+    "legalName": null,
+    "taxId": null,
+    "registeredAddress": null,
+    "branchCode": null,
+    "vatStatus": "unknown",
+    "invoiceIssuer": null,
+    "receiptIssuer": null,
+    "payee": null,
+    "withholdingRecipient": null,
+    "issueOnBehalfAuthorityReference": null
+  },
+  "agreementExample": {
+    "compensationCategory": null,
+    "incomeTaxClassification": null,
+    "priceIncludesVat": null,
+    "vatPolicyReference": null,
+    "withholdingPolicyReference": null,
+    "roundingPolicyReference": null,
+    "taxBurden": null,
+    "paymentTerms": null
+  },
+  "numbering": {
+    "existingDocumentSystem": null,
+    "cutoverDate": null,
+    "seriesPerIssuerAndDocumentKind": [],
+    "resetPeriod": null,
+    "yearFormat": null,
+    "lastIssuedNumbers": []
+  },
+  "delivery": {
+    "officialChannel": "undecided",
+    "electronicTaxRegistrationReference": null,
+    "signatureMethod": null
+  },
+  "accountingReviewer": null,
+  "sampleDocumentReferences": []
+}

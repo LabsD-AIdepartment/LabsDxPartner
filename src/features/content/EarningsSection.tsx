@@ -1,111 +1,121 @@
 'use client';
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Money } from '@/shared/ui/Money';
-import { Button } from '@/shared/ui/Button';
 import { DataState } from '@/shared/ui/DataState';
 import { reportHref } from '@/shared/routing/report-context';
 import { dateLabel } from '@/shared/ui/format-date';
+import { AccessLost } from '@/shared/query/revision-watcher';
 import { ContentState, DataEnvelope } from './ContentState';
-import { useContent } from './useContent';
+import { useContentEarnings } from './useContentEarnings';
+import { ContentError } from './model';
 import type { ContentProps } from './types';
-import { Text } from '@/shared/ui/Text';
 import styles from './content.module.css';
 export function EarningsSection(props: ContentProps & { contentId: string }) {
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [history, setHistory] = useState<(string | null)[]>([]);
-  const query = useContent(props.transport, {
+  const query = useContentEarnings(props.transport, {
     scope: props.scope,
     context: props.context,
     contentId: props.contentId,
-    resource: 'earnings',
-    cursor,
   });
-  const data = query.data;
+  useEffect(() => {
+    if (query.hasNextPage && !query.isFetching && !query.error) void query.fetchNextPage();
+  }, [
+    query.hasNextPage,
+    query.isFetching,
+    query.error,
+    query.fetchNextPage,
+    query.data?.pages.length,
+  ]);
+  const pages = query.data?.pages ?? [];
+  const unsafe = query.error instanceof ContentError || query.error instanceof AccessLost;
+  const recoverableNext = query.isFetchNextPageError && !unsafe;
+  const showPages = !query.error || recoverableNext;
+  const retry = () => {
+    if (recoverableNext) void query.fetchNextPage();
+    else void query.refetch();
+  };
+  const empty =
+    pages.length > 0 &&
+    !query.hasNextPage &&
+    pages.every((page) => page.dataState !== 'unavailable' && page.data.items.length === 0);
   return (
     <>
-      <ContentState
-        pending={query.isPending}
-        error={query.error}
-        retry={() => void query.refetch()}
-        latestHref={reportHref(props.routes.overview, { ...props.context, generation: null })}
-      />
-      {data && !query.error && (
-        <DataEnvelope data={data}>
-          <Text variant="caption" tone="muted" className={styles.meta}>
-            รายการจากต้นทางในรุ่นข้อมูลเดียวกัน ยอดสรุปของคลิปแสดงด้านบน ไม่ต้องบวกรายการนี้ซ้ำ
-          </Text>
-          {data.data.items.length === 0 ? (
+      {recoverableNext ? (
+        <DataState
+          state="error"
+          message="โหลดรายการรายได้เพิ่มเติมไม่สำเร็จ กรุณาลองอีกครั้ง"
+          onRetry={retry}
+        />
+      ) : (
+        <ContentState
+          pending={query.isPending}
+          error={query.error}
+          retry={retry}
+          latestHref={reportHref(props.routes.overview, { ...props.context, generation: null })}
+        />
+      )}
+      {showPages && pages.length > 0 && (
+        <>
+          <div className={styles.earningRows}>
+            {pages.map((data, index) => (
+              <DataEnvelope key={index} data={data} showFreshness={false}>
+                {data.data.items.map((line) => (
+                  <article key={line.id}>
+                    <div className={styles.rowHeading}>
+                      <strong>
+                        {
+                          {
+                            commission: 'คอมมิชชัน',
+                            'fixed-fee': 'ค่าจ้างคงที่',
+                            bonus: 'โบนัส',
+                            adjustment: 'รายการปรับปรุง',
+                          }[line.kind]
+                        }
+                      </strong>
+                      <Money value={line.amount} />
+                    </div>
+                    <p>
+                      {dateLabel(line.earnedAt)} ·{' '}
+                      {
+                        {
+                          confirmed: 'ยืนยันแล้ว',
+                          estimated: 'ประมาณการ ยังไม่ยืนยัน',
+                          adjustment: 'ปรับปรุงแล้ว',
+                        }[line.status]
+                      }
+                    </p>
+                    {line.reason && <p>{line.reason}</p>}
+                    <details>
+                      <summary>เงื่อนไขค่าคอมมิชชัน</summary>
+                      {line.eligibleBase && line.ratePpm !== null ? (
+                        <p>
+                          คิดค่าคอมมิชชัน {line.ratePpm / 10000}% จากยอดขายที่เข้าเงื่อนไข{' '}
+                          <Money value={line.eligibleBase} />
+                        </p>
+                      ) : (
+                        <p>
+                          {line.kind === 'fixed-fee'
+                            ? 'ค่าจ้างเป็นจำนวนเงินคงที่ตามข้อตกลง ไม่คำนวณเป็นเปอร์เซ็นต์ของยอดขาย'
+                            : line.kind === 'bonus'
+                              ? 'โบนัสเป็นจำนวนเงินตามเงื่อนไขของรายการ ไม่คำนวณเป็นเปอร์เซ็นต์ของยอดขาย'
+                              : 'รายการนี้ปรับยอดรายได้เดิมตามเหตุผลที่ระบุไว้'}
+                        </p>
+                      )}
+                    </details>
+                  </article>
+                ))}
+              </DataEnvelope>
+            ))}
+          </div>
+          {empty && (
             <DataState
               state="empty"
               message="ยังไม่มีรายการรายได้ที่จับคู่กับคลิปนี้ในช่วงที่เลือก"
             />
-          ) : (
-            <div className={styles.earningRows}>
-              {data.data.items.map((line) => (
-                <article key={line.id}>
-                  <div className={styles.rowHeading}>
-                    <strong>
-                      {
-                        {
-                          commission: 'คอมมิชชัน',
-                          'fixed-fee': 'ค่าจ้างคงที่',
-                          bonus: 'โบนัส',
-                          adjustment: 'รายการปรับปรุง',
-                        }[line.kind]
-                      }
-                    </strong>
-                    <Money value={line.amount} />
-                  </div>
-                  <p>
-                    {dateLabel(line.earnedAt)} ·{' '}
-                    {
-                      {
-                        confirmed: 'ยืนยันแล้ว',
-                        estimated: 'ประมาณการ ยังไม่ยืนยัน',
-                        adjustment: 'ปรับปรุงแล้ว',
-                      }[line.status]
-                    }
-                  </p>
-                  {line.eligibleBase && (
-                    <p>
-                      ฐานยอดขาย <Money value={line.eligibleBase} /> · อัตรา {line.ratePpm! / 10000}%
-                    </p>
-                  )}
-                  {line.reason && <p>{line.reason}</p>}
-                  <details>
-                    <summary>เงื่อนไขและรายการอ้างอิง</summary>
-                    <p>ข้อตกลงเวอร์ชัน {line.agreementVersion}</p>
-                    <p>
-                      อ้างอิง {line.sourceRef} · หลักฐาน {line.evidenceRef}
-                    </p>
-                    {line.originalLineId && <p>ปรับจากรายการ {line.originalLineId}</p>}
-                  </details>
-                </article>
-              ))}
-            </div>
           )}
-          <nav className={styles.pagination} aria-label="หน้ารายการรายได้">
-            <Button
-              disabled={!history.length}
-              onClick={() => {
-                setCursor(history.at(-1) ?? null);
-                setHistory(history.slice(0, -1));
-              }}
-            >
-              ก่อนหน้า
-            </Button>
-            <span>หน้า {history.length + 1}</span>
-            <Button
-              disabled={!data.data.nextCursor}
-              onClick={() => {
-                setHistory([...history, cursor]);
-                setCursor(data.data.nextCursor);
-              }}
-            >
-              ถัดไป
-            </Button>
-          </nav>
-        </DataEnvelope>
+          {query.isFetchingNextPage && (
+            <DataState state="loading" message="กำลังโหลดรายการรายได้เพิ่มเติม" />
+          )}
+        </>
       )}
     </>
   );

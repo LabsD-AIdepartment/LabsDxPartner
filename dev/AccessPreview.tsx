@@ -1,4 +1,5 @@
 'use client';
+import { PreviewTools } from './PreviewTools';
 import { useMemo, useState, type MouseEvent } from 'react';
 import { PublicFrame } from '@/features/login/PublicFrame';
 import { LoginPage } from '@/features/login/LoginPage';
@@ -75,31 +76,35 @@ export function AccessPreview(_props: { active?: Menu; initialActive?: boolean }
   return (
     <CredentialEnvironmentProvider value={environment}>
       <div onClickCapture={intercept}>
-        <aside className={styles.toolbar} aria-label="ทดลองเป็นดาราพาร์ทเนอร์">
-          <strong>Celebrity mock journey</strong>
-          <span>สมมุติคุณเป็นดารา · ข้อมูลจำลอง · ใช้รหัสทดลองเท่านั้น · รีโหลดแล้วเริ่มใหม่</span>
-          {journey.username && (
-            <Button
-              onClick={() => {
-                journey.logout();
-                navigate('/login');
-              }}
-            >
-              ออกจากระบบตัวอย่าง
-            </Button>
-          )}
-          {journey.username && (
-            <Button
-              onClick={() => {
-                setToken(journey.issueReset());
-                setResetSequence((value) => value + 1);
-                navigate('/reset-password');
-              }}
-            >
-              จำลองได้รับลิงก์ตั้งรหัสใหม่จากผู้ดูแล
-            </Button>
-          )}
-        </aside>
+        <PreviewTools toolbar>
+          <aside className={styles.toolbar} aria-label="ทดลองเป็นดาราพาร์ทเนอร์">
+            <strong>Celebrity mock journey</strong>
+            <span>
+              สมมุติคุณเป็นดารา · ข้อมูลจำลอง · ใช้รหัสทดลองเท่านั้น · รีโหลดแล้วเริ่มใหม่
+            </span>
+            {journey.username && (
+              <Button
+                onClick={() => {
+                  journey.logout();
+                  navigate('/login');
+                }}
+              >
+                ออกจากระบบตัวอย่าง
+              </Button>
+            )}
+            {journey.username && (
+              <Button
+                onClick={() => {
+                  setToken(journey.issueReset());
+                  setResetSequence((value) => value + 1);
+                  navigate('/reset-password');
+                }}
+              >
+                จำลองได้รับลิงก์ตั้งรหัสใหม่จากผู้ดูแล
+              </Button>
+            )}
+          </aside>
+        </PreviewTools>
         {effectivePath === '/welcome' ? (
           <PublicFrame>
             <h2>ดีลของคุณพร้อมแล้ว</h2>
@@ -129,7 +134,7 @@ export function AccessPreview(_props: { active?: Menu; initialActive?: boolean }
             <ResetPasswordPage key={resetSequence} />
           </PublicFrame>
         ) : effectivePath === '/login' ? (
-          <PublicFrame>
+          <PublicFrame variant="fluid">
             <LoginPage next="/overview" />
           </PublicFrame>
         ) : (

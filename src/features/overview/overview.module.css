@@ -9,7 +9,7 @@
 .freshness {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
   color: var(--muted);
   font-size: var(--text-caption-size);
@@ -89,11 +89,18 @@
 .clip p {
   color: var(--muted);
   font-size: var(--text-caption-size);
-  margin: 2px 0;
+  margin: var(--text-gap-tight) 0;
 }
-.cover {
+.coverFrame {
+  position: relative;
   width: 42px;
   aspect-ratio: 9/16;
+}
+.cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border-radius: 7px;
 }
@@ -105,17 +112,7 @@
   margin-top: 14px;
 }
 .explanation p {
-  margin: 6px 0 0;
-}
-.daily > div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-}
-.daily {
-  font-size: var(--text-caption-size);
+  margin: var(--text-gap-related) 0 0;
 }
 .trend summary {
   cursor: pointer;
@@ -124,12 +121,14 @@
 }
 @container overview (max-width: 680px) {
   .clip {
-    grid-template-columns: 36px minmax(0, 1fr) 20px;
+    grid-template-columns: 56px minmax(0, 1fr) 20px;
     gap: 10px;
   }
-  .cover {
-    width: 36px;
-    grid-row: span 2;
+  .coverFrame {
+    width: 56px;
+    aspect-ratio: auto;
+    grid-row: 1 / span 2;
+    align-self: stretch;
   }
   .clip > span:not(:last-child) {
     grid-column: 2;
@@ -204,7 +203,6 @@
   gap: 10px;
   padding: 10px 14px;
   border-radius: 18px;
-  background: var(--card-solid);
 }
 .identity > :first-child {
   width: 36px;
@@ -240,7 +238,7 @@
   min-width: 0;
 }
 .earningsTotal > p {
-  margin: 4px 0 0;
+  margin: var(--text-gap-related) 0 0;
 }
 .earningsFooter {
   display: flex;
@@ -273,6 +271,7 @@
 }
 .cardLabel h2 {
   margin: 0;
+  line-height: var(--leading-heading);
   font-size: var(--font-size-18);
   font-weight: var(--weight-emphasis);
 }
@@ -284,7 +283,7 @@
 .breakdown > div {
   display: grid;
   align-content: start;
-  gap: 4px;
+  gap: var(--text-gap-related);
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -308,22 +307,7 @@
 .adsDot {
   background: var(--text);
 }
-.welcome {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-right: auto;
-  font-size: var(--text-caption-size);
-}
-.welcome > span {
-  color: var(--accent);
-  font-size: var(--font-size-20);
-}
-.welcome small {
-  color: var(--muted);
-  font-size: var(--text-caption-size);
-}
+
 .cardBottom {
   display: flex;
   justify-content: space-between;
@@ -341,10 +325,6 @@
   gap: 16px;
   margin-top: 20px;
 }
-.trendSummary > span:first-child {
-  font-size: var(--font-size-36);
-  letter-spacing: -1px;
-}
 .trendSummary > span:last-child {
   display: flex;
   gap: 6px;
@@ -360,14 +340,15 @@
 }
 .unknownMix {
   display: flex;
+  justify-content: center;
   gap: 20px;
   align-items: center;
   margin-top: 24px;
   flex-wrap: wrap;
 }
 .unknownRing {
-  width: 120px;
-  height: 120px;
+  width: min(72%, 280px);
+  aspect-ratio: 1;
   border: 14px solid var(--ring-track);
   border-radius: 50%;
   display: grid;
@@ -377,7 +358,7 @@
 }
 .payoutTrack {
   display: flex;
-  gap: 4px;
+  gap: var(--text-gap-related);
   margin-top: 20px;
 }
 .payoutTrack i {
@@ -395,6 +376,24 @@
   gap: 6px;
   font-size: var(--text-caption-size);
   margin: 6px 0 16px;
+}
+@container overview (min-width: 1080px) {
+  .earnings {
+    container: earnings-card / inline-size;
+    display: flex;
+    flex-direction: column;
+  }
+  .portrait {
+    flex: 1 0 300px;
+    /* Existing portrait is 885 × 1109: reveal it without growing beyond its ratio. */
+    max-height: max(300px, calc(100cqi * 1109 / 885));
+  }
+  .portrait > :first-child {
+    object-position: center top;
+  }
+  .earningPane {
+    flex: none;
+  }
 }
 @container overview (max-width: 1079px) {
   .grid {
@@ -445,10 +444,6 @@
   .earningPane {
     padding: 22px;
   }
-
-  .trendSummary > span:first-child {
-    font-size: var(--font-size-30);
-  }
 }
 
 @container overview (max-width: 319px) {
@@ -478,9 +473,6 @@
   .toolbar {
     margin-top: 24px;
   }
-  .welcome {
-    width: 100%;
-  }
 }
 
 @container earnings-pane (max-width: 270px) {
@@ -494,5 +486,12 @@
   }
   .breakdown small {
     grid-column: 1 / -1;
+  }
+}
+
+/* The hidden mobile page heading leaves the shell's 20px top spacing. */
+@media (max-width: 600px) {
+  .grid {
+    margin-top: 0;
   }
 }

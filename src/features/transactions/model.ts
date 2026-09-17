@@ -149,9 +149,13 @@ export function safeTransactionReturn(value: string | null, preview = false) {
   if (!value || value.startsWith('//') || /[\\\r\n]/.test(value))
     return preview ? '/overview-preview' : '/overview';
   const [path] = value.split('?');
-  return (preview ? ['/overview-preview', '/content-preview'] : ['/overview', '/content']).includes(
-    path,
-  )
+  // The NATIVE allowlist is unchanged. The PREVIEW allowlist additionally permits the dev-only
+  // `/withdrawal-preview` origin so the WU02 withdrawal lane can return to it (dev routes only).
+  return (
+    preview
+      ? ['/overview-preview', '/content-preview', '/withdrawal-preview']
+      : ['/overview', '/content']
+  ).includes(path)
     ? value
     : preview
       ? '/overview-preview'

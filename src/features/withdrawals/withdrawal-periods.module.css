@@ -1,0 +1,96 @@
+.periods,
+.gateway {
+  min-width: 0;
+  font-size: var(--text-body-size);
+  overflow-wrap: anywhere;
+}
+
+.section {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.identity {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.list {
+  display: grid;
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.list > li {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--control);
+}
+
+.amounts {
+  margin: 0;
+  min-width: 0;
+}
+
+.amounts > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  min-width: 0;
+}
+
+.amounts dt {
+  flex: 1 1 200px;
+  min-width: 0;
+  color: var(--muted);
+}
+
+.amounts dd {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  font-size: var(--font-size-24);
+  overflow-wrap: anywhere;
+}
+
+.feedback > div {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  min-width: 0;
+  margin-top: 12px;
+}
+
+.feedback p,
+.feedback button {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.asOf,
+.reasons {
+  margin-top: 16px;
+}
+
+.reasons {
+  padding-inline-start: 20px;
+  margin-bottom: 0;
+}
+
+.reasons > li + li {
+  margin-top: 8px;
+}

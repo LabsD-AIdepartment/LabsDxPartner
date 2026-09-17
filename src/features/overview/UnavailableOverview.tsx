@@ -1,3 +1,4 @@
+import { Text } from '@/shared/ui/Text';
 import { Card } from '@/shared/ui/Card';
 import { Money } from '@/shared/ui/Money';
 import { DataState } from '@/shared/ui/DataState';
@@ -12,7 +13,9 @@ export function UnavailableOverview({ partner }: { partner?: PartnerPresentation
         <Card className={styles.earnings} aria-label="โปรไฟล์และคอมมิชชัน">
           <PartnerIdentity partner={partner} />
           <div className={styles.earningPane}>
-            <h2>คอมมิชชันของฉัน</h2>
+            <Text as="h2" variant="cardTitle">
+              คอมมิชชันของฉัน
+            </Text>
             <Money value={null} className={styles.heroMoney} />
             <DataState state="unavailable" />
           </div>
@@ -33,7 +36,7 @@ export function UnavailableOverview({ partner }: { partner?: PartnerPresentation
         <Card title="Small clips Real results">
           <DataState state="unavailable" />
         </Card>
-        <Card title="Your earning mix">
+        <Card title="Earnings Mix">
           <DataState state="unavailable" />
         </Card>
       </div>

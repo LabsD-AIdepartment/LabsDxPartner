@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { PartnerApplication } from '@/features/partner-application/PartnerApplication';
 import { CredentialAccount } from '@/features/partner-application/CredentialAccount';
 import { selectSessionPartner } from '@/server/modules/access/partner-session';
@@ -26,11 +26,104 @@ const response = (body: unknown, status = 200) => ({
   json: async () => body,
 });
 beforeEach(() => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true,
+    value() {
+      this.open = true;
+    },
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+    configurable: true,
+    value() {
+      this.open = false;
+    },
+  });
   vi.stubGlobal('fetch', fetcher);
   fetcher.mockReset();
 });
 afterEach(() => vi.unstubAllGlobals());
 describe('authenticated partner application', () => {
+  it('loads native scoped account metadata while preserving the shared password form', async () => {
+    fetcher.mockImplementation(async (url: string) => {
+      if (url === '/api/partner/session') return response(session);
+      if (url.startsWith('/api/v1/partner/account?'))
+        return response({
+          dataState: 'ready',
+          generatedAt: '2026-09-11T00:00:00Z',
+          dataThrough: null,
+          reasons: [],
+          requestId: 'account-native',
+          revision: '1',
+          partnerId: 'partner-one',
+          permissionRevision: 'p1:m1',
+          data: {
+            userId: 'user-one',
+            displayName: 'คุณพาร์ทเนอร์',
+            username: 'celeb_native',
+            agreement: null,
+            termsSummary: null,
+            supportUrl: null,
+          },
+        });
+      return response({}, 503);
+    });
+    render(
+      <PartnerApplication
+        initialSession={session}
+        screen={{ kind: 'account' }}
+        initialContext={initialReportContext}
+      />,
+    );
+    expect(await screen.findByText('ชื่อผู้ใช้: celeb_native')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'ข้อตกลงของคุณ' })).toBeVisible();
+    expect(screen.getAllByLabelText('รหัสผ่านปัจจุบัน')).toHaveLength(1);
+    expect(
+      fetcher.mock.calls.some(([url]) =>
+        url.includes('partnerId=partner-one&permissionRevision=p1%3Am1'),
+      ),
+    ).toBe(true);
+  });
+  it('uses changed overview dates in the native request, top navigation and reload URL', async () => {
+    window.history.replaceState(null, '', '/overview');
+    fetcher.mockImplementation(async (url: string) =>
+      url === '/api/partner/session' ? response(session) : response({}, 503),
+    );
+    const view = render(
+      <PartnerApplication
+        initialSession={session}
+        screen={{ kind: 'overview' }}
+        initialContext={initialReportContext}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'เลือกช่วงวันที่' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'เดือน 1' }), {
+      target: { value: '08' },
+    });
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'ปฏิทินเริ่มต้น' })).getByRole('button', {
+        name: '2026-08-01',
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'ใช้ช่วงวันที่' }));
+    await waitFor(() =>
+      expect(
+        fetcher.mock.calls.some(
+          ([url]) =>
+            url.startsWith('/api/v1/partner/overview?') &&
+            new URLSearchParams(url.split('?')[1]).get('from') === '2026-08-01',
+        ),
+      ).toBe(true),
+    );
+    for (const link of screen.getAllByRole('link', { name: 'My content' })) {
+      const next = new URL(link.getAttribute('href')!, 'https://example.test');
+      expect(next.searchParams.get('from')).toBe('2026-08-01');
+      expect(next.searchParams.get('toExclusive')).toBe('2026-09-01');
+      expect(next.searchParams.has('generation')).toBe(false);
+    }
+    expect(new URLSearchParams(window.location.search).get('from')).toBe('2026-08-01');
+    view.unmount();
+    window.history.replaceState(null, '', '/');
+  });
   it('ignores malformed, foreign user, and nonmember selection preferences', () => {
     for (const cookie of [
       '{',
@@ -149,6 +242,7 @@ describe('authenticated partner application', () => {
       />,
     );
     expect(await screen.findByText(/บัญชีนี้ไม่มีสิทธิ์ดูข้อมูลส่วนนี้/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'เมนูโปรไฟล์' }));
     expect(screen.getByRole('button', { name: 'ออกจากระบบ' })).toBeVisible();
   });
   it('changes credentials through the guarded service with a literal password and clears the account view only after success', async () => {

@@ -1,0 +1,154 @@
+.wallet {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.balance {
+  max-width: 100%;
+}
+.history {
+  min-width: 0;
+  container: wallet-history / inline-size;
+}
+.range {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block: 12px 18px;
+  font-size: var(--text-body-size);
+}
+.range > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.transactions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.transaction {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+}
+.row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) minmax(70px, auto) 16px;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+  padding: 18px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 150ms ease;
+}
+.row:hover {
+  background: var(--hover);
+}
+.row:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+.direction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rowIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rowIdentity strong {
+  font-weight: var(--weight-semibold);
+}
+.muted,
+.amountDirection {
+  color: var(--muted);
+  font-size: var(--text-caption-size);
+}
+.rowAmount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+  max-width: 220px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.proof {
+  position: relative;
+  flex: 0 0 auto;
+}
+.proof button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.proofError {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  top: 100%;
+  width: min(240px, 65vw);
+  background: var(--card-solid);
+  color: var(--text);
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: var(--text-body-size);
+}
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.undated {
+  margin-top: 24px;
+}
+.undated h3 {
+  font-size: var(--text-body-size);
+  color: var(--muted);
+  font-weight: var(--weight-medium);
+}
+.releaseDetail {
+  display: grid;
+  gap: 18px;
+}
+.releaseDetail p,
+.releaseDetail dl,
+.releaseDetail dd {
+  margin: 0;
+}
+.releaseDetail dt {
+  color: var(--muted);
+}
+@container wallet-history (max-width: 480px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) minmax(70px, 38%);
+    gap: 10px;
+    padding-block: 16px;
+  }
+  .direction,
+  .row > svg {
+    display: none;
+  }
+  .rowAmount {
+    max-width: none;
+  }
+}

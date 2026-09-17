@@ -1,4 +1,5 @@
 'use client';
+import { resetWorkspaceTheme } from '@/shared/theme/restore-theme';
 import { passwordPolicy, usernameHint } from '@/contracts/credentials';
 import { useCredentialEnvironment } from './CredentialEnvironment';
 import { useState, type FormEvent } from 'react';
@@ -75,6 +76,7 @@ export function InvitePage() {
         environment.clearLink();
         await environment.signIn(parsed.data.username, parsed.data.password);
       }
+      resetWorkspaceTheme();
       environment.navigate('/overview');
     } catch (failure) {
       setError(credentialErrorText(failure));

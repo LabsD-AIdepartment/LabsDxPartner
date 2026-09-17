@@ -1,0 +1,110 @@
+[
+  {
+    "id": "0001_identity.sql",
+    "checksum": "6b74cad5cb3c0d7d3ebb2c714e8e24bcb1786b9d71e1f7ccfb32ee619f5d79c4"
+  },
+  {
+    "id": "0002_partner_access.sql",
+    "checksum": "d3c7e0496c711f37719e13b4494a0b5c60ad5a7d026d03e25f645be584449e8d"
+  },
+  {
+    "id": "0003_access_audit_details.sql",
+    "checksum": "e1cb54112bbffc237ab38f19f27af4a7fd72d9638821fe19a226c28a564b1da2"
+  },
+  {
+    "id": "0004_identity_method_audit.sql",
+    "checksum": "85034c0c02405940004f3fb9e0afb9286608d7c34e066d15a26e84dd5435fb73"
+  },
+  {
+    "id": "0005_oauth_fences.sql",
+    "checksum": "9da0bbf53e3ae7b10c116d4d02ebea3fe721f15063897e08917a4d39973553e3"
+  },
+  {
+    "id": "0006_credential_username.sql",
+    "checksum": "69756eb2694adf33bfba4a6efee17fc18948359af7a192cce51964bbaabf7698"
+  },
+  {
+    "id": "0007_preapproved_invitations.sql",
+    "checksum": "63f5ad713fa75bab2491396348111aa14219945a1452bb5ef7d68429b773fb1b"
+  },
+  {
+    "id": "0008_password_recovery.sql",
+    "checksum": "a3bb1c0aec9d9e54ff6833836e0382fe79ad9d6bc9bb4b7c5ce6481969891db9"
+  },
+  {
+    "id": "0009_financial_candidates.sql",
+    "checksum": "467622328ca0ad721f4fc27dd017f94744aeaab6f76961b17708930e518aa0f6"
+  },
+  {
+    "id": "0010_thai_username.sql",
+    "checksum": "6738670e63987ec746b931714f5e3639432d80e5a08ddbecdda0e161564e9654"
+  },
+  {
+    "id": "0011_financial_approval_statements.sql",
+    "checksum": "90a7b3efaf0ce18e987382c6daf05bf5664a481f872a84c28379e63951884aa1"
+  },
+  {
+    "id": "0012_finance_settlements.sql",
+    "checksum": "c1b438f9c6aaeb52cfae92e47740fe326404258928c8e7876a0a14001264a8e6"
+  },
+  {
+    "id": "0013_earning_corrections.sql",
+    "checksum": "ad2a04032a29a2fc618de230e6ce622e51734abbe4709bdd8ee33214a25b5f2c"
+  },
+  {
+    "id": "0014_earning_row_cursor.sql",
+    "checksum": "7a329822277dc38fb5052e2beceefe977a57285031ddab9c1ea430156579d5ed"
+  },
+  {
+    "id": "0015_partner_change_metadata.sql",
+    "checksum": "0183e954dbefe1dbf135a95c78a1372921fd522bba89ceeb2878d4069d200925"
+  },
+  {
+    "id": "0016_partner_content_catalogue.sql",
+    "checksum": "6d13bbf28cebb229c28878e45b2e96710291681e38875fb12b3c3458fc089e72"
+  },
+  {
+    "id": "0017_partner_notices.sql",
+    "checksum": "f0e889005f0901725ff7adab4b78c786d7a9ecbb0aef1973902c79202d040049"
+  },
+  {
+    "id": "0018_marketing_ad_registration.sql",
+    "checksum": "83cd03724e41813ab85285921047f5b6d3a9f0b62d2e65664161b753f06fd798"
+  },
+  {
+    "id": "0019_marketing_sync_reports.sql",
+    "checksum": "5a6fd8a5d214945e3d4efdd8c5a9e74a34f57631693669e7fbb7c9cf842071c6"
+  },
+  {
+    "id": "0020_marketing_runtime_controls.sql",
+    "checksum": "73ba0bbb82d88a6ad8564489dfcecb4b77f92a5ef3c96e370e5c8038c8106e91"
+  },
+  {
+    "id": "0021_marketing_connection_audit.sql",
+    "checksum": "1c8ccfa65928a3b28f13cd2f5471ac5f3acbb298872e5fff5401989e162e068c"
+  },
+  {
+    "id": "0022_marketing_refresh_horizon.sql",
+    "checksum": "1cb81cbb8d6334d50a58dbff1b400d17334f0b02a406554f7f8add56fa5dc7e5"
+  },
+  {
+    "id": "0023_marketing_provision_audit.sql",
+    "checksum": "9627289b379777a3a1fd7c2ce82d65ced1efb1b19605d3394002e53382eac21b"
+  },
+  {
+    "id": "0024_marketing_shop_video.sql",
+    "checksum": "5add364117c854352156f7cfd16f343020f8fd759cade6c5d4b1dbebd41968dd"
+  },
+  {
+    "id": "0025_marketing_video_schedule.sql",
+    "checksum": "3639484235fbdd19eec100b13bf2986d5acec739f6ceddff38c6bf067fd6dbdb"
+  },
+  {
+    "id": "0026_marketing_video_scan.sql",
+    "checksum": "f9c4f194ed3186e1e7991025a159148dcf0ab0c20475509c21e7049fc98b6db9"
+  },
+  {
+    "id": "0027_partner_account_profiles.sql",
+    "checksum": "708376535f235dd99737a8ccac4b7b11afd815a5e3e92e3bf92a1e0c6e701785"
+  }
+]

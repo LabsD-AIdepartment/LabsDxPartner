@@ -1,0 +1,54 @@
+.root {
+  position: relative;
+}
+.trigger {
+  position: relative;
+}
+.badgeTarget {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.avatar {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 20;
+  width: min(280px, calc(100vw - 32px));
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  background: var(--card-solid);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px #00000020;
+  font-size: var(--text-caption-size);
+}
+.panel > :is(a, button) {
+  width: 100%;
+  justify-content: flex-start;
+}
+.panel > label {
+  min-width: 0;
+  padding: 8px;
+}
+.panel[hidden],
+.mobileActions:empty {
+  display: none;
+}
+.mobileActions {
+  display: grid;
+  gap: 8px;
+}
+.mobileActions > button {
+  width: 100%;
+  justify-content: flex-start;
+}

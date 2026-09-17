@@ -1,10 +1,22 @@
+import { TextGroup } from '@/shared/ui/TextGroup';
+import { ActionArrow } from '@/shared/ui/ActionArrow';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { ThemeToggle } from '@/features/shell/ThemeToggle';
 import styles from './login.module.css';
-export function PublicFrame({ children }: { children: ReactNode }) {
-  return (
+import fluid from './fluid-login.module.css';
+import { FluidBackdrop } from './FluidBackdrop';
+import { BilingualTagline } from './BilingualTagline';
+export function PublicFrame({
+  children,
+  variant = 'default',
+}: {
+  children: ReactNode;
+  variant?: 'default' | 'fluid';
+}) {
+  const isFluid = variant === 'fluid';
+  const content = (
     <div className={styles.page}>
       <a className="skip-link" href="#public-main">
         ข้ามไปยังเนื้อหา
@@ -15,41 +27,59 @@ export function PublicFrame({ children }: { children: ReactNode }) {
         </Link>
         <ThemeToggle />
       </header>
-      <main id="public-main" className={styles.main}>
-        <section className={styles.story} aria-label="พื้นที่สำหรับพาร์ทเนอร์ Labs D">
-          <span className={styles.eyebrow}>A partnership that grows with you</span>
+      <main id="public-main" className={`${styles.main} ${isFluid ? fluid.main : ''}`}>
+        <section
+          className={`${styles.story} ${isFluid ? fluid.story : ''}`}
+          aria-label="พื้นที่สำหรับพาร์ทเนอร์ Labs D"
+        >
+          {!isFluid && <span className={styles.eyebrow}>A partnership that grows with you</span>}
           <h1>
             Your content
             <br />
             <span>Your impact</span>
           </h1>
-          <p>
-            ทุกผลงานมีคุณค่า
-            <br />
-            เติบโตไปด้วยกันกับ Labs D
-          </p>
-          <div className={styles.promise}>
-            <ArrowUpRight aria-hidden size={28} />
-            <div>
-              <strong>เห็นภาพรวม เข้าใจทุกรายได้</strong>
-              <p>
-                ติดตามผลงาน ตรวจสอบคอมมิชชัน
-                <br />
-                และดูรายละเอียดการจ่ายเงินในที่เดียว
-              </p>
+          {isFluid ? (
+            <BilingualTagline english="A partnership that grows with you" thai="เติบโตไปด้วยกัน" />
+          ) : (
+            <p>เติบโตไปด้วยกัน</p>
+          )}
+          {!isFluid && (
+            <div className={styles.promise}>
+              <span className={styles.promiseIcon}>
+                <ActionArrow />
+              </span>
+              <TextGroup>
+                <strong>เห็นภาพรวม เข้าใจทุกรายได้</strong>
+                <p>
+                  ติดตามผลงาน ตรวจสอบคอมมิชชัน
+                  <br />
+                  และดูรายละเอียดการจ่ายเงินในที่เดียว
+                </p>
+              </TextGroup>
             </div>
-          </div>
+          )}
         </section>
-        <section className={styles.panel} aria-label="การเข้าสู่ระบบ">
+        <section
+          className={`${styles.panel} ${isFluid ? fluid.panel : ''}`}
+          aria-label="การเข้าสู่ระบบ"
+        >
           {children}
         </section>
       </main>
       <footer className={styles.footer}>
         <span>LABS D × PARTNER / Your creativity, rewarded</span>
         <span>
-          <ShieldCheck size={16} aria-hidden /> พื้นที่ส่วนตัวสำหรับพาร์ทเนอร์ที่ได้รับเชิญ
+          <ShieldCheck size={16} aria-hidden /> ระบบสำหรับพาร์ทเนอร์ที่ได้รับเชิญเท่านั้น
         </span>
       </footer>
     </div>
+  );
+  return isFluid ? (
+    <div className={fluid.canvas}>
+      <FluidBackdrop />
+      {content}
+    </div>
+  ) : (
+    content
   );
 }

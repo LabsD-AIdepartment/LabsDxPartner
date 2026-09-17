@@ -1,5 +1,6 @@
 import { useId, type InputHTMLAttributes } from 'react';
 import { Text } from './Text';
+import { TextGroup } from './TextGroup';
 import styles from './forms.module.css';
 export function Field({
   label,
@@ -22,15 +23,19 @@ export function Field({
           undefined
         }
       />
-      {error && (
-        <Text as="span" role="alert" id={id + '-error'}>
-          {error}
-        </Text>
-      )}
-      {hint && (
-        <Text as="span" variant="caption" tone="muted" id={id + '-hint'}>
-          {hint}
-        </Text>
+      {(error || hint) && (
+        <TextGroup as="span" spacing="tight">
+          {error && (
+            <Text as="span" role="alert" id={id + '-error'}>
+              {error}
+            </Text>
+          )}
+          {hint && (
+            <Text as="span" variant="caption" tone="muted" id={id + '-hint'}>
+              {hint}
+            </Text>
+          )}
+        </TextGroup>
       )}
     </label>
   );

@@ -12,23 +12,22 @@ export function EarningMix({ data }: { data: OverviewValue }) {
     BigInt(split.brandAds.minor) >= 0n;
   return (
     <Card
-      title="Your earning mix"
+      title="Earnings Mix"
       className={styles.mixCard}
       action={<Sparkles size={18} aria-hidden />}
     >
       {comparable && data.earnings.confirmed ? (
-        <DonutChart primary={split.organic.minor} total={data.earnings.confirmed.minor} />
+        <DonutChart
+          primary={split.organic.minor}
+          total={data.earnings.confirmed.minor}
+          showMarketingCopy={false}
+        />
       ) : (
         <>
           <div className={styles.unknownMix}>
             <div className={styles.unknownRing} aria-label="ยังไม่มีสัดส่วนรายได้">
               —
             </div>
-            <p>
-              Made by you
-              <br />
-              Earned by you
-            </p>
           </div>
           <p className="small muted">
             {split

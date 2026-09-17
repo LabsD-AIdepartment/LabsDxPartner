@@ -3,6 +3,7 @@ import { Button } from '@/shared/ui/Button';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { accessCopy, loginHref, type AccessReason } from './access';
 import { Text } from '@/shared/ui/Text';
+import { TextGroup } from '@/shared/ui/TextGroup';
 import styles from './login.module.css';
 export function AccessPage({
   reason,
@@ -27,10 +28,12 @@ export function AccessPage({
       <div className={styles.welcomeIcon}>
         <Icon size={28} aria-hidden />
       </div>
-      <h2>{copy.title}</h2>
-      <Text variant="caption" tone="muted" className={styles.description}>
-        {copy.description}
-      </Text>
+      <TextGroup className={styles.formHeading}>
+        <h2>{copy.title}</h2>
+        <Text variant="caption" tone="muted">
+          {copy.description}
+        </Text>
+      </TextGroup>
       {onRetry ? (
         <Button variant="primary" onClick={onRetry}>
           {copy.action}

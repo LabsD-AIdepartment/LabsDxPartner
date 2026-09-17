@@ -14,14 +14,23 @@ import { createAccessHttp } from '@/server/http/access';
 import { principalResolver } from './resolve-principal';
 import { createPartnerAccess } from '../partners/access';
 import { createPartnerSessionHttp } from '@/server/http/partner-session';
+import { createConfiguredMarketingProviders } from '../marketing-ads/composition';
+import { createMarketingRegistration } from '../marketing-ads/registration';
+import { createMarketingConnections } from '../marketing-ads/connections';
+import { createFacebookAccountVerifier } from '../marketing-ads/facebook/verify-account';
+import { createReadinessProbe } from '@/server/platform/health/readiness';
+import { checkIdentityReadiness } from './readiness';
 
 type Runtime = {
+  ready: () => Promise<boolean>;
   auth: ReturnType<typeof createCredentialIdentity>;
   assertBinding: () => Promise<void>;
   handle: (request: Request) => Promise<Response>;
   access: (request: Request) => Promise<Response>;
   partners: ReturnType<typeof createPartnerAccess>;
   partnerSession: (request: Request) => Promise<Response>;
+  marketing: () => ReturnType<typeof createMarketingRegistration>;
+  marketingConnections: () => ReturnType<typeof createMarketingConnections>;
 };
 let current: Runtime | undefined;
 export function getIdentityRuntime(): Runtime | null {
@@ -45,12 +54,23 @@ export function getIdentityRuntime(): Runtime | null {
   };
   const partners = createPartnerAccess(sql, principalResolver(auth, assertBinding));
   current = {
+    ready: createReadinessProbe(() => checkIdentityReadiness(sql, credentialBindingDigest(config))),
     auth,
     assertBinding,
     handle: credentialSessionHandler(sql, config, auth),
     access: createAccessHttp(sql, config, principalResolver(auth, assertBinding), assertBinding),
     partners,
     partnerSession: createPartnerSessionHttp(partners, config.BETTER_AUTH_URL),
+    marketingConnections: () =>
+      createMarketingConnections(
+        partners,
+        createFacebookAccountVerifier(sql, process.env, assertBinding),
+      ),
+    marketing: () =>
+      createMarketingRegistration(
+        partners,
+        createConfiguredMarketingProviders(sql, process.env, assertBinding).providers,
+      ),
   };
   return current;
 }

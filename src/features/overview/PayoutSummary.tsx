@@ -1,3 +1,4 @@
+import { ActionArrow } from '@/shared/ui/ActionArrow';
 import type { OverviewValue } from '@/contracts/overview';
 import { Card } from '@/shared/ui/Card';
 import { Money } from '@/shared/ui/Money';
@@ -36,7 +37,7 @@ export function PayoutSummary({
             variant="primary"
             href={obligationHref(data, next.statementId, basePath, returnTo)}
           >
-            ดูรอบจ่ายนี้ ↗
+            ดูรอบจ่ายนี้ <ActionArrow />
           </LinkButton>
         </div>
       ) : (

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "commandId": "00000000-0000-4000-8000-000000000001",
+  "operatorRef": "replace-with-operator-reference",
+  "evidenceRef": "replace-with-setup-approval-reference",
+  "connectionId": "facebook-primary",
+  "expectedRevision": null,
+  "label": "Facebook Labs D",
+  "grantUserIds": ["replace-with-existing-staff-user-id"],
+  "revokeUserIds": []
+}

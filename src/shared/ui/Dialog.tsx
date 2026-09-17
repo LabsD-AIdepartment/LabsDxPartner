@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './Button';
 import { Text } from './Text';
+import { useMobileHeaderActions } from './MobileHeaderActions';
 import styles from './ui.module.css';
 export function Dialog({
   open,
@@ -10,14 +11,21 @@ export function Dialog({
   title,
   children,
   sheet = false,
+  density = 'default',
+  className = '',
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   sheet?: boolean;
+  density?: 'default' | 'compact';
+  className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const placement = useMobileHeaderActions();
+  const currentPlacement = useRef(placement);
+  currentPlacement.current = placement;
   const id = useId();
   const close = useRef(onClose);
   close.current = onClose;
@@ -30,13 +38,22 @@ export function Dialog({
     } else if (dialog.open) dialog.close();
     return () => {
       if (dialog.open) dialog.close();
-      if (open) previous?.focus();
+      if (open) {
+        const profile = currentPlacement.current?.profile;
+        if (
+          profile &&
+          previous?.matches('[data-mobile-header-action]') &&
+          (!previous.isConnected || previous.getClientRects().length === 0)
+        ) {
+          profile.activate();
+        } else previous?.focus();
+      }
     };
   }, [open]);
   return (
     <dialog
       ref={ref}
-      className={`${styles.dialog} ${sheet ? styles.sheet : ''}`}
+      className={`${styles.dialog} ${sheet ? styles.sheet : ''} ${density === 'compact' ? styles.dialogCompact : ''} ${className}`}
       aria-labelledby={id}
       onKeyDown={(event) => {
         if (event.key !== 'Tab') return;

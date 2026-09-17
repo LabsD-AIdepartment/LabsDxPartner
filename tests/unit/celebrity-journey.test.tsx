@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { webcrypto } from 'node:crypto';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { createCelebrityJourney } from '../../dev/celebrity-journey';
@@ -10,6 +10,12 @@ import {
   PasswordResetContext,
 } from '@/contracts/credential-responses';
 vi.stubGlobal('crypto', webcrypto);
+vi.stubGlobal('matchMedia', (media: string) => ({
+  media,
+  matches: media === '(prefers-reduced-motion: reduce)',
+  addEventListener() {},
+  removeEventListener() {},
+}));
 vi.stubGlobal(
   'ResizeObserver',
   class {
@@ -22,6 +28,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
 });
+beforeEach(() => window.history.replaceState({}, '', '/access-preview?devtools=1'));
 const password = 'celebrity-demo-2026';
 async function activate(journey: ReturnType<typeof createCelebrityJourney>) {
   return journey.request(
@@ -143,7 +150,8 @@ describe('isolated celebrity mock journey', () => {
     await screen.findByText('Your content');
     await screen.findByText('คอมมิชชันของฉัน');
     expect(screen.getAllByText('฿37,360').length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('link', { name: 'บัญชีของคุณ' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'เมนูโปรไฟล์' })[0]);
+    fireEvent.click(screen.getByRole('link', { name: 'จัดการบัญชี' }));
     await screen.findByText('ข้อตกลงของคุณ');
     expect(screen.queryByText(/Google|Apple|เชื่อมบัญชี/)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('รหัสผ่านปัจจุบัน'), { target: { value: password } });
@@ -155,10 +163,10 @@ describe('isolated celebrity mock journey', () => {
     });
     fireEvent.submit(screen.getByRole('button', { name: 'เปลี่ยนรหัสผ่าน' }).closest('form')!);
     await screen.findByRole('button', { name: 'เข้าสู่ระบบ' });
-    fireEvent.change(screen.getByLabelText('ชื่อผู้ใช้', { exact: true }), {
+    fireEvent.change(screen.getByLabelText('username', { exact: true }), {
       target: { value: 'owner.celeb' },
     });
-    fireEvent.change(screen.getByLabelText('รหัสผ่าน', { exact: true }), {
+    fireEvent.change(screen.getByLabelText('password', { exact: true }), {
       target: { value: 'changed-celebrity-demo' },
     });
     fireEvent.submit(screen.getByRole('button', { name: 'เข้าสู่ระบบ' }).closest('form')!);
@@ -173,7 +181,7 @@ describe('isolated celebrity mock journey', () => {
     )!;
     fireEvent.click(clip);
     await screen.findByText('รายได้และวิธีคำนวณ');
-    fireEvent.click(screen.getAllByRole('link', { name: 'Transactions' })[0]);
+    fireEvent.click(screen.getAllByRole('link', { name: 'Wallet' })[0]);
     await screen.findByText('รอบจ่ายของคุณ');
     fireEvent.click(screen.getByRole('button', { name: 'ออกจากระบบตัวอย่าง' }));
     await screen.findByRole('button', { name: 'เข้าสู่ระบบ' });

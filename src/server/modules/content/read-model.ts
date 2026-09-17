@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { ContentQuery, ContentHttpResponse } from '@/contracts/content-http';
 import { Instant } from '@/contracts/common';
+import type { AdReferenceValue } from '@/contracts/content';
 import { coverageForPeriod } from '@/contracts/coverage';
 import { AccessFailure, type createPartnerAccess } from '@/server/modules/partners/access';
 import {
@@ -11,8 +12,52 @@ import {
 } from '@/server/modules/earnings/publication';
 import { earningLineRef } from '@/server/modules/earnings/corrections';
 import { IntakeRow } from '@/server/adapters/approved-period/schema';
+import { readPartnerAds } from '@/server/modules/marketing-ads/partner-read';
 
 const batchSize = 50;
+// Verified platform ad identities for one clip, batched into the card query to avoid N+1.
+// $11 = marketingEnabled: null when off (unknown), '[]' when on with no valid linkage (verified none).
+// Authority mirrors partner-read: active owned target, matching connection, current sync mapping.
+// A removed clip suppresses linkage (null -> omitted -> unknown) rather than exposing stale IDs.
+// source_identity is projected only when it is a canonical SourceIdentityV2 whose every dimension
+// matches the association's own trusted columns and the connection's capability/platform. Guards use
+// jsonb_typeof so malformed rows are skipped, never cast-to-throw; ->> would coerce a numeric
+// externalId to text, so string typing is required before the value is read. Deterministic
+// order-by precedes the bound so the projected set is stable.
+const adReferencesSql = (clip: string, removed: string) =>
+  `case when $11::boolean and not ${removed} then coalesce((
+    select jsonb_agg(jsonb_build_object('platform',x.platform,'externalId',x.external_id)
+      order by x.platform,x.external_id)
+    from (
+      select a.source_identity->>'platform' as platform,a.source_identity->>'externalId' as external_id
+      from portal_marketing.associations a
+      join portal_marketing.targets mt on mt.id=a.target_id and mt.active
+        and mt.partner_id=a.partner_id and mt.clip_id=a.clip_id
+      join portal_marketing.connections mc on mc.id=a.connection_id
+        and mc.namespace=a.namespace and mc.account_id=a.account_id
+      join portal_marketing.sync_jobs j on j.association_id=a.id and j.mapping_revision=a.mapping_revision
+      where a.partner_id=$1 and a.clip_id=${clip}
+        and jsonb_typeof(a.source_identity)='object'
+        and jsonb_typeof(a.source_identity->'schemaVersion')='number'
+        and a.source_identity->>'schemaVersion'='2'
+        and jsonb_typeof(a.source_identity->'externalId')='string'
+        and jsonb_typeof(a.source_identity->'platform')='string'
+        and jsonb_typeof(a.source_identity->'objectType')='string'
+        and jsonb_typeof(a.source_identity->'namespace')='string'
+        and jsonb_typeof(a.source_identity->'accountId')='string'
+        and jsonb_typeof(a.source_identity->'connectionId')='string'
+        and jsonb_typeof(a.source_identity->'capability')='string'
+        and a.source_identity->>'externalId'=a.external_id
+        and a.source_identity->>'platform'=a.platform
+        and a.source_identity->>'objectType'=a.object_type
+        and a.source_identity->>'namespace'=a.namespace
+        and a.source_identity->>'accountId'=a.account_id
+        and a.source_identity->>'connectionId'=a.connection_id
+        and a.source_identity->>'platform'=mc.platform
+        and a.source_identity->>'capability'=mc.capability
+      group by 1,2 order by 1,2 limit 100
+    ) x
+  ),'[]'::jsonb) else null end`;
 const Cursor = z.strictObject({
   binding: z.string().regex(/^[a-f0-9]{64}$/),
   at: Instant,
@@ -47,13 +92,17 @@ const commonSql = `with ${publishedPeriodsSql},
    from portal_content.clips c left join clip_totals t on t.content_id=c.id
    where c.partner_id=$1 and ($4::text is null or c.brand=$4)
  ),
- library as (select * from clips c where position(lower($5::text) in lower(c.title||' '||c.brand))>0
-   and ((c.published_at>=$2::timestamptz and c.published_at<$3::timestamptz) or c.earning_count>0)),
- brands as (select distinct c.brand from portal_content.clips c left join clip_totals t on t.content_id=c.id
-   where c.partner_id=$1 and ((c.published_at>=$2::timestamptz and c.published_at<$3::timestamptz) or t.count>0)
+ library as (select * from clips c where position(lower($5::text) in lower(c.title||' '||c.brand))>0),
+ brands as (select distinct c.brand from portal_content.clips c
+   where c.partner_id=$1
    order by c.brand limit 101),
  target as (select * from clips where id=$6::text)`;
 const metadataSql = `select
+ case when $11::boolean and $6::text is not null then (select count(*)::int from portal_marketing.associations a
+   join portal_marketing.targets t on t.id=a.target_id and t.active
+   join portal_marketing.connections mc on mc.id=a.connection_id and mc.namespace=a.namespace and mc.account_id=a.account_id
+   join portal_marketing.sync_jobs j on j.association_id=a.id and j.mapping_revision=a.mapping_revision
+   where a.partner_id=$1 and a.clip_id=$6 and exists(select 1 from target where not removed)) end as ad_count,
  to_char(statement_timestamp() at time zone 'UTC',${fmt}) as as_of,
  (select count(*)::integer from pubs) as publication_count,
  (select to_char(min(data_through) at time zone 'UTC',${fmt}) from pubs) as through,
@@ -65,20 +114,24 @@ const metadataSql = `select
  (select count(*)::integer from rows e where e.disposition='included' and e.content_id is not null
    and not exists(select 1 from portal_content.clips c where c.partner_id=$1 and c.id=e.content_id)) as missing_metadata,
  (select count(*)::integer from rows where disposition='excluded') as excluded,
- (select to_jsonb(t)||jsonb_build_object('published_at',to_char(t.published_at at time zone 'UTC',${fmt})) from target t) as target`;
+ (select to_jsonb(t)||jsonb_build_object('published_at',to_char(t.published_at at time zone 'UTC',${fmt}),
+   'ad_references',${adReferencesSql('t.id', 't.removed')}) from target t) as target`;
 const metadataFrom = `from (values(1)) singleton(n)
  left join portal_content.catalogues c on c.partner_id=$1
  left join portal_statements.revisions r on r.partner_id=$1
  left join portal_meta.partner_changes m on m.partner_id=$1`;
 
-function dataSql(resource: z.infer<typeof ContentQuery>['resource']) {
+// Exported for regression tests that assert the ad-linkage guards are present in the composed
+// query text. These tests verify query composition, not database execution.
+export function dataSql(resource: z.infer<typeof ContentQuery>['resource']) {
   if (resource === 'list')
     return `${commonSql}, batch as (
     select c.* from library c cross join params p
     where p.after_at is null or (c.published_at,c.id)<(p.after_at,p.after_id)
     order by c.published_at desc,c.id desc limit ${batchSize + 1}
   ) ${metadataSql},(select count(*)::integer from library) as total,
-    coalesce((select jsonb_agg(to_jsonb(b)||jsonb_build_object('published_at',to_char(b.published_at at time zone 'UTC',${fmt}))
+    coalesce((select jsonb_agg(to_jsonb(b)||jsonb_build_object('published_at',to_char(b.published_at at time zone 'UTC',${fmt}),
+      'ad_references',${adReferencesSql('b.id', 'b.removed')})
       order by b.published_at desc,b.id desc) from batch b),'[]') as items ${metadataFrom}`;
   if (resource === 'earnings')
     return `${commonSql}, lines as (
@@ -108,8 +161,11 @@ type ClipRow = {
   sales: string;
   earning_count: number;
   agreement: string | null;
+  // null (marketing off) or absent (legacy row) means unknown; an array means verified linkage.
+  ad_references?: AdReferenceValue[] | null;
 };
-function contentCard(row: ClipRow, known: boolean, reason: string) {
+// Exported for pure projection tests; the ad-linkage authority itself lives in the SQL above.
+export function contentCard(row: ClipRow, known: boolean, reason: string) {
   return {
     id: row.id,
     title: row.title,
@@ -121,19 +177,26 @@ function contentCard(row: ClipRow, known: boolean, reason: string) {
     views: null,
     earned: known ? money(row.amount) : null,
     unavailableReason: known ? null : reason,
+    // Omit when unknown; native media stays omitted until authoritative ingestion exists.
+    ...(row.ad_references != null ? { adReferences: row.ad_references } : {}),
   };
 }
 
-export function createContentReader(access: ReturnType<typeof createPartnerAccess>) {
+export function createContentReader(
+  access: ReturnType<typeof createPartnerAccess>,
+  options: { marketingEnabled?: boolean } = {},
+) {
   return async (headers: Headers, input: unknown) => {
     const parsed = ContentQuery.safeParse(input);
     if (!parsed.success) throw new AccessFailure('invalid_input');
     const q = parsed.data,
-      cursor = decodeCursor(q.cursor);
+      cursor = q.resource === 'ads' ? null : decodeCursor(q.cursor);
     if (cursor && (q.resource === 'list') !== (cursor.partition === null))
       throw new AccessFailure('invalid_input');
     return access.withPartner(headers, q.partnerId, 'view_content', async (tx, scope) => {
       if (scope.permissionRevision !== q.permissionRevision) throw new AccessFailure('forbidden');
+      if (options.marketingEnabled && (q.resource === 'ad' || q.resource === 'ads'))
+        return readPartnerAds(tx, scope, q);
       const canEarn = scope.capabilities.includes('view_earnings');
       if (q.resource === 'earnings' && !canEarn) throw new AccessFailure('forbidden');
       const period = {
@@ -152,6 +215,7 @@ export function createContentReader(access: ReturnType<typeof createPartnerAcces
         cursor?.at ?? null,
         cursor?.id ?? null,
         cursor?.partition ?? null,
+        !!options.marketingEnabled,
       ]);
       if (!row || row.publication_count > 1000 || row.brands.length > 100)
         throw new Error('Content bounds exceeded');
@@ -235,7 +299,7 @@ export function createContentReader(access: ReturnType<typeof createPartnerAcces
             agreementVersion: known ? row.target.agreement : null,
             earningsStatus: known ? 'confirmed' : 'unavailable',
             metrics: [],
-            adCount: null,
+            adCount: row.ad_count,
             attribution: known ? 'content' : 'unavailable',
           },
         };

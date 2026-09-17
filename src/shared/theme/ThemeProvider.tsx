@@ -1,29 +1,26 @@
 'use client';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { restoreTheme } from './restore-theme';
+import { usePathname } from 'next/navigation';
 type Theme = 'light' | 'dark';
 const Context = createContext<{ theme: Theme; toggle: () => void }>({
   theme: 'light',
   toggle: () => {},
 });
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [theme, setTheme] = useState<Theme>('light');
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('labsd-theme');
-      if (saved === 'light' || saved === 'dark') {
-        setTheme(saved);
-        document.documentElement.dataset.theme = saved;
-      }
-    } catch {
-      /* Optional preference storage must never block the application. */
-    }
-  }, []);
+    const saved = restoreTheme();
+    if (saved) setTheme(saved);
+  }, [pathname === '/login' || pathname === '/login/']);
   const toggle = () =>
     setTheme((current) => {
       const next = current === 'light' ? 'dark' : 'light';
       document.documentElement.dataset.theme = next;
       try {
-        localStorage.setItem('labsd-theme', next);
+        if (window.location.pathname.replace(/\/$/, '') !== '/login')
+          localStorage.setItem('labsd-theme', next);
       } catch {}
       return next;
     });

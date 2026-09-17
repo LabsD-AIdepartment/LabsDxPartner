@@ -9,12 +9,16 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  background: var(--control);
-  color: var(--text);
-  border: 1px solid var(--border);
+  background: var(--input-fill);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
   border-radius: 14px;
   padding: 12px 14px;
   font: inherit;
+  line-height: var(--leading-input);
+}
+.field :is(input, select, textarea):focus:not(:disabled) {
+  border-color: var(--input-border-focus);
 }
 .form {
   display: grid;
@@ -66,14 +70,23 @@
   padding-right: 64px;
 }
 .passwordControl button {
+  --button-hover-background: transparent;
+  --button-hover-foreground: var(--text);
   position: absolute;
   right: 6px;
   top: 50%;
   transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+}
+.passwordControl button:is(:hover, :active):not(:disabled) {
+  transform: translateY(-50%);
 }
 .passwordStrength {
   display: grid;
-  gap: 6px;
+  gap: var(--text-gap-related);
   min-width: 0;
 }
 .strengthTrack {

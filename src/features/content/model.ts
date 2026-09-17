@@ -1,3 +1,4 @@
+import { partnerFilters } from '@/shared/config/partner-features';
 import { z } from 'zod';
 import {
   ContentListResponse,
@@ -19,6 +20,14 @@ export type ContentRequest = {
   signal: AbortSignal;
 };
 export type ContentTransport = (request: ContentRequest) => Promise<unknown>;
+/** A cursor belongs to the filter scope which issued it. Discard it only when that scope changes. */
+export function normalizeContentRequest<
+  T extends { context: ReportContext; cursor?: string | null },
+>(request: T): T {
+  const context = partnerFilters(request.context);
+  return context === request.context ? request : { ...request, context, cursor: null };
+}
+
 export class ContentError extends Error {
   constructor(
     public code: 'generation_changed' | 'not_found' | 'invalid_response' | 'invalid_input',
@@ -39,6 +48,7 @@ export async function loadContent<K extends Resource>(
   transport: ContentTransport,
   request: ContentRequest & { resource: K },
 ): Promise<ContentResponse<K>> {
+  request = normalizeContentRequest(request);
   if (!validContentFilters(request.context))
     throw new ContentError(
       'invalid_input',
@@ -79,6 +89,12 @@ export async function loadContent<K extends Resource>(
   if (request.resource === 'ad') {
     const data = (result as ContentResponse<'ad'>).data;
     if (data.id !== request.adId || data.contentId !== request.contentId) mismatch();
+    if (
+      data.performance &&
+      (Date.parse(data.performance.period.from) !== Date.parse(result.period.from) ||
+        Date.parse(data.performance.period.toExclusive) !== Date.parse(result.period.toExclusive))
+    )
+      mismatch();
   }
   if (
     request.resource === 'ads' &&
@@ -109,13 +125,17 @@ export const resourceKey = (
   contentId?: string,
   adId?: string,
   cursor?: string | null,
-) => ({
-  resource: r,
-  from: c.from,
-  toExclusive: c.toExclusive,
-  brand: c.brand,
-  q: c.q,
-  cursor: cursor === undefined ? c.cursor : cursor,
-  contentId: contentId ?? null,
-  adId: adId ?? null,
-});
+) => {
+  const normalized = normalizeContentRequest({ context: c, cursor });
+  c = normalized.context;
+  return {
+    resource: r,
+    from: c.from,
+    toExclusive: c.toExclusive,
+    brand: partnerFilters(c).brand,
+    q: c.q,
+    cursor: normalized.cursor === undefined ? c.cursor : normalized.cursor,
+    contentId: contentId ?? null,
+    adId: adId ?? null,
+  };
+};

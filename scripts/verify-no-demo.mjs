@@ -52,13 +52,19 @@ export function assertNoProductionFixtures(root) {
         'Transactions journey preview',
         'Account journey preview',
         'Operations journey preview',
+        'Marketing ads preview',
+        'synthetic-ad-receipt-',
         'synthetic-ops-request',
         'synthetic-account-request',
         'synthetic-transactions-request',
         'labsd-synthetic-payment-f06',
         'synthetic-content-request',
         'synthetic-overview-request',
+        'synthetic-withdrawal-journey',
+        'Staff withdrawal preview',
         'จำลองอนุมัติสิทธิ์',
+        'synthetic-demo-dataset-snapshot',
+        'synthetic-ad-performance-snapshot',
       ].some((marker) => text.includes(marker))
     )
       throw new Error('Development fixture leaked into production: ' + file);

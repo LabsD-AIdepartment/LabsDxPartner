@@ -42,12 +42,17 @@
   letter-spacing: -2.6px;
   line-height: var(--leading-tight);
   font-weight: var(--weight-emphasis);
-  margin: 24px 0;
+  margin: 12px 0;
 }
 .story h1 span {
-  color: var(--accent);
+  background: var(--green);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: brightness(0.9);
 }
 .story > p {
+  margin: 0;
   color: var(--muted);
   font-size: var(--font-size-19);
 }
@@ -57,9 +62,11 @@
   align-items: flex-start;
   margin-top: 52px;
 }
-.promise > svg {
-  padding: 8px;
-  box-sizing: content-box;
+.promiseIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--green);
   color: #103d22;
@@ -70,7 +77,7 @@
   font-weight: var(--weight-emphasis);
 }
 .promise p {
-  margin: 8px 0 0;
+  margin: 0;
   color: var(--muted);
   font-size: var(--text-caption-size);
 }
@@ -89,9 +96,36 @@
   line-height: var(--leading-heading);
   letter-spacing: -0.5px;
 }
-.description {
+.formHeading {
+  margin: 20px 0 28px;
+}
+.formHeading h2 {
+  margin: 0;
+}
+.passwordRecovery {
+  display: grid;
+  min-width: 0;
+}
+.forgotPassword {
+  justify-self: end;
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
   color: var(--muted);
-  margin: 0 0 28px;
+  font: inherit;
+  cursor: pointer;
+  text-underline-offset: 4px;
+}
+.forgotPassword:hover,
+.forgotPassword:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+}
+.submit {
+  --primary: var(--green);
+  --primary-text: var(--button-primary-hover-text);
 }
 .welcomeIcon {
   background: var(--badge);
@@ -150,6 +184,9 @@
 .help p {
   margin: 0;
 }
+.recoveryHelp {
+  padding-top: 0;
+}
 .help svg {
   flex-shrink: 0;
 }
@@ -194,7 +231,7 @@
   }
   .story h1 {
     font-size: var(--font-size-44);
-    margin: 16px 0;
+    margin: 8px 0;
   }
   .story h1 br {
     display: none;

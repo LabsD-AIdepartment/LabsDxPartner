@@ -2,6 +2,7 @@
 import { useId, useState, type InputHTMLAttributes } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Text } from './Text';
+import { TextGroup } from './TextGroup';
 import { Button } from './Button';
 import { estimatePasswordStrength } from './password-strength';
 import styles from './forms.module.css';
@@ -62,15 +63,19 @@ export function PasswordField({
           <Icon size={20} aria-hidden />
         </Button>
       </div>
-      {error && (
-        <Text as="span" role="alert" id={id + '-error'}>
-          {error}
-        </Text>
-      )}
-      {hint && (
-        <Text as="span" variant="caption" tone="muted" id={id + '-hint'}>
-          {hint}
-        </Text>
+      {(error || hint) && (
+        <TextGroup as="span" spacing="tight">
+          {error && (
+            <Text as="span" role="alert" id={id + '-error'}>
+              {error}
+            </Text>
+          )}
+          {hint && (
+            <Text as="span" variant="caption" tone="muted" id={id + '-hint'}>
+              {hint}
+            </Text>
+          )}
+        </TextGroup>
       )}
       {showStrength && (
         <div className={styles.passwordStrength} id={id + '-strength'}>

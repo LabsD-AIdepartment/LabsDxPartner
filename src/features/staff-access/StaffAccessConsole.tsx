@@ -12,18 +12,28 @@ import {
 import { credentialRequest } from '@/features/login/credential-client';
 import { MemberAccessForm } from '@/shared/access/MemberAccessForm';
 import { IsolatedQueryProvider } from '@/shared/query/provider';
-import { AppShell } from '@/features/shell/AppShell';
+import { StaffShell, nativeStaffRoutes } from '@/features/operations/StaffShell';
 import { Card } from '@/shared/ui/Card';
 import { Text } from '@/shared/ui/Text';
 import { Button } from '@/shared/ui/Button';
+import { Field } from '@/shared/ui/Field';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { DataState } from '@/shared/ui/DataState';
 import { ConfirmAction } from '@/shared/ui/ConfirmAction';
 import { timestamp } from '@/shared/ui/format-date';
 import { InvitationForm, ResetForm, capabilityLabels, type AccessDraft } from './AccessForms';
 import { IssuedAccessLink, type IssuedLink } from './IssuedAccessLink';
+import { StaffAccountProfile } from '@/features/staff-account/StaffAccountProfile';
 import forms from '@/shared/ui/forms.module.css';
-export function StaffAccessConsole({ session }: { session: StaffAccessSessionValue }) {
+export function StaffAccessConsole({
+  session,
+  marketingEnabled = false,
+  accountProfileEnabled = false,
+}: {
+  session: StaffAccessSessionValue;
+  marketingEnabled?: boolean;
+  accountProfileEnabled?: boolean;
+}) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const change = () => setVisible(!document.hidden);
@@ -32,41 +42,57 @@ export function StaffAccessConsole({ session }: { session: StaffAccessSessionVal
     return () => document.removeEventListener('visibilitychange', change);
   }, []);
   return (
-    <AppShell
-      active={null}
-      title="Partner access"
-      accent="Labs D"
-      subtitle="คำเชิญ สมาชิก และการช่วยเหลือบัญชี"
-      notifications={null}
-    >
+    <StaffShell view="partners" routes={nativeStaffRoutes(marketingEnabled)}>
+      <Text tone="muted">คำเชิญ สมาชิก และการช่วยเหลือบัญชี</Text>
       <div className={forms.actions}>
-        <LinkButton href="/ops/periods">ตรวจงวดและใบสรุป</LinkButton>
         <LinkButton href="/account">บัญชีของคุณ / ออกจากระบบ</LinkButton>
         <LinkButton href="/login?next=%2Fops%2Faccess">ยืนยันตัวตนเจ้าหน้าที่อีกครั้ง</LinkButton>
       </div>
       {visible ? (
         <IsolatedQueryProvider identity={['staff-access', session.userId, session.revision]}>
-          <AccessContent session={session} />
+          <AccessContent session={session} accountProfileEnabled={accountProfileEnabled} />
         </IsolatedQueryProvider>
       ) : (
         <DataState state="loading" />
       )}
-    </AppShell>
+    </StaffShell>
   );
 }
-function AccessContent({ session }: { session: StaffAccessSessionValue }) {
+function AccessContent({
+  session,
+  accountProfileEnabled = false,
+}: {
+  session: StaffAccessSessionValue;
+  accountProfileEnabled?: boolean;
+}) {
   const client = useQueryClient();
   const [selection, setSelection] = useState<{
     partnerId?: string;
+    partnerSearch?: string;
     partnerCursor: string | null;
     memberCursor: string | null;
     inviteCursor: string | null;
   }>({ partnerCursor: null, memberCursor: null, inviteCursor: null });
+  const [search, setSearch] = useState('');
+  const searching = search.trim() !== (selection.partnerSearch ?? '');
+  useEffect(() => {
+    if (!searching) return;
+    const timer = setTimeout(() => {
+      setSelection({
+        partnerSearch: search.trim(),
+        partnerCursor: null,
+        memberCursor: null,
+        inviteCursor: null,
+      });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search, searching]);
   const [draft, setDraft] = useState<AccessDraft | null>(null),
     [link, setLink] = useState<IssuedLink | null>(null),
     [message, setMessage] = useState('');
   const clearLink = useCallback(() => setLink(null), []);
   const q = useQuery({
+    enabled: !searching,
     queryKey: ['staff-access', session.userId, session.revision, selection],
     queryFn: async ({ signal }) => {
       const result = await credentialRequest(
@@ -89,7 +115,7 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
       setLink(null);
     }
   }, [q.error]);
-  const data = q.data,
+  const data = searching ? undefined : q.data,
     selected = data?.selected;
   const choose = (partnerId: string) => {
     setDraft(null);
@@ -169,7 +195,20 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
   return (
     <div className={forms.stack}>
       <div className={forms.actions}>
+        <Field
+          label="ค้นหาพาร์ทเนอร์"
+          type="search"
+          maxLength={100}
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setDraft(null);
+            setLink(null);
+            setMessage('');
+          }}
+        />
         <Button
+          disabled={searching}
           onClick={() => {
             setLink(null);
             setDraft(null);
@@ -179,8 +218,8 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
           รีเฟรชข้อมูล
         </Button>
       </div>
-      {q.isPending && <DataState state="loading" />}
-      {q.error && (
+      {(q.isPending || searching) && <DataState state="loading" />}
+      {!searching && q.error && (
         <>
           <DataState
             state="error"
@@ -195,7 +234,11 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
           {link && <IssuedAccessLink value={link} onClose={clearLink} />}
           <Card title="เลือกพาร์ทเนอร์">
             {data.partners.items.length === 0 && (
-              <Text tone="muted">ยังไม่มีพาร์ทเนอร์ในรายการนี้</Text>
+              <Text tone="muted">
+                {selection.partnerSearch
+                  ? 'ไม่พบพาร์ทเนอร์ที่ตรงกับคำค้น'
+                  : 'ยังไม่มีพาร์ทเนอร์ในรายการนี้'}
+              </Text>
             )}
             <div className={forms.actions}>
               {data.partners.items.map((p) => (
@@ -215,7 +258,12 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
               onChange={(partnerCursor) => {
                 setLink(null);
                 setDraft(null);
-                setSelection({ partnerCursor, memberCursor: null, inviteCursor: null });
+                setSelection((old) => ({
+                  partnerSearch: old.partnerSearch,
+                  partnerCursor,
+                  memberCursor: null,
+                  inviteCursor: null,
+                }));
               }}
             />
           </Card>
@@ -240,6 +288,12 @@ function AccessContent({ session }: { session: StaffAccessSessionValue }) {
                   <Text>พาร์ทเนอร์ถูกระงับ จึงยังออกคำเชิญใหม่ไม่ได้</Text>
                 )}
               </Card>
+              {accountProfileEnabled && selected.partner.status === 'active' && (
+                <StaffAccountProfile
+                  partnerId={selected.partner.id}
+                  partnerName={selected.partner.name}
+                />
+              )}
               <Card title="คำเชิญ">
                 {!selected.invitations.items.length && (
                   <Text tone="muted">ยังไม่มีคำเชิญในรายการนี้</Text>

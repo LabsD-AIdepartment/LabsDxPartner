@@ -64,6 +64,20 @@ afterAll(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 describe('staff publication review', () => {
+  it('keeps statements and evidence readable with publication off by default', async () => {
+    const fetcher = vi.fn(async (url: string) => Response.json(
+      snapshot(new URL(url, 'https://local.test').searchParams.has('scopeId')),
+    ));
+    vi.stubGlobal('fetch', fetcher);
+    render(<StaffFinanceConsole session={session} />);
+    expect(screen.getByText('ยังไม่เปิดเผยแพร่งวด คุณยังดูข้อมูลและหลักฐานได้')).toBeVisible();
+    fireEvent.click(await screen.findByRole('button', { name: 'ดูรายการและหลักฐาน' }));
+    expect(await screen.findByText('อ้างอิงการตรวจ source-review')).toBeVisible();
+    expect(screen.getByText('รายการรายได้และรายการตัดออก')).toBeVisible();
+    expect(screen.queryByLabelText('กำหนดจ่าย')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ตรวจการเผยแพร่' })).not.toBeInTheDocument();
+    expect(fetcher.mock.calls.every(([url]) => url.startsWith('/api/v1/staff/periods?'))).toBe(true);
+  });
   it('allows the concrete finance reauthentication destination only', () => {
     expect(safeReturnTo('/ops/periods')).toBe('/ops/periods');
     expect(loginHref('/ops/periods')).toBe('/login?next=%2Fops%2Fperiods');
@@ -88,7 +102,7 @@ describe('staff publication review', () => {
         );
       }),
     );
-    render(<StaffFinanceConsole session={session} />);
+    render(<StaffFinanceConsole session={session} publicationEnabled />);
     fireEvent.click(await screen.findByRole('button', { name: 'ดูรายการและหลักฐาน' }));
     const date = await screen.findByLabelText('กำหนดจ่าย');
     fireEvent.change(date, { target: { value: '2026-09-15' } });

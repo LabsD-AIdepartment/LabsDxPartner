@@ -1,8 +1,14 @@
+> Current implementation inventory (D116, 2026-09-11): [remaining-work audit](../../implementation/remaining-work-audit.md) distinguishes completed local behavior, historical receipts, missing web readiness/publication controls and external acceptance. Unchecked A01–A03 boxes below are not evidence those features remain unimplemented. Original acceptance requirements remain in force. [Release checklist](../../implementation/release-checklist.md) is preparation, not production approval.
+
+> Current source-workflow amendment (D052, 2026-09-10): Marketing registers Ad IDs for Facebook, Shopee, Lazada and TikTok; automated API sync replaces generic per-file manual review as the next planned workflow. Company Marketplace is excluded. See [Ad ID integration design](../../design/ad-id-automatic-integration.md). Existing financial invariants and implemented approval/file-import controls remain; this amendment does not claim live support or authorize their removal.
+
 # Labs D x Partner Implementation Plan
+
+**Current access decision — D-025, 2026-09-09:** The owner replaces social-first login with invitation-only username/password accounts after the commercial agreement. [Invitation-only access](../../design/invitation-only-access.md) governs F03/F07/A01–A03 and release gates. Google/LINE/Apple setup, multi-provider linking/unlinking and Apple renewal are no longer requirements for this release. Existing source is preserved pending a coherent implementation transition.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans when implementation is authorized. Execute one bounded task, verify its acceptance evidence, and obtain independent review before advancing its gate. This document authorizes no deployment, provider-console mutation, customer access, payment or production migration.
 
-**Goal:** Complete the small, understandable celebrity partner frontend first, then connect Google/LINE/Apple identity and accurate, inspectable partner earnings from existing systems.
+**Goal:** Complete the small, understandable celebrity partner frontend first, then connect invitation-only username/password identity and accurate, inspectable partner earnings from existing systems.
 
 **Architecture:** One modular web application and one logical PostgreSQL store. The browser reads partner-scoped local projections; existing ERP, Sale Dashboard and ChatMesh remain upstream authorities. A bounded importer refreshes projections outside the request path. Three primary menus remain Overview, My content and Transactions.
 
@@ -16,20 +22,20 @@
 
 ## 1. Scope and delivery order
 
-**Whole-system review2026-09-09:** [Full20-task practicality review](../../reviews/2026-09-09-practicality-review.md) covers completed and pending work, business fit and architecture. Immediate sequencing now prioritizes G01 plus I01 source-contract discovery alongside native provider proof, before further generic financial/auth expansion. Preserve approved frontend and exact-money/access controls. Self-service linking deferral and optional-insight pilot scope are recommendations requiring explicit resolution, not removed requirements or waived release gates. Source/payment authority and real input grain determine which adapters/writers are actually needed; do not implement all listed source adapters by default. No application deletion or production exposure follows from this review.
+**Whole-system review2026-09-09:** [Full20-task practicality review](../../reviews/2026-09-09-practicality-review.md) covers completed and pending work, business fit and architecture. Immediate sequencing now prioritizes G01 plus I01 source-contract discovery alongside native provider proof, before further generic financial/auth expansion. Preserve approved frontend and exact-money/access controls. D-025 explicitly replaces social linking requirements; optional-insight pilot scope still requires explicit resolution. Source/payment authority and real input grain determine which adapters/writers are actually needed; do not implement all listed source adapters by default. No application deletion or production exposure follows from this review.
 
 | Phase | Deliverable visible to owner | Tasks | Exit gate |
 |---|---|---|---|
 | 0 — Contracts and foundation | Stable route/data map, exact money examples, reusable theme/components | F00–F02 | Fixture and server contracts agree; money examples pass |
 | 1 — Complete frontend | All screens, responsive layouts and meaningful states using synthetic data | F03–F08 | Owner can walk the whole partner experience; UI-only acceptance |
-| 2 — Identity and access | Actual Google, LINE and Apple login, invitations, membership and secure sessions | A01–A03 | All three providers and cross-partner denial verified |
+| 2 — Identity and access | Invitation activation, username/password login, recovery, membership and secure sessions | A01–A03 | Credential/invitation/recovery journeys and cross-partner denial verified |
 | 3 — Accurate data and finance | Scoped reads, reconciled approved-period import, immutable statements and payment recording | G01–G04 | One complete authorized partner/period reconciles end-to-end |
 | 4 — Existing-system integration | Minimal approved source feeds and honest clip/ad performance | I01–I02 | Source replay, revision and coverage verified; no browser provider fan-out |
 | 5 — Pilot readiness | Performance, recovery, monitoring and controlled deployment package | R01–R02 | Independently reviewed release artifact; exposure separately authorized |
 
-Do not require live credentials to finish phase 1. Do not call phase 2 complete with fake auth or a permanently disabled provider. Phase 3 can use a finance-approved file if existing APIs lack adequate entitlement granularity; disclose manual cadence. Phase 4 adds only source routes needed by the pilot, not every marketplace integration. No parallel development of Better Auth and Auth.js.
+Do not require live credentials to finish phase 1. Do not call phase 2 complete with fake auth or an untested invitation/password-recovery path. Phase 3 can use a finance-approved file if existing APIs lack adequate entitlement granularity; disclose manual cadence. Phase 4 adds only source routes needed by the pilot, not every marketplace integration. No parallel development of Better Auth and Auth.js.
 
-Dependency spine: `F00 → F01/F02 → F03 → F04/F05/F06 → F07/F08`. After F08, run `A01 → A02 → A03` alongside `G01` agreement/source-contract work and isolated schema drafts. Both `A03 + G01` are required before `G02 → G03 → G04 → I01 → I02 → R01 → R02`. No confirmed-money publication or partner financial exposure before A02/A03 isolation is proven.
+Dependency spine: `F00 → F01/F02 → F03 → F04/F05/F06 → F07/F08`. After F08, advance `A01 → A02 → A03` alongside `G01 + I01 source discovery`. Actual source grain, authority and controls inform G01 before G02. The operational finance path remains `A03 + approved G01 → G02 → G03 → G04`; there is no confirmed-money publication or partner financial exposure before A02/A03 isolation is proven. Automate the selected I01 feed after the first reconciled path; add I02 only from useful available source fields. Start applicable R01 isolation, recovery and query checks as each capability exists, then complete the release evidence before R02. This reorders discovery and verification, not full-scope acceptance: all originally required functionality remains tracked unless the owner explicitly agrees a narrower pilot scope.
 
 Safe parallel slices after contracts freeze: F04 overview, F05 content, F06 transactions. One owner controls shared contracts/theme/schema; route workers do not independently redefine money, session or filters. Every public-contract change updates consumers and fixtures in the same reviewed batch. External provider/account inventory can be read during frontend work; it does not authorize provisioning or infra spend.
 
@@ -87,12 +93,12 @@ Acceptance: component demonstration plus visual review at 390, 768 and 1440px; n
 
 Files: `app/(public)/{login,access}/page.tsx`; `app/(partner)/layout.tsx`; `src/features/login/`; `tests/e2e/access-states.spec.ts`.
 
-- [ ] Keep three navigation menus. Add login with Google/LINE/Apple buttons, invite entry, pending approval, expired/used invite, cancelled login, retry and suspended access screens.
+- [ ] Keep three navigation menus. Login uses username/password with no public sign-up. Invitation recipients choose username/password/confirmation after viewing invitation context. Support expired/used/revoked links, retry and suspended access; routine preapproved activation needs no second business approval.
 - [ ] Implement access variants on one `/access` page keyed by safe reason codes, not a new route for every state. Reason codes never confer permissions.
 - [ ] Preserve intended relative destination after authentication; invalid external return URLs never become links.
 - [ ] Simulate state transitions only in isolated development scenarios. Login buttons in the production app must later call real auth, never set a mock identity cookie.
 
-Acceptance: all access states are understandable on mobile; no finance screen exposed by an unauthenticated development-state accident in a production build. Real-provider success is deliberately tested in A01/A03.
+Acceptance: all access states are understandable on mobile; no finance screen exposed by an unauthenticated development-state accident in a production build. Real credential, invitation and recovery behavior is tested in A01–A03.
 
 ### F04 — Overview with meaningful numbers
 
@@ -157,47 +163,34 @@ Local frontend candidate verified 2026-09-09: 147 unit/contract tests and 28 bro
 
 ## 4. Phase 2 — Real identity and partner isolation
 
-### A01 — Pin auth behavior and prove three providers
+### A01 — Maintained username/password authentication
 
-Files: `src/server/modules/identity/{auth,provider-config,profile-map}.ts`; `app/api/auth/[...all]/route.ts`; `db/schema/identity.ts`; `tests/integration/auth-profile.test.ts`; `docs/implementation/provider-acceptance.md`.
+- [ ] Inventory and adapt the pinned library's username/credential plugin, account schema, runtime configuration and native endpoints. Preserve one identity adapter; implement no new password engine.
+- [ ] Normalize usernames consistently and enforce uniqueness in the database. Keep immutable user IDs, maintained password hashes, secure database sessions, login throttling and generic credential failure responses.
+- [ ] Disable public registration and social entry/linking routes for this release. Credential creation is possible only through the guarded invitation flow. Validate every native bypass route, not only the visible form.
+- [ ] Prove the maintained registration/reset adapter against isolated Postgres, including any library-required internal address; it is never a recovery destination. No Google/LINE/Apple credentials are needed for this path.
 
-- [ ] Inventory Google client/consent, LINE channel/provider and Apple Developer/App ID/Services ID/key/registered HTTPS callback. Record references and readiness, never secret values. Provisioning/domain changes require the applicable explicit authorization.
-- [ ] Install and pin Better Auth with Postgres sessions. Disable implicit linking, cookie session cache, unused password/native paths; configure explicit different-email linking and last-method protection. Pin and test actual API options.
-- [ ] Mount the maintained Next host handler, preserving callback body/content type, repeated Set-Cookie and external HTTPS origin through the proxy. Test Google/LINE/Apple callbacks through that actual adapter. Documented integration is not runtime acceptance; avoid custom request reconstruction and cookie-presence-only authorization.
-- [ ] LINE `openid profile`, S256 PKCE and deterministic unverified `.invalid` auth-only email if absent. Contact email is separate. Verify placeholder is never used for messaging, linking or recovery.
-- [ ] Verify Google subject-based identity; Apple first/repeat consent, relay addresses, missing name and cross-site POST callback with state/browser binding in Safari and Chrome on registered HTTPS staging. No blanket CSRF/SameSite bypass.
-- [ ] Record Apple callback path and maintained-library cookie/transaction decision; use narrow temporary cross-site cookie scope where supported, otherwise document and test single-use state/browser binding. Ordinary session/mutation protections stay enforced. Assign a renewal owner, Key ID reference, next date and configured expiry: propose automated 30-day JWT renewal and alerts 14/7 days before expiry, subject to provider-supported settings. Test expired-secret failure without demo fallback; R01 verifies renewal procedure.
-- [ ] If the pinned Better Auth cannot pass missing-email LINE or Apple callback proof without unsafe custom auth, replace only the identity adapter with Auth.js before A02. Record the decision; never ship both engines.
+Acceptance: real credential/session behavior, password-manager support, concurrent username collision and throttling verified. Existing OAuth evidence is historical; it does not prove this new path.
 
-Acceptance: controlled accounts genuinely log in through all three providers; cancellation, wrong-state, callback replay and invalid-token failures are rejected. Missing provider credentials are an external dependency, not a completed mock substitute; independent frontend work can already be complete.
+### A02 — Preapproved invitation activation and verified recovery
 
-Local preparation 2026-09-09: pinned auth/Drizzle schema/native handler, off-by-default gate and isolated Postgres tests implemented. Actual three-provider and browser acceptance remains open; see `docs/implementation/provider-acceptance.md`.
+- [ ] Staff bind an invitation to an approved partner, intended recipient/contact reference and capabilities; expiry/revoke/reissue are explicit. Sending uses the existing verified contact channel and deliberate staff action.
+- [ ] GET/link preview never consumes an invitation. Explicit setup submission atomically creates the credential/account, activates the intended membership, consumes the invitation and records audit before a usable session is returned. Failed validation leaves the invite usable; concurrent redemption has one outcome.
+- [ ] Existing-account recipients authenticate and accept the exact additional membership; no name/contact matching or automatic account merge.
+- [ ] Keep server-side current membership checks, suspension and exact-target staff changes. Invitation recipients can never grant themselves staff privileges.
+- [ ] Password change requires current authenticated proof. Forgotten-password recovery uses verified staff contact and an exact-account, expiring one-use reset link; successful reset revokes old sessions. Staff never see or assign the password.
+- [ ] Inventory current database identities before any conversion. Applied migrations remain immutable; use new ordered migrations only when necessary. Preserve provider records and audits; no automatic credential conversion/deletion.
 
-### A02 — Membership, invitations, identity linking and recovery
+Acceptance: invalid/expired/revoked/replayed invitations and resets, failed account writes, concurrent redemption, suspension, forwarded-link delivery assumptions and two-partner isolation covered. Full boundary and transition: [invitation-only access](../../design/invitation-only-access.md).
 
-Files: `src/server/modules/{identity,partners}/`; `db/schema/partners.ts`; `app/api/v1/partner/session/route.ts`; `app/api/v1/ops/invites/route.ts`; `tests/integration/access-control.test.ts`.
+### A03 — Connect invitation and credential frontend to real sessions
 
-- [ ] Hashed single-use expiring invitation claims become pending membership; activation requires known-contact verification or pre-bound identity. Concurrent redemption activates at most one intended account.
-- [ ] Resolve session → current active membership → permitted partner at every request. Selectable partner must be a current membership, never a client-supplied authority.
-- [ ] Explicit provider linking proves existing and new identity, enforces uniqueness atomically and rejects conflicts. Same email and relay addresses do not auto-merge.
-- [ ] Recovery through an existing method or controlled staff verification; revoke old sessions/identity access and audit replacement. Block removal of the last usable method.
-- [ ] Staff role is explicitly provisioned; require fresh auth for membership and finance changes. Use maintained auth primitives for state/CSRF and rate limiting.
+- [ ] Replace login/access/account fixture transport with the real credential and invitation services; finance fixtures remain isolated until G04.
+- [ ] Walk staff-issued invite → username/password setup → authorized overview → logout → username login → verified reset through actual browser/server/database paths.
+- [ ] Clear/abort scoped caches on logout, account switch, suspension and401/403. Keep private responses and per-request membership checks.
+- [ ] Verify accessible Day/Dark forms and responsive states; preserve all approved partner presentation. Expired invitation and recovery failures have a clear existing support path.
 
-Acceptance: two-partner adversarial matrix covers session route, direct object IDs, mutation bodies and staff routes; suspended membership loses access immediately. No data access granted solely by invitation possession or matching email.
-
-Local preparation 2026-09-09: membership/invitation services and transactional native unlink wrapper implemented; 34 isolated PostgreSQL tests pass. See `docs/implementation/membership-access.md` and `docs/implementation/identity-methods.md`. Explicit linking, callback/session-issuance fencing, recovery, HTTP wiring and real-provider acceptance remain open; these partial service checks do not close A02.
-
-Subsequent local preparation2026-09-09: guarded native callbacks/linking and revocation fencing now pass48 isolated PostgreSQL tests including14 new callback cases. [Callback receipt](../../implementation/oauth-callback-boundary.md) records the test-lifecycle repair, rollback/concurrency evidence and limitations. Actual provider proof, recovery, housekeeping and account HTTP/frontend wiring remain open; A02 is not complete.
-
-### A03 — Connect frontend to real sessions
-
-Files: `src/features/login/`, `src/features/account/`, `src/shared/query/`, `app/(partner)/layout.tsx`; `tests/e2e/authenticated-journeys.spec.ts`.
-
-- [ ] Replace fixture access transport with the real identity wrapper; financial fixtures remain isolated synthetic staging only until G04.
-- [ ] Clear/abort all user-scoped queries on logout, account switch, suspension and 401/403; private/no-store server responses. Never flash another user's previously cached amount.
-- [ ] Prove all-provider sign-in/relogin, explicit linking/unlinking, invite states, expiration/revocation and unauthorized document attempts through the actual browser/server/DB path.
-
-Exit: real authentication and isolation complete in controlled staging. Record package versions, HTTPS hostname, provider matrix and test accounts by non-sensitive label. Do not claim live finance ready yet.
+Exit: invitation-only authentication, recovery and isolation proven in controlled staging. HTTPS deployment configuration remains required; external social provider acceptance is superseded by D-025. No live finance acceptance inferred.
 
 ## 5. Phase 3 — Reconciled partner numbers
 
@@ -210,7 +203,8 @@ Start after F08 in parallel with A01–A03 for agreement/source documentation an
 - [ ] Map one authorized partner's existing agreement to commission base, discounts/refunds, rate, effective dates, rounding, evidence grain, payment cadence and stacking/offset rules. Sample 10%/3% never becomes a default contract.
 - [ ] Identify authoritative source per channel; map order/line/reference, revision, earned-time, collected/returned status and evidence. Explicitly record unsupported clip attribution and unresolved rows.
 - [ ] Import already-approved fixed fees/bonuses as distinct evidenced earning lines when the actual agreement includes them. Do not build a new fee-negotiation/bonus-rule system.
-- [ ] Define approved-period import template with source coverage/control totals, canonical entitlement keys, references and original evidence access for staff. No raw customer PII in partner contracts.
+- [ ] Select the actual source grain before fixing the import contract. If finance supplies an approved period summary plus a real breakdown file, represent that explicitly and expose only supported detail; the existing detailed-row parser is not evidence that summary-only input is supported. If authoritative detailed entitlements exist, use that adapter without building a redundant summary mode. Never fabricate order/clip rows.
+- [ ] Define the selected approved-period import template with source coverage/control totals, stable references and original evidence access for staff; detailed mode also requires canonical entitlement keys. Approval is an authenticated review of an exact version and independent controls, not manual re-entry of every amount or a self-approved file hash. No raw customer PII in partner contracts.
 - [ ] Create isolated test DB bindings and collision-free migrations; inspect target before execution. Never edit an applied migration or infer production migration approval.
 
 Acceptance: finance/source owner can explain every input and total for the selected period. Unknown financial rules block that pilot's publication, not unrelated frontend work. Pilot contract is signed off as business input before the importer can publish confirmed money.
@@ -233,7 +227,7 @@ Check: `npm run test:integration -- tests/integration/import-reconciliation.test
 Files: `src/server/modules/statements/{publish,settle,repository,download,export}.ts`; `src/server/platform/documents/`; ops publication/payment routes; `tests/integration/statements.test.ts`.
 
 - [ ] Publish locked reconciled generation into immutable period header/lines, unique active partner/period version. Require policy for unresolved rows; excluded rows cannot silently disappear from a confirmed statement.
-- [ ] Record actual finance evidence, cash/withholding/other explicit components and applied obligation; idempotent payment references, partial allocations and no allocation above outstanding without an explicit credit rule. Corrections are append-only reversals/new entries, never hidden edits.
+- [ ] Name one authoritative partner-payment writer before implementing persistence. Prefer importing existing approved finance records; only enable portal manual recording when explicitly assigned that responsibility. Preview controls do not assign authority. Require a named reason and evidence for any nonstandard settlement component. Record actual finance evidence, cash/withholding/other explicit components and applied obligation; idempotent payment references, partial allocations and no allocation above outstanding without an explicit credit rule. Corrections are append-only reversals/new entries, never hidden edits.
 - [ ] Adjustment references retain original source/agreement; later refunds do not rewrite an issued statement. A negative closing balance is credit/carry-forward, not an automatic debit or bank operation.
 - [ ] CSV export uses exact same frozen/pinned data, scoped server generation and formula-injection protection. Interactive export is capped at 10,000 lines, streamed; larger request asks for narrower periods in v1. Private documents are authorized per download; signed URLs if used expire within 60 seconds and are never persisted client-side.
 
@@ -256,6 +250,8 @@ Exit: one partner/period works end-to-end in isolated/staging environment with t
 ## 6. Phase 4 — Reuse existing feeds, deepen only useful detail
 
 ### I01 — Minimal upstream contracts and scheduled refresh
+
+Execution has two slices: source discovery and a bounded authorized sample alongside G01 **before G02**; scheduled automation of the chosen feed after the end-to-end G04 path. The directory examples below are alternatives, not a requirement to implement three adapters.
 
 Files: `src/server/adapters/{sale-dashboard,erp,chatmesh}/`; `docs/implementation/upstream-contracts.md`; `tests/integration/upstream-contracts.test.ts`.
 
@@ -282,6 +278,8 @@ Acceptance: one clip with multiple ads, mismatched Page/account, unavailable ins
 
 ### R01 — Load, observability, security and restore
 
+Collect relevant evidence alongside A02/A03 and G02–G04 as those capabilities exist. Do not wait for optional ad metrics to start isolation, restore or query checks. Final R01 acceptance still covers the complete agreed release scope; no original requirement is silently waived. The numerical load budgets below are provisional engineering targets, to be calibrated against actual pilot volume and headroom.
+
 Files: `src/server/platform/observability/`; `app/api/{health,ready}/route.ts`; `tests/performance/partner-read.ts`; `tests/integration/isolation-matrix.test.ts`; `docs/runbooks/{imports,identity,backup-restore,incident}.md`.
 
 - [ ] Measure architecture's proposed budgets on recorded hardware/network: 100k earning lines, 100 partners, 20 concurrent reads; warm API p95≤500ms, cold≤1500ms, mobile LCP p75≤2.5s; default Overview≤100KB/list≤150KB excluding images. Record actual figures and query plans, not just target labels.
@@ -292,12 +290,18 @@ Files: `src/server/platform/observability/`; `app/api/{health,ready}/route.ts`; 
 
 Acceptance: independent reviewer sees failure-mode evidence and measured limits. A static green suite or mocked OAuth alone does not meet this gate.
 
+D105 local evidence (2026-09-11): native HTTPS reads over 100 partners / 100k earning lines / 20 closed-loop workers passed warm p95 50.67ms, max 442.26ms, response 2,739 bytes across 58,867 individually checked requests. During the same load, the actual native browser observed payment and reversal payout updates within conservative 14.694s / 19.634s bounds. See `docs/implementation/browser-refresh-acceptance.md`. This advances the warm-read and two healthy active-session update cases only; cold/history, mobile LCP, observability/retention and the remaining R01 requirements remain open.
+
+D108 local evidence (2026-09-11): five fresh built Next processes each served a first burst of 20 distinct partners without API warm-up, covering the same 100k-row/100-partner population. API p95 164.61ms, max 165.69ms, max JSON 2,832 bytes; all per-response financial controls matched. See `docs/implementation/cold-overview-acceptance.md`. This measures process-cold loopback HTTP with a running, potentially warm database/OS cache. Disk-cold database reads, large per-partner histories/query plans, mobile LCP and the rest of R01 remain open.
+
+D109 local evidence (2026-09-11): Overview now aggregates daily groups before repeated summary scans/current-metadata joins, retaining per-line rounded money and original counts. A24-month/120k-line single-partner scenario passed100 exact reads in20-request bursts through the built app's unchanged max10 pool: p95224.34ms, max260.33ms, max25,466bytes. Actual annual SELECT55.424ms/zero temporary blocks versus original214.883ms/spilled intermediates. See `docs/implementation/finance-history-acceptance.md`; diagnostic fixture-pool2 runs remain separately identified. This advances the large-history/query-plan case, not disk-cold/TLS/browser/mobile/retention or fullR01 readiness.
+
 ### R02 — Frozen release candidate and controlled pilot
 
 Files: `docs/implementation/release-checklist.md`; `docs/runbooks/deployment.md`; CI/deployment configuration only when target is authorized.
 
 - [ ] Record protected-main candidate SHA, dependency lockfile, migration list, build digest, web/import artifact pairing, test evidence and separate-model review. A local Git baseline exists; remote/protected-main and release-artifact evidence remain separate requirements.
-- [ ] Confirm domain/provider callback inventory, all three auth providers, business agreement input, source freshness and support owner. Establish feature flags for partner exposure, import scheduler and period publication independently.
+- [ ] Confirm HTTPS domain, invitation/credential/recovery acceptance, business agreement input, source freshness and support owner. Establish feature flags for partner exposure, import scheduler and period publication independently.
 - [ ] Prepare deployment with exposure/import/publication OFF, exact target binding and reversible verification; obtain explicit authorization for production migration/deploy/exposure and costs. Never treat this plan review as that approval.
 - [ ] After authorized deploy, verify actual deployment ID+SHA+digest, health, isolated smoke and migration ledger; only then enable one invited pilot cohort under the agreed exposure decision. No automatic payment execution.
 - [ ] Rollback stops new imports/publications/exposure and reverts compatible code; retains issued statements, evidence and audit. Failed migration requires ledger inspection; no blind retry or database erase.
@@ -310,7 +314,7 @@ Each task produces a small implementation diff, relevant non-tautological checks
 
 For every task record: input contract/version, actual files, command results, remaining external dependencies, commit SHA when Git exists and next task. Public-contract changes interrupt the affected slice for modulecommand reconciliation; unaffected work can continue.
 
-Phase 1 is independently actionable after implementation authorization. Provider-console readiness is an A01 gate; real agreement/source precision is a G01 gate; source-owner feeds are an I01 gate; public exposure is an R02 gate. These prerequisites do not turn the entire frontend plan into a blocked project.
+Phase 1 is independently actionable after implementation authorization. Credential/invitation adapter readiness is an A01/A02 gate; real agreement/source precision is a G01 gate; source-owner feeds are an I01 gate; public exposure is an R02 gate. These prerequisites do not turn the entire frontend plan into a blocked project.
 
 Deferred: global creator discovery, marketplace onboarding, in-app contract negotiation/e-sign, automatic wallet/payout gateway, cross-currency tax engine, media asset CMS, campaign/ads management, ticketing product, AI scoring, streaming infrastructure and new provider connector fleet. Add only after an actual pilot requirement justifies scope and ownership.
 

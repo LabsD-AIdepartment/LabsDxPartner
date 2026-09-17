@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { Id, Freshness } from './common';
-import { PermissionRevision } from './access';
 import { Username } from './credentials';
 import { AgreementVersion } from './earnings';
 export const Account = z.strictObject({
@@ -17,7 +16,8 @@ export const Account = z.strictObject({
 export const AccountResponse = Freshness.extend({
   revision: Id,
   partnerId: Id,
-  permissionRevision: PermissionRevision,
+  // Native revisions bind both partner and membership; preview revisions remain opaque too.
+  permissionRevision: Id,
   data: Account,
 });
 // Credential mutation belongs to the maintained identity service, not this metadata transport.

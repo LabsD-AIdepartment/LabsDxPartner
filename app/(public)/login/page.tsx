@@ -9,7 +9,7 @@ export default async function LoginRoute({
 }) {
   const params = await searchParams;
   return (
-    <PublicFrame>
+    <PublicFrame variant="fluid">
       <LoginPage next={safeReturnTo(params.next)} />
     </PublicFrame>
   );

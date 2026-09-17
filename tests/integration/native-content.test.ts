@@ -32,6 +32,44 @@ async function readContent(
 }
 
 describe('native published Content journey', () => {
+  it('discovers catalogue clips outside publication dates without inventing earnings', async () => {
+    const s = await setup();
+    await s.catalogue();
+    const window = { from: '2026-09-01', toExclusive: '2026-09-10' };
+    for (const publish of [false, true]) {
+      if (publish) await (await s.ingest()).publish();
+      const library = await readContent(s, 'list', window);
+      if (library.resource !== 'list') throw new Error('Expected list');
+      expect(library.result.data.totalCount).toBe(6);
+      expect(library.result.dataState).toBe('partial');
+      expect(library.result.coverage?.status).toBe('unavailable');
+      expect(library.result.data.items.every((clip) => clip.earned === null && clip.cover)).toBe(
+        true,
+      );
+      expect(library.result.brands).toEqual(['Axtion', 'Melura', 'Rusiren', 'Tendrix', 'Zenova']);
+      const filtered = await readContent(s, 'list', { ...window, brand: 'Axtion', q: 'routine' });
+      if (filtered.resource !== 'list') throw new Error('Expected list');
+      expect(filtered.result.data.items.map((clip) => clip.id)).toEqual(['clip-2']);
+      const detail = await readContent(s, 'detail', {
+        ...window,
+        contentId: 'clip-1',
+        generation: library.result.generation,
+      });
+      if (detail.resource !== 'detail') throw new Error('Expected detail');
+      expect(detail.result.data.content.earned).toBeNull();
+      expect(detail.result.data.eligibleSales).toBeNull();
+    }
+    const covered = await readContent(s, 'list', { from: '2026-07-01', toExclusive: '2026-08-01' });
+    if (covered.resource !== 'list') throw new Error('Expected list');
+    expect(covered.result.data.totalCount).toBe(6);
+    expect(covered.result.data.items.every((clip) => clip.earned?.minor === '0')).toBe(true);
+    await sql`update portal_access.memberships set capabilities=ARRAY['view_content'],permission_revision=2 where partner_id=${s.partnerId}`;
+    const restricted = await readContent(s, 'list', { ...window, permissionRevision: 'p1:m2' });
+    if (restricted.resource !== 'list') throw new Error('Expected list');
+    expect(restricted.result.data.items).toHaveLength(6);
+    expect(restricted.result.data.items.every((clip) => clip.earned === null)).toBe(true);
+    expect((await content(s, 'list', { ...window, partnerId: randomUUID() })).status).toBe(403);
+  });
   it('continues earning rows without duplicate or missing microsecond ties and reconciles multiple agreements', async () => {
     const s = await setup();
     await s.catalogue();

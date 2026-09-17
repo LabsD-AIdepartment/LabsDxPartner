@@ -5,6 +5,7 @@ import { changeMeta } from '@/shared/query/invalidate-changes';
 import { validContentFilters } from '@/shared/routing/report-context';
 import {
   loadContent,
+  normalizeContentRequest,
   ContentError,
   resourceKey,
   type Resource,
@@ -15,6 +16,7 @@ export function useContent<K extends Resource>(
   transport: ContentTransport,
   request: Omit<ContentRequest, 'signal' | 'resource'> & { resource: K },
 ) {
+  request = normalizeContentRequest(request);
   return useQuery({
     meta:
       request.resource === 'ads' || request.resource === 'ad'
@@ -38,6 +40,13 @@ export function useContent<K extends Resource>(
     queryFn: ({ signal }) => loadContent(transport, { ...request, signal }),
     enabled: validContentFilters(request.context),
     retry: false,
+    // Portal-only refresh also ages freshness when acquisition is stopped and emits no revision.
+    // `detail` joins ads/ad at 60s so a clip detail picks up a server-side ad-performance acquisition
+    // that finishes AFTER the client's 3s fallback, without any user navigation.
+    refetchInterval:
+      request.resource === 'ads' || request.resource === 'ad' || request.resource === 'detail'
+        ? 60_000
+        : false,
   });
 }
 
@@ -52,6 +61,7 @@ export function useContentLibrary(
   transport: ContentTransport,
   request: Omit<ContentRequest, 'signal' | 'resource'>,
 ) {
+  request = normalizeContentRequest(request);
   const context = { ...request.context, cursor: null, history: [] };
   return useInfiniteQuery({
     meta: changeMeta('earnings', 'metrics'),

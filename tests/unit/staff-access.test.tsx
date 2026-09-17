@@ -62,6 +62,80 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 describe('staff access UI', () => {
+  it('searches as typing, hides old choices immediately and resets selection and paging', async () => {
+    const found = { ...partner, id: 'found', name: 'คุณมดดำ' };
+    fetcher.mockImplementation(async (_url, options) => {
+      const input = JSON.parse(options.body);
+      const items = input.partnerSearch ? [found] : [partner];
+      return response({
+        ...snapshot,
+        partners: page(items),
+        selected: input.partnerId ? snapshot.selected : null,
+      });
+    });
+    render(<StaffAccessConsole session={session} />);
+    fireEvent.click(await screen.findByRole('button', { name: partner.name }));
+    await screen.findByText('สร้างคำเชิญใหม่');
+    const before = fetcher.mock.calls.length;
+    fireEvent.change(screen.getByLabelText('ค้นหาพาร์ทเนอร์'), { target: { value: ' มด ' } });
+    expect(screen.queryByRole('button', { name: partner.name })).toBeNull();
+    expect(screen.queryByText('สร้างคำเชิญใหม่')).toBeNull();
+    expect(fetcher.mock.calls.length).toBe(before);
+    await screen.findByRole('button', { name: found.name });
+    expect(JSON.parse(fetcher.mock.calls.at(-1)![1].body)).toEqual({
+      expectedRevision: '1',
+      partnerSearch: 'มด',
+      partnerCursor: null,
+      memberCursor: null,
+      inviteCursor: null,
+    });
+    fireEvent.change(screen.getByLabelText('ค้นหาพาร์ทเนอร์'), { target: { value: '' } });
+    await screen.findByRole('button', { name: partner.name });
+  });
+  it('keeps a late prior search response out of the current results and shows empty feedback', async () => {
+    let resolveOld: ((value: unknown) => void) | undefined;
+    fetcher.mockImplementation(async (_url, options) => {
+      const input = JSON.parse(options.body);
+      if (input.partnerSearch === 'old')
+        return new Promise((resolve) => {
+          resolveOld = resolve;
+        });
+      return response({
+        ...snapshot,
+        partners: page(input.partnerSearch ? [] : [partner]),
+        selected: null,
+      });
+    });
+    render(<StaffAccessConsole session={session} />);
+    await screen.findByRole('button', { name: partner.name });
+    fireEvent.change(screen.getByLabelText('ค้นหาพาร์ทเนอร์'), { target: { value: 'old' } });
+    await waitFor(() => expect(resolveOld).toBeDefined());
+    fireEvent.change(screen.getByLabelText('ค้นหาพาร์ทเนอร์'), { target: { value: 'new' } });
+    await screen.findByText('ไม่พบพาร์ทเนอร์ที่ตรงกับคำค้น');
+    resolveOld!(response({ ...snapshot, selected: null }));
+    await waitFor(() => expect(screen.getByText('ไม่พบพาร์ทเนอร์ที่ตรงกับคำค้น')).toBeVisible());
+    expect(screen.queryByRole('button', { name: partner.name })).toBeNull();
+  });
+  it('uses staff navigation with the real routes and hides disabled marketing entry', async () => {
+    fetcher.mockImplementation(async () => response({ ...snapshot, selected: null }));
+    const view = render(<StaffAccessConsole session={session} marketingEnabled />);
+    const nav = within(screen.getByRole('navigation', { name: 'เมนูเจ้าหน้าที่' }));
+    expect(nav.getByRole('link', { name: /^พาร์ทเนอร์$/ })).toHaveAttribute('href', '/ops/access');
+    expect(nav.getByRole('link', { name: /^พาร์ทเนอร์$/ })).toHaveAttribute('aria-current', 'page');
+    expect(nav.getByRole('link', { name: 'แอดและการเชื่อมต่อ' })).toHaveAttribute(
+      'href',
+      '/ops/ads',
+    );
+    expect(nav.getByRole('link', { name: 'งวดและการชำระ' })).toHaveAttribute(
+      'href',
+      '/ops/periods',
+    );
+    expect(screen.queryByRole('complementary', { name: 'ทางลัด' })).toBeNull();
+    await screen.findByRole('button', { name: partner.name });
+    view.rerender(<StaffAccessConsole session={session} marketingEnabled={false} />);
+    expect(nav.queryByRole('link', { name: 'แอดและการเชื่อมต่อ' })).toBeNull();
+    expect(nav.queryByRole('link', { name: 'ข้อมูลนำเข้า' })).toBeNull();
+  });
   it('allows only the concrete staff return path and leaves role authorization to the server', () => {
     expect(safeReturnTo('/ops/access')).toBe('/ops/access');
     for (const value of ['/ops/arbitrary', '//foreign.test/ops/access', '/ops/access?bypass=true'])

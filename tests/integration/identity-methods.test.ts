@@ -1,3 +1,4 @@
+import { ensureTestIdentityBinding } from '../helpers/identity-binding';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createHmac, randomUUID } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -32,6 +33,7 @@ let resolve: ReturnType<typeof principalResolver>;
 let service: ReturnType<typeof createIdentityMethods>;
 beforeAll(async () => {
   sql = await connectTestDatabase();
+  await ensureTestIdentityBinding(sql, identityBindingDigest(config));
   auth = createIdentity(
     config,
     drizzleAdapter(drizzle(sql), { provider: 'pg', schema: authSchema, transaction: true }),
@@ -92,7 +94,7 @@ describe('A02 transactional native unlink; synthetic setup is not provider OAuth
     const list = await service.list(user.headers);
     expect(list.methods.map((m) => m.provider).sort()).toEqual(['google', 'line']);
     expect(list.methods.every((m) => m.canUnlink)).toBe(true);
-    expect(Object.keys(list.methods[0]).sort()).toEqual(['canUnlink', 'id', 'provider']);
+    expect(Object.keys(list.methods[0]).sort()).toEqual(['canUnlink', 'connectedAt', 'id', 'provider']);
     expect(JSON.stringify(list)).not.toContain('synthetic-token');
     expect(JSON.stringify(list)).not.toContain('@identity.invalid');
   });

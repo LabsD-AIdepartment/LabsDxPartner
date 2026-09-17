@@ -1,0 +1,53 @@
+.contacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.preferences {
+  display: grid;
+  gap: 12px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.preferences legend {
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.preference {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+}
+.preference input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+.preference span {
+  overflow-wrap: anywhere;
+}
+.requests {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.requests li {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 540px) {
+  .actions {
+    justify-content: center;
+  }
+}

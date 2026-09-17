@@ -25,8 +25,12 @@ describe('native Overview publication and presentation snapshot', () => {
       reasonRef: 'not-eligible',
       approvalRef: 'approved-exclusion',
     };
-    s.sample.file.rows.push(excluded);
-    const controls = { ...s.sample.file.sources[0].controls, rows: 7, excluded: 1 };
+    const secondExcluded = {
+      ...excluded,
+      entitlement: { ...excluded.entitlement, reference: 'excluded-right-2' },
+    };
+    s.sample.file.rows.push(excluded, secondExcluded);
+    const controls = { ...s.sample.file.sources[0].controls, rows: 8, excluded: 2 };
     s.sample.file.sources[0].controls = controls;
     s.sample.context.sources[0].controls = controls;
     s.sample.context.exclusions.push({
@@ -34,11 +38,81 @@ describe('native Overview publication and presentation snapshot', () => {
       reasonRef: excluded.reasonRef,
       approvalRef: excluded.approvalRef,
     });
+    s.sample.context.exclusions.push({
+      entitlement: secondExcluded.entitlement,
+      reasonRef: secondExcluded.reasonRef,
+      approvalRef: secondExcluded.approvalRef,
+    });
     await (await s.ingest()).publish();
-    expect((await s.read()).data.earnings.excludedCount).toBe(1);
+    expect((await s.read()).data.earnings.excludedCount).toBe(2);
     const filtered = await s.read({ brand: 'Axtion' });
     expect(filtered.data.earnings.excludedCount).toBeNull();
     expect(filtered.data.earnings.confirmed?.minor).toBe('1592000');
+  });
+  it('retains per-line rounding, mixed rates and Bangkok day boundaries within daily groups', async () => {
+    const s = await setup();
+    await s.catalogue();
+    const original = s.sample.file.rows[0];
+    if (original.disposition !== 'included' || original.earning.kind !== 'commission')
+      throw Error('Expected commission');
+    const earning = original.earning;
+    const times = [
+      '2026-08-30T00:00:00+07:00',
+      '2026-08-29T17:01:00Z',
+      '2026-08-30T23:59:59+07:00',
+    ];
+    s.sample.file.rows = times.map((earnedAt, i) => ({
+      ...original,
+      earnedAt,
+      entitlement: { ...original.entitlement, reference: `daily-round-${i}` },
+      earning: {
+        ...earning,
+        groupRef: i === 2 ? 'organic-high' : 'organic',
+        baseMinor: '5',
+        amountMinor: '1',
+        ratePpm: i === 2 ? 200000 : 100000,
+      },
+    }));
+    const controls = {
+      rows: 3,
+      included: 3,
+      excluded: 0,
+      unresolved: 0,
+      eligibleBaseMinor: '15',
+      amountMinor: '3',
+    };
+    s.sample.file.sources[0].controls = controls;
+    s.sample.context.sources[0].controls = controls;
+    const group = s.sample.context.groups[0];
+    s.sample.context.groups = [
+      { ...group, rows: 2, baseMinor: '10', amountMinor: '2' },
+      { ...group, id: 'organic-high', ratePpm: 200000, rows: 1, baseMinor: '5', amountMinor: '1' },
+    ];
+    s.sample.context.attributions = s.sample.file.rows.map((row) => ({
+      entitlement: row.entitlement,
+      contentId: 'clip-1',
+      evidenceRef: 'demo-mapping-clip-1',
+    }));
+    await (await s.ingest()).publish();
+    const result = (await s.read({ from: '2026-08-30', toExclusive: '2026-08-31' })).data;
+    expect(result.earnings.confirmed?.minor).toBe('3');
+    expect(result.earnings.eligibleSales?.minor).toBe('15');
+    expect(result.earnings.channelBreakdown?.organicRatePpm).toBeNull();
+    expect(result.earnings.trend).toEqual([
+      {
+        date: '2026-08-30',
+        amount: { currency: 'THB', minor: '3' },
+        // Daily eligible-sales base (3 rows × base 5), reported as a single unattributed subtotal
+        // because the source payload carries no authoritative sales platform.
+        sales: { currency: 'THB', minor: '15' },
+        salesByPlatform: [{ platform: 'unattributed', sales: { currency: 'THB', minor: '15' } }],
+      },
+    ]);
+    expect(result.earnings.topContent[0].earned?.minor).toBe('3');
+    expect(
+      (await s.read({ from: '2026-08-29', toExclusive: '2026-08-30' })).data.earnings.confirmed
+        ?.minor,
+    ).toBe('0');
   });
   it('does not mix partner metadata or earnings when both catalogues use the same clip IDs', async () => {
     const first = await setup(),

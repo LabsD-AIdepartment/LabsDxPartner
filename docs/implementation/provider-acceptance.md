@@ -1,3 +1,5 @@
+> Historical receipt — superseded for this release by invitation-only username/password access (D-025). Google/LINE/Apple setup, callbacks and Apple renewal below are not remaining tasks. Current implementation and acceptance gaps: [D116 audit](remaining-work-audit.md); actual local credential journey: [native account acceptance](native-account-acceptance.md). Preserve this record as historical evidence only.
+
 # A01 — Identity adapter preparation and provider acceptance
 
 2026-09-09. **In progress, not accepted for real sign-in.** F08 frontend checkpoint is `09b7ff929fa703d3db3e76ad755d3225af30d2b8`. The new auth surface remains off by default. Partner/staff guards still deny access until A02/A03; having an auth cookie will not reveal fixture finance.

@@ -64,10 +64,8 @@
 .statement:hover {
   background: var(--hover);
 }
-.statement p {
-  margin: 8px 0;
-}
 .amount {
+  align-items: flex-end;
   text-align: right;
 }
 .amount > span {

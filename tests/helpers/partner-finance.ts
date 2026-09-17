@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, expect } from 'vitest';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomUUID } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { connectTestDatabase } from '../../scripts/test-database.mjs';
@@ -50,7 +50,7 @@ beforeEach(async () => {
 afterAll(async () => {
   await sql.end();
 });
-async function actor(staff = false) {
+async function actor(staff = false, sessionFixture: 'login' | 'persisted' = 'login') {
   const ctx = await auth.$context;
   const username = 'overview_' + randomUUID().slice(0, 8);
   const user = await ctx.internalAdapter.createUser(
@@ -70,6 +70,21 @@ async function actor(staff = false) {
   });
   if (staff)
     await sql`insert into portal_access.staff_grants(user_id,capabilities,active,provision_ref) values(${user.id},ARRAY['review_imports','publish_statements','record_payments','manage_partners'],true,'synthetic-overview')`;
+  // Load tests measure already-authenticated readers, not bursts against login throttling.
+  // The session is still persisted and validated by the ordinary principal resolver.
+  if (sessionFixture === 'persisted') {
+    const session = await ctx.internalAdapter.createSession(user.id);
+    if (!session) throw new Error('Synthetic session creation failed');
+    const signature = createHmac('sha256', config.BETTER_AUTH_SECRET)
+      .update(session.token)
+      .digest('base64');
+    return {
+      id: user.id,
+      headers: new Headers({
+        cookie: `${ctx.authCookies.sessionToken.name}=${encodeURIComponent(session.token + '.' + signature)}`,
+      }),
+    };
+  }
   const response = await native(
     new Request(config.BETTER_AUTH_URL + '/api/auth/sign-in/username', {
       method: 'POST',
@@ -88,10 +103,10 @@ async function actor(staff = false) {
     }),
   };
 }
-async function setup() {
+async function setup(options: { sessionFixture?: 'login' | 'persisted' } = {}) {
   const partnerId = randomUUID(),
-    staff = await actor(true),
-    viewer = await actor();
+    staff = await actor(true, options.sessionFixture),
+    viewer = await actor(false, options.sessionFixture);
   await sql`insert into portal_access.partners(id,name,status) values(${partnerId},'Synthetic Overview partner','active')`;
   await sql`insert into portal_access.memberships(id,partner_id,user_id,status,capabilities,verified_contact_ref) values(${randomUUID()},${partnerId},${viewer.id},'active',ARRAY['view_earnings','view_content','view_statements'],'synthetic-contact')`;
   const sample = celebrityPeriod(partnerId);

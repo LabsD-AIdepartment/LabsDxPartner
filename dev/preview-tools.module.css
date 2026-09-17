@@ -1,0 +1,6 @@
+.close {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 24px;
+  background: var(--badge);
+}

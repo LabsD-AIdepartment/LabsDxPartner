@@ -1,5 +1,6 @@
 import type { ReactNode, HTMLAttributes } from 'react';
 import { Text } from './Text';
+import { TextGroup } from './TextGroup';
 import styles from './ui.module.css';
 export function Card({
   title,
@@ -17,16 +18,16 @@ export function Card({
     <article className={`${styles.card} ${className}`} {...props}>
       {title && (
         <div className={styles.heading}>
-          <div>
+          <TextGroup>
             <Text as="h2" variant="cardTitle">
               {title}
             </Text>
             {description && (
-              <Text variant="caption" tone="muted" className={styles.description}>
+              <Text variant="caption" tone="muted">
                 {description}
               </Text>
             )}
-          </div>
+          </TextGroup>
           {action}
         </div>
       )}

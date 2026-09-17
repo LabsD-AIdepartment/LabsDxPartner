@@ -1,0 +1,33 @@
+.link.mobileOnly {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .link.compact {
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .link.compact,
+  .link.compact:hover:not(:disabled),
+  .link.compact:focus-visible {
+    background: var(--text);
+    color: var(--card-solid);
+    border-color: var(--text);
+  }
+
+  .link.compact:focus-visible {
+    outline-offset: 4px;
+  }
+
+  .link.mobileOnly {
+    display: inline-flex;
+  }
+
+  .compact .label {
+    display: none;
+  }
+}

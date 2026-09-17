@@ -39,8 +39,8 @@ export function ChangeWatcher({
         initial: callbacks.current.initial,
         reconcileInitial,
         load: (signal) => callbacks.current.load(signal),
-        onChange: (groups, snapshot) => {
-          void invalidateChanges(client, scope, groups);
+        onChange: async (groups, snapshot, signal) => {
+          await invalidateChanges(client, scope, groups, { signal, throwOnError: true });
           callbacks.current.onChange?.(groups, snapshot);
         },
         onError: (error) => callbacks.current.onError?.(error),

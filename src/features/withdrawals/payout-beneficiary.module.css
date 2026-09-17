@@ -1,0 +1,38 @@
+.content {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.facts {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  font-size: var(--text-body-size);
+}
+.facts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 12px;
+}
+.facts dt,
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.facts dt {
+  color: var(--muted);
+}
+.notice {
+  margin-block: 16px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 540px) {
+  .editAction {
+    display: flex;
+    justify-content: center;
+  }
+  .facts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}

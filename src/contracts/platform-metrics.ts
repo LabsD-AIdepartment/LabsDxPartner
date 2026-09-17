@@ -20,8 +20,30 @@ const MetricKey = z.enum([
   'platform_value',
   'spend',
   'roas',
+  // Meta-official derived economics. cpc/cpm/cost_per_purchase are money; ctr is a ratio the source
+  // already expresses as a PERCENT value (Meta returns e.g. 1.53 for 1.53%). All are non-additive:
+  // they are averages/ratios and must never be summed across periods or ads.
+  'cpc',
+  'ctr',
+  'cpm',
+  'cost_per_purchase',
+  // Derived sales conversion rate = platform_orders / link_clicks * 100 (a PERCENT value). It is a
+  // non-additive ratio owned by the shared projection; presentation appends %. Old payloads never
+  // send this key.
+  'purchase_conversion_rate',
 ]);
-const nonAdditive = new Set(['reach', 'roas']);
+// money units for cost-per metrics; ratio units for rate metrics.
+const moneyKeys = new Set(['platform_value', 'spend', 'cpc', 'cpm', 'cost_per_purchase']);
+const ratioKeys = new Set(['roas', 'ctr', 'purchase_conversion_rate']);
+const nonAdditive = new Set([
+  'reach',
+  'roas',
+  'cpc',
+  'ctr',
+  'cpm',
+  'cost_per_purchase',
+  'purchase_conversion_rate',
+]);
 export const PlatformMetricV2 = z
   .strictObject({
     schemaVersion: z.literal(2),
@@ -37,11 +59,7 @@ export const PlatformMetricV2 = z
     aggregation: z.enum(['sum-disjoint', 'non-additive']),
   })
   .superRefine((v, ctx) => {
-    const expected = ['platform_value', 'spend'].includes(v.key)
-      ? 'money'
-      : v.key === 'roas'
-        ? 'ratio'
-        : 'count';
+    const expected = moneyKeys.has(v.key) ? 'money' : ratioKeys.has(v.key) ? 'ratio' : 'count';
     const fail = (message: string) => ctx.addIssue({ code: 'custom', message });
     if (v.unit !== expected) fail('Metric unit does not match its definition');
     if ((v.unit === 'money') !== (v.currency !== null)) fail('Currency is required only for money');
@@ -138,10 +156,21 @@ export function decimalToMinor(value: string, scale: number): string {
 
 /** Display only: bounded exact rounding without converting money to a floating-point number. */
 export function formatExactDecimal(raw: string, places: number): string {
+  return formatScaledDecimal(raw, places, 0);
+}
+
+/** Display a source fraction as percent; never sum rates or round through Number. */
+export function formatExactPercentage(raw: string, places = 2): string {
+  return formatScaledDecimal(raw, places, 2) + '%';
+}
+
+function formatScaledDecimal(raw: string, places: number, shift: number): string {
   const value = ExactDecimal.parse(raw);
   if (!Number.isInteger(places) || places < 0 || places > 18)
     throw new Error('Invalid display precision');
-  const [whole, fraction = ''] = value.split('.');
+  const [sourceWhole, sourceFraction = ''] = value.split('.');
+  const whole = sourceWhole + sourceFraction.slice(0, shift).padEnd(shift, '0');
+  const fraction = sourceFraction.slice(shift);
   let minor = BigInt(whole + fraction.slice(0, places).padEnd(places, '0'));
   if (Number(fraction[places] ?? '0') >= 5) minor += 1n;
   const digits = minor.toString().padStart(places + 1, '0');

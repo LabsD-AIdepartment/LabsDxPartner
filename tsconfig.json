@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "es2022"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es2022"
+    ],
     "strict": true,
     "allowJs": true,
     "skipLibCheck": true,
@@ -19,14 +23,45 @@
       }
     ],
     "paths": {
-      "@account-preview": ["./dev/AccountPreview.tsx"],
-      "@operations-preview": ["./dev/OperationsPreview.tsx"],
-      "@/*": ["./src/*"],
-      "@foundation-gallery": ["./dev/FoundationGallery.tsx"],
-      "@access-preview": ["./dev/AccessPreview.tsx"],
-      "@content-preview": ["./dev/ContentPreview.tsx"],
-      "@overview-preview": ["./dev/OverviewPreview.tsx"],
-      "@transactions-preview": ["./dev/TransactionsPreview.tsx"]
+      "@marketing-ads-preview": [
+        "./dev/AdRegistrationPreview.tsx"
+      ],
+      "@account-preview": [
+        "./dev/AccountPreview.tsx"
+      ],
+      "@operations-preview": [
+        "./dev/OperationsPreview.tsx"
+      ],
+      "@/*": [
+        "./src/*"
+      ],
+      "@foundation-gallery": [
+        "./dev/FoundationGallery.tsx"
+      ],
+      "@access-preview": [
+        "./dev/AccessPreview.tsx"
+      ],
+      "@content-preview": [
+        "./dev/ContentPreview.tsx"
+      ],
+      "@overview-preview": [
+        "./dev/OverviewPreview.tsx"
+      ],
+      "@transactions-preview": [
+        "./dev/TransactionsPreview.tsx"
+      ],
+      "@withdrawal-preview": [
+        "./dev/WithdrawalPreview.tsx"
+      ],
+      "@demo-dataset-handler": [
+        "./dev/demo-dataset/handler.ts"
+      ],
+      "@ad-performance-handler": [
+        "./dev/ad-performance/handler.ts"
+      ],
+      "@partner-pitch": [
+        "./dev/PitchApplication.tsx"
+      ]
     }
   },
   "include": [
@@ -43,5 +78,10 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", ".agent-work", "design-preview", "_Reff"]
+  "exclude": [
+    "node_modules",
+    ".agent-work",
+    "design-preview",
+    "_Reff"
+  ]
 }

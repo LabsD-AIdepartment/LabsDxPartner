@@ -10,7 +10,7 @@ beforeEach(async () => {
   const parent = resolve('.agent-work/runtime/tmp');
   await mkdir(parent, { recursive: true });
   root = await mkdtemp(join(parent, 'reviewed-files-'));
-  for (const name of ['exports', 'controls', 'catalogues', 'settlements'])
+  for (const name of ['exports', 'controls', 'catalogues', 'settlements', 'account-profiles'])
     await mkdir(join(root, name));
 });
 afterEach(async () => {
@@ -23,6 +23,26 @@ async function period() {
   return sample;
 }
 describe('operator-provisioned reviewed source files', () => {
+  it('loads account profiles from a safe reviewed reference with exact ownership', async () => {
+    const profile = {
+      partnerId: 'p1',
+      sourceRevision: 'deal-1',
+      evidenceRef: 'signed',
+      agreement: null,
+      termsSummary: null,
+      supportUrl: null,
+    };
+    await writeFile(join(root, 'account-profiles', 'deal-1.json'), JSON.stringify(profile));
+    const source = createReviewedFiles(root).accountProfiles;
+    expect(await source.load('p1', 'deal-1')).toEqual(profile);
+    await expect(source.load('p2', 'deal-1')).rejects.toMatchObject({ code: 'changed' });
+    await expect(source.load('p1', '../deal-1')).rejects.toMatchObject({ code: 'invalid_input' });
+    await writeFile(
+      join(root, 'account-profiles', 'bad.json'),
+      JSON.stringify({ ...profile, termsSummary: 'Invented rates' }),
+    );
+    await expect(source.load('p1', 'bad')).rejects.toMatchObject({ code: 'invalid_input' });
+  });
   it('reads separate export and controls and preserves exact input bytes', async () => {
     const sample = await period(),
       record = await createReviewedFiles(root).periods.load('review-one');

@@ -1,3 +1,4 @@
+import { partnerFilters } from '@/shared/config/partner-features';
 import { Overview, type OverviewValue } from '@/contracts/overview';
 import { QueryFilters } from '@/contracts/common';
 import type { FilterValue } from '@/shared/ui/FilterBar';
@@ -19,6 +20,7 @@ export async function loadOverview(
   transport: OverviewTransport,
   request: Parameters<OverviewTransport>[0],
 ): Promise<OverviewValue> {
+  request = { ...request, filters: partnerFilters(request.filters) };
   if (!validateFilters(request.filters)) throw new Error('Invalid period');
   const raw = await transport(request);
   if (request.signal.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -34,6 +36,7 @@ export async function loadOverview(
   return data;
 }
 export function earningsHref(path: string, data: OverviewValue, filters: FilterValue) {
+  filters = partnerFilters(filters);
   return `${path}?${new URLSearchParams({ generation: data.earnings.generation, origin: 'overview', from: filters.from, toExclusive: filters.toExclusive, ...(filters.brand ? { brand: filters.brand } : {}) })}`;
 }
 export function obligationHref(

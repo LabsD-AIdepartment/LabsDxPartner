@@ -7,6 +7,23 @@ The owner explicitly clarified that this review covers **the entire system and a
 
 Follow-through later2026-09-09: the callback test failure below was traced to beforeAll spies being reset before each test. [Repair receipt](../implementation/oauth-callback-boundary.md) records48 passing isolated PostgreSQL tests, including native callback rollback/concurrency. That supersedes the failure status for the new candidate only; the findings below remain the historical review and do not imply real-provider or fullA02 acceptance.
 
+## Current-state reconciliation — 2026-09-09, whole-plan follow-through
+
+This section supersedes historical implementation status in the tables below while preserving the original findings. Current committed baseline is `8396df55498bfe569acb4a343779893ca7917593` on `feat/portal-foundation`; there is an uncommitted exact-target contract/UI batch. No runtime, provider, upstream, performance or independent acceptance was newly performed for this documentation review.
+
+| Finding | Current state | Remaining action |
+|---|---|---|
+| Native callback experiment | Repaired local candidate at8396df5; receipt records48 isolated PostgreSQL tests and190 unit tests | Real Google/LINE/Apple browser proof, recovery and session wiring remain open. Earlier failure is not current evidence against the library |
+| Ambiguous membership/provider commands | D-023 dirty source now shares exact user/account IDs and revisions across schemas, UI and services | Verify multiple members/multiple same-provider methods, stale selection, all consumers and rendered layouts before accepting or exposing |
+| Source grain and approval | Detailed intake remains one candidate; actual agreement/period and summary-only alternative unresolved | Select actual source with finance; no invented granular detail or duplicate manual entry |
+| Payment ownership and generic other component | Still unresolved; preview is not an operational ownership decision | Consume finance payment records if authoritative; require explicit assignment and named/evidenced components for any portal writer |
+| Operational support/notifications | Frontend paths exist; real owner/destination and actual notice history still need wiring | Use existing support with scoped references and only real statement/payment events |
+| Overall milestone | F00–F08 local candidates; A01/A02/G01 partial; remaining tasks not operational | Prove one complete real partner/period before extending automation |
+
+The practicality test for each feature is: **who uses it, what decision or task it enables, which system owns its input, and how completion is demonstrated**. A screen, contract or green mock test alone is not a completed business workflow.
+
+The canonical dependency text now separates I01 discovery from automation and starts R01 evidence alongside implemented capabilities. It retains all task IDs and full release gates. This corrects contradictory old sequencing rather than adding another phase.
+
 ## Conclusion
 
 The three-menu partner product is appropriate. Several implementation details and the sequence have become heavier than the demonstrated need. Keep the approved presentation and the controls that make money and access trustworthy; simplify staff interaction and prove one actual partner journey before expanding automation or identity lifecycle machinery. Completed frontend candidates are reusable work, not a reason to enable every simulated command in the pilot.
@@ -131,7 +148,7 @@ Dependency direction remains presentation → scoped application services → ow
 
 ## Immediate execution order
 
-1. Preserve the unfinished experiment and its failed evidence; stop expansion of callback internals while reviewing simpler maintained integration. Migration0005 was applied to the isolated test database and must remain immutable. Do not leave a new release candidate claiming the earlier green test results apply to this dirty tree.
+1. Preserve the repaired callback receipt and the in-flight exact-target contract batch. Complete focused verification of that batch before wiring it; avoid further generic account machinery without a concrete access/recovery need. Migration0005 was applied to the isolated test database and remains immutable. Historical green tests do not certify the current dirty tree.
 2. Resolve A01 native Google/LINE/Apple callback proof and G01 one-partner/one-period authority in parallel as workstreams, without delegation. If external inputs are absent, prepare the exact missing contract/examples; do not invent credentials or finance rules.
 3. Wire ordinary authenticated access through A03 after its identity and membership evidence. Explicit linking/removal/recovery remain separate tracked acceptance items; any pilot deferral must define the verified recovery workflow and release scope first. No automatic exposure based on this review.
 4. Deliver one complete source → entitlement → statement → payment evidence → partner screen/export path using G02–G04. Preserve duplicate/refund, money precision, frozen statement and cross-partner tests. Select upstream payment authority before enabling manual payment entry.
@@ -146,4 +163,4 @@ Before wiring, test: duplicate import/payment; refund after issue; missing clip 
 
 Allowed now: source review, preservation, documented sequencing, and local implementation within reconciled scope. Separate authorization remains for actual deployment/exposure, upstream mutations and destructive data actions. No independent acceptance is inferred from this author review.
 
-Verdict: **READY FOR DECLARED SCOPE** — practical review and revised local sequencing only; the unfinished OAuth candidate and production release have not been accepted.
+Verdict: **READY FOR DECLARED SCOPE** — practical review and revised local sequencing only; real-provider behavior, the current dirty contract batch and production release have not been accepted.

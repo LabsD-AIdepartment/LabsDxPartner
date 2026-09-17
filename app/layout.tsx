@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ThemeProvider } from '@/shared/theme/ThemeProvider';
+import { restoreTheme } from '@/shared/theme/restore-theme';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/dm-sans';
 import '@fontsource-variable/noto-sans-thai';
@@ -12,6 +13,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="th" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(${restoreTheme.toString()})();` }} />
+      </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
       </body>

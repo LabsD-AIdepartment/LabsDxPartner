@@ -78,3 +78,11 @@ exercises the page action alongside unchanged verify/collect/quota behavior.
 No live account/entitlement, native database recovery, browser change or production
 readiness is claimed by these tests. The follow-up integration must prove durable
 restart and complete publication using the existing worker/store architecture.
+
+## D085 follow-up
+
+The original D084 scope above is historical. Native durable staging and the
+configured page worker are now implemented by
+[tiktok-shop-video-resume.md](./tiktok-shop-video-resume.md), with additive0026,
+bounded batches and complete-only SQL publication. The legacy diagnostic collect
+path still retains its2000-video cap. Neither change enables production access.

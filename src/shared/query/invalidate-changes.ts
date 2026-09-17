@@ -22,10 +22,23 @@ export async function invalidateChanges(
   client: QueryClient,
   scope: QueryScope,
   groups: readonly ChangeGroup[],
+  options: { signal?: AbortSignal; throwOnError?: boolean } = {},
 ) {
   if (!groups.length) return;
   const predicate = (query: Query) => dependsOnChanges(query, scope, groups);
   // An initial pending request must be canceled too; invalidate alone can reuse that older read.
-  await client.cancelQueries({ predicate });
-  await client.invalidateQueries({ predicate, refetchType: 'active' });
+  const { signal, throwOnError = false } = options;
+  const cancel = () => {
+    void client.cancelQueries({ predicate });
+  };
+  signal?.throwIfAborted();
+  signal?.addEventListener('abort', cancel, { once: true });
+  try {
+    await client.cancelQueries({ predicate });
+    signal?.throwIfAborted();
+    await client.invalidateQueries({ predicate, refetchType: 'active' }, { throwOnError });
+    signal?.throwIfAborted();
+  } finally {
+    signal?.removeEventListener('abort', cancel);
+  }
 }

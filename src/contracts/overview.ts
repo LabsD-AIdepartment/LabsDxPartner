@@ -4,6 +4,31 @@ import { ContentCard } from './content';
 import { Rate } from './earnings';
 import { PeriodCoverage, coverageMatchesPeriod, coverageSegmentForDay } from './coverage';
 import { ProfilePresentation } from './catalogue';
+// Named sales sources a confirmed daily sale can be attributed to. 'unattributed' is the honest
+// fallback when the upstream payload carries no authoritative platform for a sale.
+export const SalesPlatform = z.enum([
+  'facebook',
+  'tiktok',
+  'shopee',
+  'lazada',
+  'web',
+  'unattributed',
+]);
+export type SalesPlatformName = z.infer<typeof SalesPlatform>;
+// A daily trend point. `date`/`amount` (confirmed commission) are the original, always-present
+// fields. `sales` (the daily eligible-sales base) and `salesByPlatform` are additive and OPTIONAL,
+// so hand-authored fixtures written before this field existed still parse. Both are also nullable:
+// an explicit null means "unknown" (never zero); a present breakdown must sum exactly to `sales`.
+const TrendPoint = z.strictObject({
+  date: z.iso.date(),
+  amount: Money,
+  sales: Money.nullable().optional(),
+  salesByPlatform: z
+    .array(z.strictObject({ platform: SalesPlatform, sales: Money }))
+    .max(6)
+    .nullable()
+    .optional(),
+});
 export const Obligation = z
   .strictObject({
     asOf: Instant,
@@ -51,7 +76,7 @@ export const Overview = Freshness.extend({
         .nullable()
         .default(null),
       contentCount: Count.nullable().default(null),
-      trend: z.array(z.strictObject({ date: z.iso.date(), amount: Money })).max(366),
+      trend: z.array(TrendPoint).max(366),
       topContent: z.array(ContentCard).max(3),
     })
     .superRefine((value, ctx) => {
@@ -115,6 +140,40 @@ export const Overview = Freshness.extend({
             code: 'custom',
             path: ['trend', i],
             message: 'Daily earnings must be ordered, unique and within published coverage',
+          });
+        // Optional daily sales detail. Deliberately NOT reconciled against earnings.eligibleSales:
+        // that window total can include estimated current-period sales while the trend is
+        // confirmed-only, so a cross-total check would produce false mismatches.
+        const breakdown = point.salesByPlatform;
+        if (breakdown == null) continue;
+        if (point.sales == null) {
+          // Unknown daily sales is null, never zero; a platform breakdown cannot stand alone.
+          ctx.addIssue({
+            code: 'custom',
+            path: ['trend', i, 'salesByPlatform'],
+            message: 'Platform breakdown requires a known daily sales figure',
+          });
+          continue;
+        }
+        const platforms = breakdown.map((entry) => entry.platform);
+        if (new Set(platforms).size !== platforms.length)
+          ctx.addIssue({
+            code: 'custom',
+            path: ['trend', i, 'salesByPlatform'],
+            message: 'Platform breakdown must list each platform at most once',
+          });
+        // Guard every BigInt against a regex-invalid Money so malformed detail surfaces as its own
+        // field error rather than a thrown exception here.
+        if (
+          Money.safeParse(point.sales).success &&
+          breakdown.every((entry) => Money.safeParse(entry.sales).success) &&
+          breakdown.reduce((sum, entry) => sum + BigInt(entry.sales.minor), 0n) !==
+            BigInt(point.sales.minor)
+        )
+          ctx.addIssue({
+            code: 'custom',
+            path: ['trend', i, 'salesByPlatform'],
+            message: 'Platform breakdown must sum exactly to the daily sales',
           });
       }
     }),

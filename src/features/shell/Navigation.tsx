@@ -1,7 +1,7 @@
 'use client';
 import { LayoutGrid, Video, Wallet } from 'lucide-react';
-import { LinkButton } from '@/shared/ui/LinkButton';
-import { Button } from '@/shared/ui/Button';
+import Link from '@/shared/ui/AppLink';
+import navigationStyles from './navigation.module.css';
 import styles from './shell.module.css';
 export type Menu = 'overview' | 'content' | 'transactions';
 export function Navigation({
@@ -19,29 +19,30 @@ export function Navigation({
         [
           { key: 'overview', label: 'Overview', Icon: LayoutGrid },
           { key: 'content', label: 'My content', Icon: Video },
-          { key: 'transactions', label: 'Transactions', Icon: Wallet },
+          { key: 'transactions', label: 'Wallet', Icon: Wallet },
         ] as const
       ).map(({ key, label, Icon }) =>
         hrefs ? (
-          <LinkButton
+          <Link
             key={key}
             href={hrefs[key]}
-            variant={active === key ? 'primary' : 'secondary'}
+            className={navigationStyles.item}
             aria-current={active === key ? 'page' : undefined}
           >
             <Icon size={16} aria-hidden />
             {label}
-          </LinkButton>
+          </Link>
         ) : (
-          <Button
+          <button
+            type="button"
             key={key}
-            variant={active === key ? 'primary' : 'secondary'}
+            className={navigationStyles.item}
             aria-current={active === key ? 'page' : undefined}
             onClick={() => onNavigate?.(key)}
           >
-            <Icon size={16} />
+            <Icon size={16} aria-hidden />
             {label}
-          </Button>
+          </button>
         ),
       )}
     </nav>

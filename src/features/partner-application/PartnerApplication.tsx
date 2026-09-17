@@ -4,9 +4,11 @@ import { Session, type SessionValue } from '@/contracts/session';
 import { ScopedQueryProvider } from '@/shared/query/provider';
 import { ChangeWatcher } from '@/shared/query/ChangeWatcher';
 import { loadChanges } from '@/shared/query/changes-http';
+import { nativeVideoRead } from '@/features/shop-video/transport';
 import { contentHttp } from '@/features/content/http';
 import { NotificationCenter } from '@/features/notifications/NotificationCenter';
-import { PartnerShell } from '@/features/shell/PartnerShell';
+import { ProfileMenu } from '@/features/shell/ProfileMenu';
+import { PartnerShell, partnerHrefs } from '@/features/shell/PartnerShell';
 import { OverviewPage } from '@/features/overview/OverviewPage';
 import { overviewHttp } from '@/features/overview/http';
 import { ContentList } from '@/features/content/ContentList';
@@ -16,10 +18,17 @@ import { StatementList } from '@/features/transactions/StatementList';
 import { StatementDetail } from '@/features/transactions/StatementDetail';
 import { transactionHttp, statementDocumentHttp } from '@/features/transactions/http';
 import { DataState } from '@/shared/ui/DataState';
-import { Button } from '@/shared/ui/Button';
 import { LinkButton } from '@/shared/ui/LinkButton';
-import { type ReportContext } from '@/shared/routing/report-context';
+import {
+  changeReportFilters,
+  reportNavigationHrefs,
+  reportHref,
+  type ReportContext,
+} from '@/shared/routing/report-context';
+import { useReportState } from '@/shared/routing/useReportState';
 import { CredentialAccount } from './CredentialAccount';
+import { AccountPage } from '@/features/account/AccountPage';
+import { accountHttp } from '@/features/account/http';
 import type { PartnerScreen } from './types';
 import forms from '@/shared/ui/forms.module.css';
 
@@ -27,10 +36,12 @@ export function PartnerApplication({
   initialSession,
   screen,
   initialContext,
+  payoutAccountHref,
 }: {
   initialSession: SessionValue;
   screen: PartnerScreen;
   initialContext: ReportContext;
+  payoutAccountHref?: string;
 }) {
   const [session, setSession] = useState(initialSession);
   const [state, setState] = useState<'ready' | 'checking' | 'changing' | 'error'>('checking');
@@ -147,11 +158,50 @@ export function PartnerApplication({
     partnerId: member?.partnerId ?? 'none',
     permissionRevision: member?.permissionRevision ?? 'none',
   };
+  const [context, changeContext] = useReportState(
+    {
+      ...initialContext,
+      origin:
+        screen.kind === 'overview'
+          ? 'overview'
+          : screen.kind === 'content'
+            ? 'content'
+            : initialContext.origin,
+    },
+    JSON.stringify([scope, screen]),
+    active === 'content' ? '/content' : active === 'transactions' ? '/transactions' : '/overview',
+  );
   return (
     <ScopedQueryProvider scope={scope}>
       <PartnerShell
         active={screen.kind === 'account' ? null : active}
+        hrefs={reportNavigationHrefs(context, partnerHrefs)}
         accountHref="/account"
+        accountMenu={
+          <ProfileMenu
+            accountHref="/account"
+            onLogout={() => void logout()}
+            busy={state === 'changing'}
+          >
+            {session.memberships.length > 1 && (
+              <label className={forms.field}>
+                พาร์ทเนอร์
+                <select
+                  aria-label="เลือกพาร์ทเนอร์"
+                  value={session.activePartnerId ?? ''}
+                  disabled={state !== 'ready'}
+                  onChange={(e) => void switchPartner(e.target.value)}
+                >
+                  {session.memberships.map((m) => (
+                    <option key={m.partnerId} value={m.partnerId}>
+                      {m.partnerName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </ProfileMenu>
+        }
         notifications={
           state === 'ready' &&
           session.access === 'active' &&
@@ -189,33 +239,6 @@ export function PartnerApplication({
               }}
             />
           )}
-        <div className={forms.row}>
-          <div>
-            {session.displayName}
-            {member && <> · {member.partnerName}</>}
-          </div>
-          {session.memberships.length > 1 && (
-            <label className={forms.field}>
-              พาร์ทเนอร์
-              <select
-                aria-label="เลือกพาร์ทเนอร์"
-                value={session.activePartnerId ?? ''}
-                disabled={state !== 'ready'}
-                onChange={(e) => void switchPartner(e.target.value)}
-              >
-                {session.memberships.map((m) => (
-                  <option key={m.partnerId} value={m.partnerId}>
-                    {m.partnerName}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <LinkButton href="/account">บัญชีของคุณ</LinkButton>
-          <Button disabled={state === 'changing'} onClick={() => void logout()}>
-            ออกจากระบบ
-          </Button>
-        </div>
         {state === 'error' ? (
           <DataState
             state="error"
@@ -229,7 +252,25 @@ export function PartnerApplication({
         ) : state !== 'ready' ? (
           <DataState state="loading" />
         ) : screen.kind === 'account' ? (
-          <CredentialAccount name={session.displayName} onChanged={finish} />
+          session.access === 'active' && member ? (
+            <AccountPage
+              scope={scope}
+              transport={accountHttp}
+              onLogout={finish}
+              credentials={
+                <>
+                {payoutAccountHref && <LinkButton href={payoutAccountHref}>ดู/แก้ไขบัญชีรับเงิน</LinkButton>}
+                <CredentialAccount
+                  name={session.displayName}
+                  onChanged={finish}
+                  showIdentity={false}
+                />
+                </>
+              }
+            />
+          ) : (
+            <CredentialAccount name={session.displayName} onChanged={finish} />
+          )
         ) : session.access !== 'active' || !member ? (
           <DataState
             state="unavailable"
@@ -250,7 +291,8 @@ export function PartnerApplication({
               key={`${session.userId}:${member.partnerId}:${member.permissionRevision}`}
               session={session}
               screen={screen}
-              initialContext={initialContext}
+              context={context}
+              onContextChange={changeContext}
             />
           </>
         )}
@@ -261,13 +303,14 @@ export function PartnerApplication({
 function PartnerFeatures({
   session,
   screen,
-  initialContext,
+  context,
+  onContextChange,
 }: {
   session: SessionValue;
   screen: PartnerScreen;
-  initialContext: ReportContext;
+  context: ReportContext;
+  onContextChange: (context: ReportContext) => void;
 }) {
-  const [context, setContext] = useState(initialContext);
   const member = session.memberships.find((m) => m.partnerId === session.activePartnerId)!;
   const scope = {
     userId: session.userId,
@@ -279,6 +322,7 @@ function PartnerFeatures({
     context,
     routes: { content: '/content', overview: '/overview' },
     transport: contentHttp,
+    shopVideoTransport: nativeVideoRead,
     canViewAdSpend: member.capabilities.includes('view_ad_spend'),
   };
   const transactions = {
@@ -286,7 +330,12 @@ function PartnerFeatures({
     transport: transactionHttp,
     documents: statementDocumentHttp,
     basePath: '/transactions',
-    returnTo: '/overview',
+    returnTo: reportHref(context.origin === 'overview' ? '/overview' : '/content', {
+      ...context,
+      generation: null,
+      cursor: null,
+      history: [],
+    }),
   };
   switch (screen.kind) {
     case 'overview':
@@ -300,6 +349,14 @@ function PartnerFeatures({
             toExclusive: context.toExclusive,
             brand: context.brand,
           }}
+          controlledFilters={{
+            value: { from: context.from, toExclusive: context.toExclusive, brand: context.brand },
+            onChange: (value) =>
+              onContextChange({
+                ...changeReportFilters(context, value),
+                origin: 'overview',
+              }),
+          }}
           partner={{
             name: member.partnerName,
             greeting: session.displayName,
@@ -310,9 +367,7 @@ function PartnerFeatures({
         />
       );
     case 'content':
-      return (
-        <ContentList {...content} brands={[]} onChange={setContext} resetContext={initialContext} />
-      );
+      return <ContentList {...content} brands={[]} onChange={onContextChange} />;
     case 'clip':
       return <ContentDetail {...content} contentId={screen.contentId} />;
     case 'ad':

@@ -1,3 +1,5 @@
+import { redirectPitchLegacy } from '@/server/platform/pitch-legacy';
+import { developmentPreviewsEnabled } from '@/server/platform/development-previews';
 import { notFound } from 'next/navigation';
 export default async function Page({
   params,
@@ -6,7 +8,8 @@ export default async function Page({
   params: Promise<{ segments?: string[] }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if (process.env.NODE_ENV !== 'development') notFound();
+  redirectPitchLegacy('/transactions-preview' + '/' + ((await params).segments ?? []).join('/'), await searchParams);
+  if (!developmentPreviewsEnabled()) notFound();
   const { segments = [] } = await params;
   if (segments.length > 1 || (segments[0] && !/^[a-zA-Z0-9_-]+$/.test(segments[0]))) notFound();
   const search = new URLSearchParams();

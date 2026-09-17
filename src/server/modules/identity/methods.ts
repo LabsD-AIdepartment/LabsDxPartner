@@ -8,8 +8,7 @@ import type { ResolvePrincipal } from './resolve-principal';
 import { FRESH_SESSION_SECONDS } from './policy';
 import { revokeIdentitySessions } from './revocation';
 
-const Revision = z.string().regex(/^[a-f0-9]{64}$/);
-const Unlink = z.strictObject({ accountId: Id, expectedRevision: Revision, idempotencyKey: Id });
+import { MethodRevision as Revision, UnlinkMethod as Unlink } from '@/contracts/identity-methods';
 const Method = z.strictObject({ id: Id, provider: Provider });
 const Receipt = z.strictObject({
   requestId: Id,
@@ -80,10 +79,12 @@ export function createIdentityMethods(
     list(headers: Headers) {
       return run(headers, false, async (tx, userId) => {
         const current = await methods(tx, userId);
+        const dates = await tx`select id,created_at from portal_identity.accounts where user_id = ${userId}`;
+        const connected = new Map(dates.map(row => [row.id, new Date(row.created_at).toISOString()]));
         return {
           userId,
           revision: revision(current),
-          methods: current.map((method) => ({ ...method, canUnlink: current.length > 1 })),
+          methods: current.map(method => ({ ...method, connectedAt: connected.get(method.id)!, canUnlink: current.length > 1 })),
         };
       });
     },

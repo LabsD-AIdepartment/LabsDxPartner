@@ -1,8 +1,20 @@
 import { ContentError, type ContentTransport, type ContentRequest } from '@/features/content/model';
 import { overviewRows } from './overview-transport';
 import { money, at } from './scenarios/ready';
+import { septemberClips, DEMO_FINANCIALS } from './scenarios/demo-financials';
 import type { ScenarioName } from './scenarios';
-export type ContentMode = ScenarioName | 'removed' | 'error' | 'loading' | 'generation-changed';
+import { performanceFixture } from './platform-performance';
+import { applyAdSample } from './ad-sample-media';
+export type ContentMode =
+  | ScenarioName
+  | 'removed'
+  | 'error'
+  | 'loading'
+  | 'generation-changed'
+  | 'platform-v2'
+  // Current-inclusive demo: the confirmed clips PLUS the September open-period clips (whose
+  // per-clip commission is still estimated), consistent with the partner-demo Overview.
+  | 'partner-demo';
 export function contentFixture(
   request: Omit<ContentRequest, 'signal'>,
   mode: ContentMode = 'ready',
@@ -12,7 +24,10 @@ export function contentFixture(
   )
     ? (mode as ScenarioName)
     : 'ready';
-  const { s, rows, bySource } = overviewRows(request.context, name);
+  const { s, rows, bySource } = overviewRows(
+    request.context,
+    mode === 'partner-demo' ? 'partner-demo' : name,
+  );
   const sum = (values: typeof rows) =>
     money(values.reduce((n, x) => n + BigInt(x.amount.minor), 0n).toString());
   const period = {
@@ -22,8 +37,14 @@ export function contentFixture(
   };
   const envelope = {
     dataState: s.overview.dataState,
-    generatedAt: at,
-    dataThrough: name === 'stale' ? '2026-08-31T00:00:00+07:00' : s.overview.dataThrough,
+    // partner-demo includes September clips, so its watermark must not predate them.
+    generatedAt: mode === 'partner-demo' ? DEMO_FINANCIALS.asOf : at,
+    dataThrough:
+      mode === 'partner-demo'
+        ? DEMO_FINANCIALS.asOf
+        : name === 'stale'
+          ? '2026-08-31T00:00:00+07:00'
+          : s.overview.dataThrough,
     reasons: s.overview.reasons,
     requestId: 'synthetic-content-request',
     generation: mode === 'generation-changed' ? '2' : '1',
@@ -32,14 +53,28 @@ export function contentFixture(
   const forClip = (id: string) => rows.filter((x) => x.contentId === id);
   const unmapped = (id: string) =>
     rows.some((x) => x.attribution === 'partner-only' && bySource.get(x.sourceRef)?.id === id);
-  const cards = (name === 'empty' ? [] : s.content.data.items).map((x) => ({
+  const baseCards =
+    name === 'empty'
+      ? []
+      : mode === 'partner-demo'
+        ? [...s.content.data.items, ...septemberClips]
+        : s.content.data.items;
+  const cards = baseCards.map((raw) => {
+    // partner-demo binds the verified Tendrix ad samples (title/cover/media/adReferences) via the
+    // shared overlay so the list, detail and Overview top content never drift. Other modes and
+    // other clips are untouched -> their adReferences stay omitted (unknown).
+    const x = mode === 'partner-demo' ? applyAdSample(raw) : raw;
+    return {
     ...x,
     removed: mode === 'removed' || x.removed,
+    // A September open-period clip has no CONFIRMED commission yet (0), and its detail surfaces an
+    // 'estimated'/'mixed' earningsStatus from the estimated earnings line — never a false confirmed.
     earned: unmapped(x.id) ? null : sum(forClip(x.id).filter((x) => x.status !== 'estimated')),
     unavailableReason: unmapped(x.id)
       ? 'ต้นทางระบุรายได้ระดับพาร์ทเนอร์ ยังจับคู่กับคลิปนี้ไม่ได้'
       : null,
-  }));
+    };
+  });
   const paginate = <T>(items: T[]) => {
     const raw = request.cursor === undefined ? request.context.cursor : request.cursor;
     const offset = raw && /^offset-\d+$/.test(raw) ? Number(raw.slice(7)) : 0;
@@ -58,11 +93,7 @@ export function contentFixture(
         (!request.context.brand || x.brand === request.context.brand) &&
         `${x.title} ${x.brand}`
           .toLocaleLowerCase()
-          .includes(request.context.q.toLocaleLowerCase()) &&
-        (forClip(x.id).length ||
-          unmapped(x.id) ||
-          (x.publishedAt.slice(0, 10) >= request.context.from &&
-            x.publishedAt.slice(0, 10) < request.context.toExclusive)),
+          .includes(request.context.q.toLocaleLowerCase()),
     );
     return { ...envelope, data: paginate(items) };
   }
@@ -143,9 +174,12 @@ export function contentFixture(
         agreementVersion: selected[0]?.agreementVersion ?? null,
         earningsStatus: unmapped(clip.id)
           ? 'unavailable'
-          : selected.some((x) => x.status === 'estimated')
+          : selected.some((x) => x.status === 'estimated') &&
+              selected.some((x) => x.status !== 'estimated')
             ? 'mixed'
-            : 'confirmed',
+            : selected.some((x) => x.status === 'estimated')
+              ? 'estimated'
+              : 'confirmed',
         metrics: [
           metric('video_views', null, 'ยอดดูคลิปจากแพลตฟอร์ม เป็นข้อมูลประกอบ ไม่ใช่ยอดรายได้'),
           metric('reach', null, 'จำนวนผู้ชมไม่ซ้ำ ไม่สามารถรวมจากโฆษณาย่อยได้'),
@@ -162,7 +196,11 @@ export function contentFixture(
   if (request.resource === 'ads') return { ...envelope, data: paginate(ads) };
   const ad = ads.find((x) => x.id === request.adId);
   if (!ad) throw new ContentError('not_found', 'ไม่พบโฆษณานี้ หรือโฆษณาไม่ได้อยู่ในคลิปที่เลือก');
-  return { ...envelope, data: ad };
+  return {
+    ...envelope,
+    data:
+      mode === 'platform-v2' ? { ...ad, metrics: [], performance: performanceFixture(period) } : ad,
+  };
 }
 export function createContentTransport(mode: ContentMode = 'ready'): ContentTransport {
   return async (request) => {

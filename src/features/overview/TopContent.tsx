@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { ActionArrow } from '@/shared/ui/ActionArrow';
+import Link from '@/shared/ui/AppLink';
 import type { OverviewValue } from '@/contracts/overview';
 import type { FilterValue } from '@/shared/ui/FilterBar';
 import { Card } from '@/shared/ui/Card';
@@ -19,8 +20,12 @@ export function TopContent({
   return (
     <Card
       title="Small clips Real results"
-      description="สูงสุด 3 คลิปตามรายได้ยืนยันในช่วงที่เลือก"
-      action={<Link href={earningsHref(contentBasePath, data, filters)}>ดูทั้งหมด ↗</Link>}
+      description="3 คลิปที่สร้างรายได้สูงสุด"
+      action={
+        <Link href={earningsHref(contentBasePath, data, filters)}>
+          ดูทั้งหมด <ActionArrow />
+        </Link>
+      }
     >
       {data.earnings.topContent.length ? (
         <div className={styles.clips}>
@@ -34,18 +39,20 @@ export function TopContent({
                 filters,
               )}
             >
-              <CoverImage
-                className={styles.cover}
-                src={clip.removed ? null : clip.cover}
-                alt={clip.title}
-                style={{ objectPosition: clip.coverPosition }}
-              />
+              <div className={styles.coverFrame}>
+                <CoverImage
+                  className={styles.cover}
+                  src={clip.removed ? null : clip.cover}
+                  alt={clip.title}
+                  style={{ objectPosition: clip.coverPosition }}
+                />
+              </div>
               <div>
                 <strong>{clip.removed ? 'คลิปถูกนำออกแล้ว' : clip.title}</strong>
                 <p>{clip.brand}</p>
               </div>
               <Money value={clip.earned} reason={clip.unavailableReason ?? undefined} />
-              <span aria-hidden>↗</span>
+              <ActionArrow />
             </Link>
           ))}
         </div>

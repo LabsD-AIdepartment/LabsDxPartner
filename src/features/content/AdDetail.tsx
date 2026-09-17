@@ -1,6 +1,6 @@
 'use client';
 import { Card } from '@/shared/ui/Card';
-import { LinkButton } from '@/shared/ui/LinkButton';
+import { BackLink } from '@/shared/ui/BackLink';
 import { DataState } from '@/shared/ui/DataState';
 import { reportHref, validContentFilters } from '@/shared/routing/report-context';
 import { timestamp } from '@/shared/ui/format-date';
@@ -10,6 +10,7 @@ import { MetricSections } from './MetricDefinition';
 import { adStatus } from './AdList';
 import type { ContentProps } from './types';
 import styles from './content.module.css';
+import { AdPerformance } from './AdPerformance';
 export function AdDetail(props: ContentProps & { contentId: string; adId: string }) {
   const query = useContent(props.transport, {
     scope: props.scope,
@@ -21,14 +22,13 @@ export function AdDetail(props: ContentProps & { contentId: string; adId: string
   const data = query.data;
   return (
     <div className={styles.page}>
-      <LinkButton
+      <BackLink
+        label="กลับรายละเอียดคลิป"
         href={reportHref(
           `${props.routes.content}/${encodeURIComponent(props.contentId)}`,
           props.context,
         )}
-      >
-        ← กลับรายละเอียดคลิป
-      </LinkButton>
+      />
       {!validContentFilters(props.context) ? (
         <DataState state="error" message="ช่วงเวลาหรือรุ่นข้อมูลไม่ถูกต้อง" />
       ) : (
@@ -40,15 +40,26 @@ export function AdDetail(props: ContentProps & { contentId: string; adId: string
         />
       )}
       {data && !query.error && (
-        <DataEnvelope data={data}>
+        <DataEnvelope data={data} periodLabel="ช่วงข้อมูลโฆษณา">
           <Card
             title={data.data.title}
-            description={`${adStatus[data.data.status]} · สถานะ ณ ${timestamp(data.data.asOf)}`}
+            description={
+              data.data.status === 'unknown'
+                ? adStatus.unknown
+                : `${adStatus[data.data.status]} · สถานะ ณ ${timestamp(data.data.asOf)}`
+            }
           >
             <p className={styles.notice}>
               ผลโฆษณาจากแพลตฟอร์ม · คอมมิชชันแสดงที่หน้าคลิป และไม่ถูกนับซ้ำต่อโฆษณา
             </p>
-            <MetricSections metrics={data.data.metrics} canViewAdSpend={props.canViewAdSpend} />
+            {data.data.performance ? (
+              <AdPerformance
+                performance={data.data.performance}
+                canViewAdSpend={props.canViewAdSpend}
+              />
+            ) : (
+              <MetricSections metrics={data.data.metrics} canViewAdSpend={props.canViewAdSpend} />
+            )}
           </Card>
         </DataEnvelope>
       )}

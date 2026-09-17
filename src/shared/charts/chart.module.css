@@ -18,58 +18,77 @@
   fill: #21421c;
   font-size: var(--text-caption-size);
 }
+.chart[data-compact='true'] text {
+  font-size: var(--trend-label-size);
+}
+.barContainer {
+  container: sales-bars / inline-size;
+  width: 100%;
+  min-width: 0;
+}
 .bars {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
-  height: 178px;
+  display: grid;
+  gap: 14px;
   margin-top: 22px;
 }
 .barItem {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: stretch;
-  gap: 8px;
-  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto 8px;
+  gap: 6px 12px;
   min-width: 0;
-  height: 100%;
 }
 .bar {
-  min-height: 4px;
-  border-radius: 7px 7px 0 0;
-  background: repeating-linear-gradient(
-    125deg,
-    transparent,
-    transparent 3px,
-    #4a9c6455 3px,
-    #4a9c6455 4px
-  );
-  border: 1px solid #4a9c6433;
-  position: relative;
-}
-.featured {
+  width: var(--bar-size);
+  height: 8px;
+  border-radius: 999px;
   background: var(--green);
   box-shadow:
     inset 1px 1px 3px #ffffff99,
     0 6px 18px #32c96b1c;
 }
 .barLabel {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
   font-size: var(--text-caption-size);
-  text-align: center;
   color: var(--muted);
   overflow-wrap: anywhere;
 }
 .barValue {
-  position: absolute;
-  top: 8px;
-  left: 0;
-  right: 0;
-  text-align: center;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  text-align: end;
   font-size: var(--text-caption-size);
-  color: #103d22;
-  font-weight: var(--weight-bold);
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+  min-width: 0;
+  max-width: 100%;
 }
+.barTrack {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  height: 8px;
+}
+/* A narrow card gets readable name/value rows instead of compressed text. */
+@container sales-bars (max-width: 255px) {
+  .barItem {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto 8px;
+  }
+  .barValue {
+    grid-column: 1;
+    grid-row: 2;
+    text-align: start;
+  }
+  .barTrack {
+    grid-row: 3;
+  }
+}
+
 .mix {
   display: flex;
   flex-wrap: wrap;
@@ -159,25 +178,6 @@
   }
 }
 
-.lastValue {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  align-items: baseline;
-  flex-wrap: wrap;
-  font-size: var(--text-caption-size);
-  margin: 4px 0;
-}
-.lastValue strong {
-  background: #c5fa5f;
-  color: #21421c;
-  padding: 2px 8px;
-  border-radius: 6px;
-  overflow-wrap: anywhere;
-  max-width: 100%;
-  font-weight: var(--weight-medium);
-}
-
 .mix > :last-child {
   flex: 1 1 160px;
   min-width: 0;
@@ -193,4 +193,30 @@
   .mix p {
     font-size: var(--font-size-18);
   }
+}
+
+.centeredMix {
+  justify-content: center;
+}
+.centeredMix > .ring {
+  flex: 0 0 auto;
+  width: min(72%, 280px);
+}
+
+.centeredMix .center {
+  font-size: var(--text-earnings-mix-percent);
+}
+
+.plotScroll {
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.plotScroll:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.plotScroll svg {
+  max-width: none;
+  overflow: hidden;
 }

@@ -1,4 +1,7 @@
 .workspace {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   max-width: 1680px;
   margin: auto;
 }
@@ -21,10 +24,24 @@
 .nav {
   display: flex;
   gap: 6px;
+  font-size: var(--text-caption-size);
 }
 .nav :is(button, a) {
-  font-size: var(--text-caption-size);
+  font-size: inherit;
+  min-height: 2.875em;
+  padding: 0.625em 1.125em;
+  gap: 0.5em;
   white-space: nowrap;
+}
+.nav svg {
+  width: 1em;
+  height: 1em;
+}
+.rail [aria-current='page'],
+.rail [aria-current='page']:hover:not(:disabled) {
+  background: var(--primary);
+  color: var(--primary-text);
+  border-color: transparent;
 }
 .controls {
   margin-left: auto;
@@ -39,15 +56,102 @@
   border-radius: 50%;
 }
 .main {
+  flex: 1;
   padding: 30px 38px 36px 108px;
   min-width: 0;
+}
+.pageHeading {
+  display: contents;
+}
+.titleRow {
+  container-type: inline-size;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: 14px;
+}
+.titleRow:has(.titleActions:not(:empty)) {
+  margin-bottom: 24px;
+}
+.titleActions {
+  flex: 0 1 auto;
+  max-width: 100%;
+  margin-inline-start: auto;
+}
+.titleActions:empty {
+  display: none;
+}
+
+/* Retain the page's semantic heading while removing its visual space in disabled modes. */
+@media (max-width: 600px) {
+  .pageHeading[data-mobile-visible='false'] :is(.title, .subtitle) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .pageHeading[data-mobile-visible='false'] .titleRow {
+    margin-bottom: 0;
+  }
+  .pageHeading[data-mobile-visible='false'] .titleRow:has(.titleActions:not(:empty)) {
+    margin-bottom: 24px;
+  }
+  .pageHeading[data-mobile-visible='false']
+    .titleRow:has([data-mobile-relocated='true'][data-local-controls='false']) {
+    margin-bottom: 0;
+  }
+}
+@media (600px < width <= 950px) {
+  .pageHeading[data-tablet-visible='false'] :is(.title, .subtitle) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .pageHeading[data-tablet-visible='false'] .titleRow {
+    margin-bottom: 0;
+  }
+  .pageHeading[data-tablet-visible='false'] .titleRow:has(.titleActions:not(:empty)) {
+    margin-bottom: 24px;
+  }
+}
+@media (width > 950px) {
+  .pageHeading[data-desktop-visible='false'] :is(.title, .subtitle) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .pageHeading[data-desktop-visible='false'] .titleRow {
+    margin-bottom: 0;
+  }
+  .pageHeading[data-desktop-visible='false'] .titleRow:has(.titleActions:not(:empty)) {
+    margin-bottom: 24px;
+  }
+}
+.mobileCalendar {
+  display: none;
 }
 .title {
   font-size: var(--text-page-title);
   font-weight: var(--weight-emphasis);
   letter-spacing: -1.6px;
   line-height: var(--leading-display);
-  margin: 0 0 14px;
+  margin: 0;
 }
 .title span {
   color: var(--accent);
@@ -62,29 +166,61 @@
 }
 .count {
   position: absolute;
-  top: -5px;
-  right: -6px;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 4px;
+  top: -2px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
   background: var(--green);
   color: #103d22;
-  font-size: var(--text-caption-size);
+  font-size: var(--text-notification-count);
+  line-height: 1;
   font-weight: var(--weight-bold);
   pointer-events: none;
 }
+.unreadDescription {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .notices {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
-.notices > div {
-  display: flex;
-  flex-wrap: wrap;
+.noticeRow {
+  display: grid;
   gap: 8px;
+}
+.noticeRow + .noticeRow {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.noticeContent {
+  min-width: 0;
+}
+.noticeContent .noticeTitle {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+.noticeAction {
+  flex: 0 0 auto;
 }
 .music {
   position: fixed;
@@ -105,28 +241,43 @@
 }
 .footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 16px;
   font-size: var(--text-caption-size);
   color: var(--muted);
-  margin-top: 30px;
+  padding: 0 38px 36px 108px;
+}
+.footer > span {
+  font-size: var(--text-footer);
+}
+.footerCredit {
+  margin-inline-start: auto;
+  text-align: right;
 }
 .mobileNav {
   display: none;
 }
-@media (max-width: 1200px) {
+@media (600px < width <= 1200px) {
   .header {
-    flex-wrap: wrap;
-    gap: 14px;
+    flex-wrap: nowrap;
+    gap: 10px;
   }
   .logo {
-    font-size: var(--font-size-32);
+    flex: 0 0 auto;
+    font-size: var(--text-tablet-brand);
   }
-  .nav :is(button, a) {
-    padding: 10px 12px;
+  .header .nav {
+    flex: 0 0 auto;
+    font-size: var(--text-menu-compact);
   }
   .controls {
+    flex: 0 0 auto;
     gap: 6px;
+  }
+  .controls > div:not(.mobileCalendar) {
+    display: flex;
+    align-items: center;
   }
 }
 @media (max-width: 950px) {
@@ -136,33 +287,78 @@
   .main {
     padding: 24px;
   }
+  .footer {
+    padding: 0 24px 24px;
+  }
   .rail {
     display: none;
-  }
-  .header .nav {
-    order: 3;
-    width: 100%;
-    justify-content: center;
   }
   .title {
     font-size: var(--font-size-40);
   }
 }
+@media (600px < width <= 1200px) {
+  .title {
+    font-size: var(--text-tablet-title);
+  }
+}
+/* Scale the header and title/actions from the same 800px composition. */
+@media (600px < width < 800px) {
+  .header,
+  .titleRow {
+    zoom: calc(100vw / 800px);
+  }
+  .header .nav {
+    font-size: var(--text-caption-size);
+  }
+  .logo {
+    font-size: var(--font-size-24);
+  }
+  .title {
+    font-size: var(--font-size-32);
+  }
+}
 @media (max-width: 600px) {
+  .controls > .mobileCalendar:empty {
+    display: none;
+  }
+  .titleActions:has([data-mobile-relocated='true'][data-local-controls='false']) {
+    display: none;
+  }
+  .titleRow:has([data-mobile-relocated='true'][data-local-controls='false']) {
+    margin-bottom: 14px;
+  }
   .header {
-    padding: 20px 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 16px;
     min-height: 84px;
     gap: 8px;
   }
   .logo {
-    font-size: var(--font-size-28);
+    font-size: var(--text-mobile-brand);
     white-space: normal;
     line-height: var(--leading-tight);
     max-width: 100%;
-    flex: 1 1 200px;
+    letter-spacing: -0.7px;
+  }
+  .logo span {
+    white-space: nowrap;
   }
   .controls {
     gap: 4px;
+  }
+  .controls > div {
+    display: flex;
+    align-items: center;
+  }
+  .controls > button,
+  .controls > div > button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
   }
   .avatar {
     width: 40px;
@@ -172,14 +368,31 @@
     display: none;
   }
   .main {
-    padding: 20px 16px 110px;
+    padding: 20px 16px calc(94px + env(safe-area-inset-bottom));
   }
   .title {
-    font-size: var(--font-size-34);
-    letter-spacing: -1.2px;
+    font-size: var(--text-mobile-title);
+    letter-spacing: -0.6px;
+  }
+  .titleActions {
+    flex: 1 1 100%;
+    margin-inline-start: 0;
   }
   .subtitle {
     font-size: var(--text-caption-size);
+  }
+  .footer {
+    display: none;
+  }
+  .music {
+    right: 16px;
+    bottom: 88px;
+  }
+}
+
+@media (max-width: 600px) {
+  .header .nav {
+    display: none;
   }
   .mobileNav {
     display: flex;
@@ -199,28 +412,14 @@
   }
   .mobileNav .nav :is(button, a) {
     font-size: var(--text-caption-size);
-    gap: 5px;
-    padding: 8px 6px;
+    gap: 2px;
+    padding: 5px 6px;
     flex-direction: column;
-    min-height: 54px;
-  }
-  .footer {
-    display: grid;
-    font-size: var(--text-caption-size);
-  }
-  .music {
-    right: 16px;
-    bottom: 88px;
+    min-height: 48px;
   }
 }
 
 @media (max-width: 360px) {
-  .logo {
-    font-size: var(--font-size-26);
-  }
-  .title {
-    font-size: var(--font-size-30);
-  }
   .mobileNav .nav {
     gap: 2px;
   }

@@ -4,7 +4,9 @@ import type { z } from 'zod';
 export class StaffFinanceError extends Error {
   constructor(readonly code: string) {
     super(
-      code === 'FRESH_AUTH_REQUIRED'
+      code === 'PUBLICATION_DISABLED'
+        ? 'ยังไม่เปิดเผยแพร่งวด คุณยังดูข้อมูลและหลักฐานได้'
+        : code === 'FRESH_AUTH_REQUIRED'
         ? 'กรุณายืนยันตัวตนเจ้าหน้าที่อีกครั้ง'
         : code === 'CHANGED'
           ? 'ข้อมูลเปลี่ยนแล้ว กรุณาปิดหน้าตรวจรายการและโหลดข้อมูลใหม่'

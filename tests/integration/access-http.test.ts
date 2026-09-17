@@ -541,6 +541,39 @@ describe('partner application session', () => {
 });
 
 describe('staff access projection and commands', () => {
+  it('searches the whole partner directory with literal case-insensitive text and bounded pages', async () => {
+    const partners = createPartnerAccess(
+      sql,
+      principalResolver(auth, async () => {}),
+    );
+    const actor = await partners.staffSession(staff);
+    const prefix = 'zz-search-' + randomUUID();
+    const ids = Array.from({ length: 51 }, (_, i) => prefix + '-' + String(i).padStart(3, '0'));
+    const rows = ids.map((id) => ({ id, name: 'ชื่อ ' + prefix + '%_ ABC', status: 'active' }));
+    rows.push({ id: prefix + '-other', name: 'ชื่อ ' + prefix + 'QZ ABC', status: 'active' });
+    await sql`insert into portal_access.partners ${sql(rows, 'id', 'name', 'status')}`;
+    const load = (input: object, headers = staff) =>
+      handle(request('staff/access', { expectedRevision: actor.revision, ...input }, headers));
+    const partnerSearch = '  ' + prefix.toUpperCase() + '%_ a  ';
+    const firstResponse = await load({ partnerSearch });
+    expect(firstResponse.status).toBe(200);
+    const first = StaffAccessSnapshot.parse(await firstResponse.json());
+    expect(first.partners.items.map((p) => p.id)).toEqual(ids.slice(0, 50));
+    expect(first.partners.nextCursor).toBe(ids[49]);
+    const second = StaffAccessSnapshot.parse(
+      await (await load({ partnerSearch, partnerCursor: first.partners.nextCursor })).json(),
+    );
+    expect(second.partners.items.map((p) => p.id)).toEqual([ids[50]]);
+    expect(second.partners.nextCursor).toBeNull();
+    const thai = StaffAccessSnapshot.parse(
+      await (await load({ partnerSearch: 'ชื่อ ' + prefix + 'QZ' })).json(),
+    );
+    expect(thai.partners.items.map((p) => p.id)).toEqual([prefix + '-other']);
+    expect((await load({ partnerSearch: 'x'.repeat(101) })).status).toBe(400);
+    expect((await load({ partnerSearch }, new Headers())).status).toBe(401);
+    expect((await load({ partnerSearch, expectedRevision: '9999999' })).status).toBe(409);
+  });
+
   it('reads bounded access metadata without secrets and uses the reviewed recipient for reissue/revoke/reset', async () => {
     const partners = createPartnerAccess(
       sql,

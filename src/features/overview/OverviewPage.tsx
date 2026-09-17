@@ -1,7 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { partnerFilters } from '@/shared/config/partner-features';
+import { PlatformSalesChart } from './PlatformSalesChart';
+import { PageTitleActions } from '@/shared/ui/PageTitleActions';
+import { ActionArrow } from '@/shared/ui/ActionArrow';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import type { OverviewReportInput } from './report-export';
+import forms from '@/shared/ui/forms.module.css';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, ArrowUpRight, Video } from 'lucide-react';
 import { type QueryScope, partnerKey } from '@/shared/query/keys';
 import { changeMeta } from '@/shared/query/invalidate-changes';
 import { FilterBar, type FilterValue } from '@/shared/ui/FilterBar';
@@ -9,10 +14,10 @@ import { DataState } from '@/shared/ui/DataState';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { Dialog } from '@/shared/ui/Dialog';
+import { DialogActions } from '@/shared/ui/DialogActions';
 import { Money } from '@/shared/ui/Money';
-import { TrendChart } from '@/shared/charts/TrendChart';
+import { WeeklyEarningsChart } from './WeeklyEarningsChart';
 import { EarningsSummary, type PartnerPresentation } from './EarningsSummary';
-import { BarChart } from '@/shared/charts/BarChart';
 import { EarningMix } from './EarningMix';
 import { PayoutSummary } from './PayoutSummary';
 import { TopContent } from './TopContent';
@@ -21,7 +26,6 @@ import {
   defaultOverviewFilters,
   loadOverview,
   validateFilters,
-  timestamp,
   type OverviewTransport,
 } from './model';
 import styles from './overview.module.css';
@@ -30,6 +34,19 @@ import { UnavailableOverview } from './UnavailableOverview';
 import { CoverageNotice } from '@/shared/ui/CoverageNotice';
 import { AccessLost } from '@/shared/query/revision-watcher';
 import { LinkButton } from '@/shared/ui/LinkButton';
+function freezeSnapshot<T>(value: T): T {
+  if (value && typeof value === 'object') {
+    for (const child of Object.values(value as Record<string, unknown>)) freezeSnapshot(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+type ReportReview = {
+  input: OverviewReportInput;
+  source: OverviewReportInput['data'];
+  identity: string;
+};
+
 export function OverviewPage({
   scope,
   transport,
@@ -39,6 +56,9 @@ export function OverviewPage({
   contentBasePath,
   transactionsBasePath,
   overviewBasePath = '/overview',
+  controlledFilters,
+  renderPayout,
+  weeklyEarningsOverride,
 }: {
   scope: QueryScope;
   transport: OverviewTransport;
@@ -48,9 +68,21 @@ export function OverviewPage({
   contentBasePath?: string;
   transactionsBasePath?: string;
   overviewBasePath?: string;
+  controlledFilters?: { value: FilterValue; onChange: (value: FilterValue) => void };
+  renderPayout?: (className: string) => ReactNode;
+  /**
+   * Opt-in, development-only sample feed for the Daily Clip Earnings weekly card only. Isolated by a
+   * unique cache identity; it never affects the general Overview query, headline, export or payout.
+   */
+  weeklyEarningsOverride?: { transport: OverviewTransport; cacheKey: string; notice: string };
 }) {
-  const [filters, setFilters] = useState(initialFilters);
-  const [exportOpen, setExportOpen] = useState(false);
+  const [localFilters, setLocalFilters] = useState(initialFilters);
+  const filters = partnerFilters(controlledFilters?.value ?? localFilters);
+  const setFilters = controlledFilters?.onChange ?? setLocalFilters;
+  const [report, setReport] = useState<ReportReview | null>(null);
+  const [exportBusy, setExportBusy] = useState<'csv' | 'pdf' | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const exportJob = useRef<AbortController | null>(null);
   const valid = validateFilters(filters);
   const query = useQuery({
     meta: changeMeta('earnings', 'settlements', 'metrics'),
@@ -59,36 +91,112 @@ export function OverviewPage({
     enabled: valid,
   });
   const data = query.data;
-  if (query.error instanceof AccessLost) return <>
-    <DataState state="error" message="สิทธิ์เข้าถึงข้อมูลเปลี่ยนแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" />
-    <LinkButton href="/login">ไปหน้าเข้าสู่ระบบ</LinkButton>
-  </>;
-  const presentation = data?.profile ? { ...data.profile, greeting: `คุณ ${data.profile.name}` } : partner;
+  const reportIdentity = JSON.stringify([scope, filters.from, filters.toExclusive, filters.brand]);
+  const exportReady =
+    valid &&
+    query.isSuccess &&
+    !query.isFetching &&
+    !query.isError &&
+    data?.dataState !== 'stale' &&
+    data?.dataState !== 'unavailable';
+  const reviewCurrent =
+    !!report && exportReady && report.source === data && report.identity === reportIdentity;
+  const latest = useRef({ identity: reportIdentity, data, ready: exportReady });
+  latest.current = { identity: reportIdentity, data, ready: exportReady };
+  useLayoutEffect(
+    () => () => {
+      exportJob.current?.abort();
+      exportJob.current = null;
+    },
+    [],
+  );
+  useLayoutEffect(() => {
+    if (report && !reviewCurrent) {
+      exportJob.current?.abort();
+      exportJob.current = null;
+      setReport(null);
+      setExportBusy(null);
+      setExportError(null);
+    }
+  }, [report, reviewCurrent]);
+  const closeReport = () => {
+    exportJob.current?.abort();
+    exportJob.current = null;
+    setReport(null);
+    setExportBusy(null);
+    setExportError(null);
+  };
+  const download = async (format: 'csv' | 'pdf') => {
+    if (!report || !reviewCurrent || exportJob.current) return;
+    const current = report;
+    const job = new AbortController();
+    exportJob.current = job;
+    setExportBusy(format);
+    setExportError(null);
+    try {
+      const { downloadOverviewReport } = await import('./report-export');
+      if (
+        job.signal.aborted ||
+        exportJob.current !== job ||
+        !latest.current.ready ||
+        latest.current.identity !== current.identity ||
+        latest.current.data !== current.source
+      )
+        return;
+      await downloadOverviewReport(current.input, format, job.signal);
+      if (!job.signal.aborted && exportJob.current === job) setReport(null);
+    } catch {
+      if (!job.signal.aborted && exportJob.current === job)
+        setExportError('ดาวน์โหลดรายงานไม่สำเร็จ กรุณาลองอีกครั้ง');
+    } finally {
+      if (exportJob.current === job) {
+        exportJob.current = null;
+        setExportBusy(null);
+      }
+    }
+  };
+  if (query.error instanceof AccessLost)
+    return (
+      <>
+        <DataState
+          state="error"
+          message="สิทธิ์เข้าถึงข้อมูลเปลี่ยนแล้ว กรุณาเข้าสู่ระบบอีกครั้ง"
+        />
+        <LinkButton href="/login">ไปหน้าเข้าสู่ระบบ</LinkButton>
+      </>
+    );
+  const presentation = data?.profile
+    ? {
+        ...data.profile,
+        greeting: data.profile.name.startsWith('คุณ')
+          ? data.profile.name
+          : `คุณ ${data.profile.name}`,
+      }
+    : partner;
   return (
     <>
-      <div className={styles.toolbar}>
-        <div className={styles.welcome}>
-          สวัสดี {presentation?.greeting ?? 'คุณพาร์ทเนอร์'} <span>✦</span>
-          <small>นี่คือผลงานของคุณ</small>
-        </div>
+      <PageTitleActions fallbackClassName={styles.toolbar}>
         <FilterBar
+          compact
           value={filters}
           brands={data?.brands ?? brands}
           onChange={setFilters}
-          onReset={() => setFilters(initialFilters)}
-          onExport={() => setExportOpen(true)}
-          actions={
-            <Button
-              icon
-              aria-label="อัปเดตข้อมูลภาพรวม"
-              disabled={!valid || query.isFetching}
-              onClick={() => void query.refetch()}
-            >
-              <RefreshCw size={18} aria-hidden />
-            </Button>
-          }
+          exportDisabled={!exportReady}
+          onExport={() => {
+            if (!exportReady || !data) return;
+            setReport({
+              identity: reportIdentity,
+              source: data,
+              input: freezeSnapshot({
+                data: structuredClone(data),
+                filters: { ...filters },
+                partnerName: presentation?.name ?? 'พาร์ทเนอร์',
+              }),
+            });
+            setExportError(null);
+          }}
         />
-      </div>
+      </PageTitleActions>
       {!valid ? (
         <DataState
           state="error"
@@ -103,14 +211,11 @@ export function OverviewPage({
       ) : (
         data && (
           <>
-            <div className={styles.freshness}>
-              <span>ข้อมูลรายได้ถึง {timestamp(data.dataThrough)}</span>
-              <span>
-                {query.isFetching
-                  ? 'กำลังอัปเดตข้อมูล…'
-                  : `ประมวลผล ${timestamp(data.generatedAt)}`}
-              </span>
-            </div>
+            {query.isFetching && (
+              <div className={styles.freshness} role="status">
+                กำลังอัปเดตข้อมูล…
+              </div>
+            )}
             {query.isError && (
               <DataState
                 state="stale"
@@ -137,57 +242,29 @@ export function OverviewPage({
                   />
                   <Card
                     className={styles.sales}
-                    title="Sales in motion"
-                    description="ยอดขายที่เข้าเงื่อนไขคอมมิชชันในช่วงที่เลือก"
-                    action={<ArrowUpRight size={18} aria-hidden />}
+                    title="Clip Driven Sales"
+                    description="ยอดขายจากคลิปของคุณ"
+                    action={<ActionArrow />}
                   >
                     <Money value={data.earnings.eligibleSales} className={styles.largeMoney} />
-                    {data.earnings.salesByBrand ? (
-                      <BarChart items={data.earnings.salesByBrand} />
-                    ) : (
-                      <DataState state="unavailable" message="ยังไม่มีข้อมูลยอดขายแยกตามแบรนด์" />
-                    )}
-                    <div className={styles.cardBottom}>
-                      <span>แยกตามแบรนด์</span>
-                      <span>Eligible sales</span>
-                    </div>
-                    <p className="small muted">ใช้เป็นฐานคำนวณรายได้ ไม่ใช่ยอดเงินที่จะได้รับ</p>
+                    <PlatformSalesChart earnings={data.earnings} />
                   </Card>
-                  <PayoutSummary
-                    data={data}
-                    basePath={transactionsBasePath}
-                    returnTo={earningsHref(overviewBasePath, data, filters)}
-                  />
-                  <Card
-                    className={styles.trend}
-                    title="Every clip counts"
-                    description="คอมมิชชันยืนยันตามวันที่เกิดรายได้ รวมรายการปรับปรุง"
-                  >
-                    <div className={styles.trendSummary}>
-                      <Money value={data.earnings.confirmed} />
-                      <span>
-                        <Video size={15} aria-hidden />
-                        {data.earnings.contentCount ?? '—'} คลิปที่สร้างรายได้
-                      </span>
-                    </div>
-                    {data.earnings.confirmed === null ? (
-                      <DataState state="unavailable" message="ยังไม่มีข้อมูลคอมมิชชันรายวัน" />
-                    ) : (
-                      <TrendChart points={data.earnings.trend} coverage={data.earnings.coverage} />
-                    )}
-                    {data.earnings.trend.length > 0 && (
-                      <details>
-                        <summary>ดูตัวเลขรายวัน</summary>
-                        <div className={styles.daily}>
-                          {data.earnings.trend.map((point) => (
-                            <div key={point.date}>
-                              <span>{point.date}</span>
-                              <Money value={point.amount} />
-                            </div>
-                          ))}
-                        </div>
-                      </details>
-                    )}
+                  {renderPayout ? (
+                    renderPayout(styles.payout)
+                  ) : (
+                    <PayoutSummary
+                      data={data}
+                      basePath={transactionsBasePath}
+                      returnTo={earningsHref(overviewBasePath, data, filters)}
+                    />
+                  )}
+                  <Card className={styles.trend}>
+                    <WeeklyEarningsChart
+                      scope={scope}
+                      transport={transport}
+                      brand={filters.brand}
+                      override={weeklyEarningsOverride}
+                    />
                   </Card>
                 </div>
                 <div className={styles.lower}>
@@ -199,12 +276,20 @@ export function OverviewPage({
           </>
         )
       )}
-      <Dialog open={exportOpen} onClose={() => setExportOpen(false)} title="Export report">
-        <p>
-          การดาวน์โหลดรายงานจะเปิดพร้อมหน้ารายการจ่ายเงิน
-          ขณะนี้ยังไม่มีไฟล์รายงานที่สร้างจากข้อมูลจริง
-        </p>
-        <Button onClick={() => setExportOpen(false)}>กลับไปดูภาพรวม</Button>
+      <Dialog density="compact" open={reviewCurrent} onClose={closeReport} title="Export report">
+        <div className={forms.form} aria-busy={!!exportBusy}>
+          <p>เลือกรูปแบบรายงาน</p>
+          <DialogActions>
+            <Button disabled={!reviewCurrent || !!exportBusy} onClick={() => void download('csv')}>
+              ดาวน์โหลด CSV
+            </Button>
+            <Button disabled={!reviewCurrent || !!exportBusy} onClick={() => void download('pdf')}>
+              ดาวน์โหลด PDF
+            </Button>
+          </DialogActions>
+          {exportBusy && <p role="status">กำลังเตรียม {exportBusy.toUpperCase()}…</p>}
+          {exportError && <p role="alert">{exportError}</p>}
+        </div>
       </Dialog>
     </>
   );

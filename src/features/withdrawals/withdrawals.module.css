@@ -1,0 +1,593 @@
+.beneficiary {
+  min-width: 0;
+  max-width: 100%;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--control);
+  color: var(--text);
+  font-size: var(--text-body-size);
+  overflow-wrap: anywhere;
+}
+
+.beneficiaryHeading {
+  margin: 0 0 12px;
+}
+
+.beneficiaryDetails {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.beneficiaryDetails > div {
+  min-width: 0;
+}
+
+.beneficiaryDetails dt {
+  color: var(--muted);
+  font-size: var(--text-caption-size);
+}
+
+.beneficiaryDetails dd {
+  margin: var(--text-gap-tight) 0 0;
+}
+
+.beneficiaryAccountRevealable {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  width: min(100%, calc(var(--account-text-width) + 52px));
+  align-items: center;
+  gap: 8px;
+}
+
+.beneficiaryAccount > span {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.beneficiaryAccount > .beneficiaryReveal {
+  flex-shrink: 0;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+
+.beneficiaryReasons {
+  margin: 0;
+  padding-inline-start: 20px;
+  color: var(--muted);
+}
+
+.beneficiaryReasons li + li {
+  margin-top: var(--text-gap-related);
+}
+
+.summary {
+  container: withdrawal-summary / inline-size;
+  width: 100%;
+  min-width: 0;
+  background: var(--payout);
+}
+
+.summaryAmount {
+  display: block;
+  margin: 20px 0;
+  font-size: var(--text-withdrawal-balance);
+  letter-spacing: -1px;
+}
+
+.summaryRows {
+  display: grid;
+  gap: 14px;
+  margin: 20px 0;
+  padding-block: 16px;
+  border-block: 1px solid var(--line);
+  font-size: var(--text-body-size);
+}
+
+.summaryRows > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+  min-width: 0;
+}
+
+.summaryRows dt {
+  flex: 1 1 160px;
+  min-width: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.summaryRows dd {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+}
+
+.summaryRows dt > span,
+.summaryRows dd > span + span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-caption-size);
+}
+
+.summaryNotice {
+  display: grid;
+  gap: 8px;
+  margin-block: 16px;
+}
+
+.summaryReasons {
+  margin: 0;
+  padding-inline-start: 20px;
+  font-size: var(--text-caption-size);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.summaryReasons li + li {
+  margin-top: 6px;
+}
+
+.summaryAction {
+  width: 100%;
+  min-width: 0;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+.summaryExplanation {
+  margin-top: 16px;
+}
+
+.summaryAsOf {
+  margin-top: 8px;
+}
+
+.summaryFeedback {
+  margin-block: 16px;
+}
+
+.summaryFeedback > div {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.summaryFeedback p {
+  min-width: 0;
+}
+
+.sheetContent,
+.sheetForm {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  font-size: var(--text-body-size);
+  overflow-wrap: anywhere;
+}
+
+.sheetStage {
+  margin: 0;
+  font-size: var(--text-section-title-size);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-heading);
+}
+
+.sheetModes {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  border: 0;
+}
+
+.sheetModes legend {
+  padding: 0;
+  margin-bottom: 10px;
+  font-weight: var(--weight-medium);
+}
+
+.sheetChoices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 10px;
+}
+
+.sheetChoices label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.sheetChoices label:has(input:checked) {
+  background: var(--badge);
+  border-color: var(--accent);
+}
+
+.sheetChoices input {
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.sheetModes:disabled label {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.sheetAmounts,
+.sheetReference {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  font-size: var(--text-body-size);
+}
+
+.sheetAmounts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  min-width: 0;
+}
+
+.sheetAmounts dt {
+  flex: 1 1 200px;
+  min-width: 0;
+  color: var(--muted);
+}
+
+.sheetAmounts dd,
+.sheetReference dd {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.sheetReference dt {
+  color: var(--muted);
+}
+
+.sheetNet {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-weight: var(--weight-medium);
+}
+
+.sheetNet dd {
+  font-size: var(--font-size-24);
+}
+
+.sheetNotice {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--control);
+  font-size: var(--text-body-size);
+}
+
+.sheetNotice ul {
+  margin: 0;
+  padding-inline-start: 18px;
+}
+
+.sheetNotice li + li {
+  margin-top: 8px;
+}
+
+.sheetActions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 12px;
+}
+
+.sheetContent button {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sheetActiveList {
+  display: grid;
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sheetActiveList > li {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.requestStatus {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--badge);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.history {
+  min-width: 0;
+  font-size: var(--text-body-size);
+}
+
+.historyFilters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px 16px;
+  margin-block: 20px 12px;
+}
+
+.historyFilters > label {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.historyStatusFilter {
+  display: grid;
+  gap: 8px;
+}
+
+.historyStatusFilter select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--control);
+  color: var(--text);
+  font: inherit;
+}
+
+.historyFeedback > div {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  min-width: 0;
+  margin-top: 16px;
+}
+
+.historyFeedback p {
+  min-width: 0;
+}
+
+.historyList {
+  display: grid;
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  min-width: 0;
+}
+
+.historyList > li {
+  min-width: 0;
+}
+
+.historyLink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--icon-action-size);
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--card-solid);
+  color: var(--text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.historyLink:hover {
+  background: var(--hover);
+}
+
+.historyLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.historyBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  min-width: 0;
+}
+
+.historyIdentity {
+  flex: 1 1 230px;
+  min-width: 0;
+}
+
+.historyAmounts {
+  display: grid;
+  flex: 1 1 250px;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+}
+
+.historyAmounts > div {
+  min-width: 0;
+}
+
+.historyAmounts dt {
+  color: var(--muted);
+  font-size: var(--text-caption-size);
+}
+
+.historyAmounts dd {
+  margin: var(--text-gap-tight) 0 0;
+  min-width: 0;
+  font-size: var(--font-size-24);
+  overflow-wrap: anywhere;
+}
+
+.detailPage,
+.detailFacts {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  font-size: var(--text-body-size);
+  overflow-wrap: anywhere;
+}
+
+.detailFacts {
+  container: withdrawal-detail-facts / inline-size;
+  margin-top: 20px;
+}
+
+.detailActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+.detailPage button,
+.detailPage a {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.detailFeedback > div {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.detailFeedback p {
+  min-width: 0;
+}
+
+.detailColumns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  align-items: start;
+  gap: 20px;
+  min-width: 0;
+}
+
+.detailTimeline {
+  display: grid;
+  gap: 18px;
+  padding-inline-start: 24px;
+  margin-block: 20px 0;
+}
+
+.detailTimeline > li {
+  min-width: 0;
+  padding-inline-start: 4px;
+}
+
+.detailTimeline > li > * + * {
+  margin-top: 8px;
+}
+
+.detailPendingList,
+.detailPeriodList {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  margin: 20px 0 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.detailPendingList > li,
+.detailPeriodList > li {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.detailReasons {
+  padding-inline-start: 20px;
+  margin-block: 12px 0;
+}
+
+.detailReasons > li + li {
+  margin-top: 8px;
+}
+
+.detailSection {
+  margin-top: 16px;
+}
+
+.summaryRows dt.summaryPendingLabel {
+  flex-basis: max-content;
+  white-space: nowrap;
+}
+
+.detailCard {
+  container: withdrawal-detail-card / inline-size;
+}
+
+@media (max-width: 600px) {
+  .detailBackOutside,
+  .detailFeedback:empty {
+    display: none;
+  }
+
+  .detailCard > div:first-child {
+    align-items: center;
+    gap: 8px;
+  }
+
+  .detailCard > div:first-child h2 {
+    font-size: var(--text-withdrawal-detail-title);
+  }
+}
+
+/* Natural action widths total 330.4px including their 12px gap. */
+@container withdrawal-detail-facts (max-width: 331px) {
+  .detailRequestActions {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .detailRequestActions > button {
+    padding-inline: 8px;
+    white-space: normal;
+  }
+
+  .detailRequestActions > button:only-child {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

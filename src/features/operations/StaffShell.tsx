@@ -4,14 +4,23 @@ import { LinkButton } from '@/shared/ui/LinkButton';
 import { Text } from '@/shared/ui/Text';
 import type { OpsView } from './model';
 import styles from './operations.module.css';
+type StaffView = OpsView | 'ads' | 'requests';
+/** Real staff routes differ from the generic fixture workspace routes. */
+export function nativeStaffRoutes(marketingEnabled: boolean) {
+  return {
+    partners: '/ops/access',
+    ...(marketingEnabled ? { ads: '/ops/ads' } : {}),
+    periods: '/ops/periods',
+  };
+}
 export function StaffShell({
   view,
   basePath = '/ops',
   children,
   routes,
 }: {
-  view: OpsView;
-  routes?: Partial<Record<OpsView, string>>;
+  view: StaffView;
+  routes?: Partial<Record<StaffView, string>>;
   basePath?: string;
   children: ReactNode;
 }) {
@@ -30,11 +39,13 @@ export function StaffShell({
         {(
           [
             ['partners', 'พาร์ทเนอร์'],
+            ['ads', 'แอดและการเชื่อมต่อ'],
             ['imports', 'ข้อมูลนำเข้า'],
             ['periods', 'งวดและการชำระ'],
+            ['requests', 'คำขอถอนเงิน'],
           ] as const
         )
-          .filter(([key]) => !routes || !!routes[key])
+          .filter(([key]) => (key === 'requests' ? !!routes?.requests : !routes || !!routes[key]))
           .map(([key, label]) => (
             <LinkButton
               key={key}
@@ -51,8 +62,10 @@ export function StaffShell({
           {
             {
               partners: 'พาร์ทเนอร์และข้อตกลง',
+              ads: 'แอดและการเชื่อมต่อ',
               imports: 'ตรวจสอบข้อมูลนำเข้า',
               periods: 'งวดและการชำระ',
+              requests: 'คำขอถอนเงินของพาร์ตเนอร์',
             }[view]
           }
         </Text>

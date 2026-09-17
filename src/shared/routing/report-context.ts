@@ -1,3 +1,4 @@
+import { partnerFilters } from '@/shared/config/partner-features';
 import { QueryFilters, Id } from '@/contracts/common';
 import type { FilterValue } from '@/shared/ui/FilterBar';
 export type ReportContext = FilterValue & {
@@ -31,7 +32,7 @@ export function readReportContext(params: URLSearchParams): ReportContext {
     /* An invalid cursor trail never becomes navigation code. */
   }
   const g = params.get('generation');
-  return {
+  return partnerFilters({
     from: params.get('from') ?? initialReportContext.from,
     toExclusive: params.get('toExclusive') ?? initialReportContext.toExclusive,
     brand: params.get('brand') || null,
@@ -40,9 +41,10 @@ export function readReportContext(params: URLSearchParams): ReportContext {
     history,
     generation: g || null,
     origin: params.get('origin') === 'overview' ? 'overview' : 'content',
-  };
+  });
 }
 export function reportSearch(c: ReportContext) {
+  c = partnerFilters(c);
   const p = new URLSearchParams({ from: c.from, toExclusive: c.toExclusive, origin: c.origin });
   if (c.brand) p.set('brand', c.brand);
   if (c.q) p.set('q', c.q);
@@ -51,10 +53,56 @@ export function reportSearch(c: ReportContext) {
   if (c.generation) p.set('generation', c.generation);
   return p.toString();
 }
+// Report query fields owned by reportSearch. Stripped from a base path's existing query before the
+// fresh report search is merged, so a stale filter never survives and a dev/base param never leaks
+// into the product ReportContext (nor vice-versa).
+const REPORT_FIELDS = [
+  'from',
+  'toExclusive',
+  'origin',
+  'brand',
+  'q',
+  'cursor',
+  'history',
+  'generation',
+] as const;
+/**
+ * Merge the report search into `path`, preserving any NON-report base query params (e.g. a dev
+ * `scenario`/`identity` prefix carries its own query) and a trailing `#hash`, while dropping stale
+ * report fields. `path` may be a bare path, a path with a query, and/or a path with a hash.
+ */
 export function reportHref(path: string, c: ReportContext) {
-  return `${path}?${reportSearch(c)}`;
+  const hashAt = path.indexOf('#');
+  const hash = hashAt >= 0 ? path.slice(hashAt) : '';
+  const beforeHash = hashAt >= 0 ? path.slice(0, hashAt) : path;
+  const queryAt = beforeHash.indexOf('?');
+  const base = queryAt >= 0 ? beforeHash.slice(0, queryAt) : beforeHash;
+  const merged = new URLSearchParams(queryAt >= 0 ? beforeHash.slice(queryAt + 1) : '');
+  for (const field of REPORT_FIELDS) merged.delete(field);
+  for (const [key, value] of new URLSearchParams(reportSearch(c))) merged.append(key, value);
+  const query = merged.toString();
+  return `${base}${query ? '?' + query : ''}${hash}`;
+}
+/** Top-level navigation carries filters, never a detail generation or pagination cursor. */
+export function reportNavigationHrefs(
+  c: ReportContext,
+  paths: { overview: string; content: string; transactions: string },
+) {
+  if (!validContentFilters(c)) return paths;
+  const current = { ...c, generation: null, cursor: null, history: [] };
+  const overview = reportHref(paths.overview, { ...current, q: '', origin: 'overview' });
+  const content = reportHref(paths.content, { ...current, origin: 'content' });
+  return {
+    overview,
+    content,
+    transactions:
+      reportHref(paths.transactions, current) +
+      '&' +
+      new URLSearchParams({ returnTo: c.origin === 'overview' ? overview : content }),
+  };
 }
 export function validContentFilters(c: ReportContext) {
+  c = partnerFilters(c);
   return (
     (c.generation === null || Id.safeParse(c.generation).success) &&
     QueryFilters.safeParse({
@@ -70,5 +118,5 @@ export function changeReportFilters(
   c: ReportContext,
   patch: Partial<FilterValue & { q: string }>,
 ): ReportContext {
-  return { ...c, ...patch, cursor: null, history: [], generation: null };
+  return partnerFilters({ ...c, ...patch, cursor: null, history: [], generation: null });
 }

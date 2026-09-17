@@ -2,19 +2,16 @@
 import type { ReactNode } from 'react';
 import { AppShell } from './AppShell';
 import type { Menu } from './Navigation';
+import type { PageHeadingVisibility } from './PageHeading';
 export const partnerHrefs: Record<Menu, string> = {
   overview: '/overview',
   content: '/content',
   transactions: '/transactions',
 };
-const headings: Record<Menu, [string, string, string]> = {
-  overview: [
-    'Your content',
-    'Your impact',
-    'ทุกคอนเทนต์มีคุณค่า ติดตามผลงานและรายได้ของคุณได้ที่เดียว',
-  ],
-  content: ['Create Share', 'Get rewarded', 'ดูผลงานและรายละเอียดของแต่ละคลิป'],
-  transactions: ['Your earnings', 'Made clear', 'ตรวจสอบรอบจ่ายและรายละเอียดคอมมิชชันของคุณ'],
+const headings: Record<Menu, [string, string, string?]> = {
+  overview: ['Your content', 'Your impact'],
+  content: ['Create Share', 'Get rewarded'],
+  transactions: ['Your earnings', 'Made clear'],
 };
 export function PartnerShell({
   active,
@@ -24,6 +21,8 @@ export function PartnerShell({
   footerNote,
   avatar,
   accountHref,
+  accountMenu,
+  headingVisibility,
 }: {
   active: Menu | null;
   children: ReactNode;
@@ -32,6 +31,8 @@ export function PartnerShell({
   footerNote?: ReactNode;
   avatar?: string;
   accountHref?: string;
+  accountMenu?: ReactNode;
+  headingVisibility?: Partial<PageHeadingVisibility>;
 }) {
   const [title, accent, subtitle] =
     active === null
@@ -44,10 +45,12 @@ export function PartnerShell({
       title={title}
       accent={accent}
       subtitle={subtitle}
+      headingVisibility={headingVisibility}
       notifications={notifications}
       footerNote={footerNote}
       avatar={avatar}
       accountHref={accountHref}
+      accountMenu={accountMenu}
     >
       {children}
     </AppShell>

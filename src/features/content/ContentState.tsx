@@ -57,6 +57,7 @@ export function DataEnvelope({
   data,
   children,
   showFreshness = true,
+  periodLabel = 'ช่วงรายได้',
 }: {
   data: {
     dataState: 'ready' | 'partial' | 'stale' | 'unavailable';
@@ -68,13 +69,14 @@ export function DataEnvelope({
   };
   children: ReactNode;
   showFreshness?: boolean;
+  periodLabel?: string;
 }) {
   return (
     <>
       {showFreshness && (
         <div className={styles.freshness}>
           <Text as="span" variant="caption" tone="muted">
-            ช่วงรายได้ {dateLabel(data.period.from)} – ก่อน {dateLabel(data.period.toExclusive)}
+            {periodLabel} {dateLabel(data.period.from)} – ก่อน {dateLabel(data.period.toExclusive)}
           </Text>
           <Text as="span" variant="caption" tone="muted">
             ข้อมูลถึง {timestamp(data.dataThrough)}

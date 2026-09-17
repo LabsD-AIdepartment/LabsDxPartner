@@ -1,0 +1,55 @@
+.experience,
+.confirmation,
+.operation {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  font-size: var(--text-body-size);
+  overflow-wrap: anywhere;
+}
+
+.operation {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+.confirmation button {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.balance {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-block: 16px;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+.balanceAmount {
+  font-size: var(--font-size-32);
+}
+
+.balanceRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.balanceRow > * {
+  min-width: 0;
+  max-width: 100%;
+}

@@ -1,11 +1,13 @@
 'use client';
+import { ActionArrow } from '@/shared/ui/ActionArrow';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { partnerKey } from '@/shared/query/keys';
 import { Card } from '@/shared/ui/Card';
 import { Text } from '@/shared/ui/Text';
+import { TextGroup } from '@/shared/ui/TextGroup';
 import { Money } from '@/shared/ui/Money';
-import { LinkButton } from '@/shared/ui/LinkButton';
+import { BackLink } from '@/shared/ui/BackLink';
 import { Button } from '@/shared/ui/Button';
 import { DataState } from '@/shared/ui/DataState';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
@@ -56,7 +58,7 @@ export function StatementList(props: TransactionsProps) {
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>
-        <LinkButton href={props.returnTo}>← กลับหน้าก่อนหน้า</LinkButton>
+        <BackLink href={props.returnTo} label="กลับหน้าก่อนหน้า" />
         <label className={styles.filter}>
           สถานะรอบจ่าย
           <select
@@ -102,7 +104,7 @@ export function StatementList(props: TransactionsProps) {
                       key={s.id}
                       href={transactionHref(props.basePath, s.id, props.returnTo)}
                     >
-                      <div>
+                      <TextGroup>
                         <Text as="h3" variant="cardTitle">
                           {dateLabel(s.period.from)} – ก่อน {dateLabel(s.period.toExclusive)}
                         </Text>
@@ -110,8 +112,8 @@ export function StatementList(props: TransactionsProps) {
                           เผยแพร่ {dateLabel(s.publishedAt)} · {s.id}
                         </Text>
                         <StatusBadge status={s.status} />
-                      </div>
-                      <div className={styles.amount}>
+                      </TextGroup>
+                      <TextGroup className={styles.amount}>
                         <Text variant="caption" tone="muted">
                           ยอดคงเหลือ
                         </Text>
@@ -121,8 +123,8 @@ export function StatementList(props: TransactionsProps) {
                             ? 'กำหนดจ่าย ' + dateLabel(s.scheduledAt)
                             : 'ยังไม่มีกำหนดจ่าย'}
                         </Text>
-                      </div>
-                      <span aria-hidden>↗</span>
+                      </TextGroup>
+                      <ActionArrow />
                     </a>
                   ))}
                 </div>

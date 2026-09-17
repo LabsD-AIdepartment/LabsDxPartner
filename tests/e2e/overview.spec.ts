@@ -12,7 +12,7 @@ test('content filters do not rewrite payout; later settlement keeps selected fil
   await expect(page.getByLabel('แบรนด์')).toHaveValue('Axtion');
   await expect(page.getByText('฿15,920', { exact: true }).first()).toBeVisible();
   const destination = new URL(
-    (await page.getByRole('link', { name: 'ดูรอบจ่ายนี้ ↗' }).getAttribute('href'))!,
+    (await page.getByRole('link', { name: 'ดูรอบจ่ายนี้' }).getAttribute('href'))!,
     page.url(),
   );
   expect(destination.searchParams.has('generation')).toBe(false);

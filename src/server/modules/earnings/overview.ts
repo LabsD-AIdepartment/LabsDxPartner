@@ -7,13 +7,19 @@ import { earningsGeneration, instantSqlFormat, publishedPeriodsSql } from './pub
 const dateSql = instantSqlFormat;
 // One data statement: publication, metadata, totals and revisions share an MVCC snapshot.
 // No current_generation read: unissued import candidates are private to operations.
-const query = `with ${publishedPeriodsSql}, rows as materialized (
-  select e.earned_at,e.content_id,e.disposition,e.amount_minor,e.eligible_base_minor,
+// Collapse repeated summary scans to daily groups, retaining source line counts and
+// already-rounded amounts. Do not sum bases then recalculate commission or collapse rates.
+const query = `with ${publishedPeriodsSql}, daily as (
+  select (e.earned_at at time zone 'Asia/Bangkok')::date as day,
+    e.content_id,e.disposition,sum(e.amount_minor) as amount_minor,sum(e.eligible_base_minor) as eligible_base_minor,
     e.payload->'earning'->>'kind' as kind,e.payload->'earning'->>'channel' as channel,
-    (e.payload->'earning'->>'ratePpm')::integer as rate,c.id as metadata_id,c.brand
+    (e.payload->'earning'->>'ratePpm')::integer as rate,count(*)::integer as source_rows
   from pubs p join portal_imports.earning_rows e on e.generation_id=p.generation_id
-  left join portal_content.clips c on c.partner_id=$1 and c.id=e.content_id
   where e.earned_at>=$2::timestamptz and e.earned_at<$3::timestamptz
+  group by 1,2,3,6,7,8
+), rows as materialized (
+  select d.*,c.id as metadata_id,c.brand from daily d
+  left join portal_content.clips c on c.partner_id=$1 and c.id=d.content_id
 ), selected as materialized (select * from rows where $4::text is null or brand=$4),
  totals as (select
   coalesce(sum(amount_minor) filter(where disposition='included'),0)::text as confirmed,
@@ -25,9 +31,10 @@ const query = `with ${publishedPeriodsSql}, rows as materialized (
   coalesce(sum(amount_minor) filter(where disposition='included' and (kind<>'commission' or channel not in ('organic','brand-ads'))),0)::text as other,
   case when count(distinct rate) filter(where kind='commission' and channel='organic')=1 then min(rate) filter(where kind='commission' and channel='organic') end as organic_rate,
   case when count(distinct rate) filter(where kind='commission' and channel='brand-ads')=1 then min(rate) filter(where kind='commission' and channel='brand-ads') end as ads_rate,
-  count(*) filter(where disposition='included' and kind='commission' and brand is null)::integer as missing_sales_brand
+  coalesce(sum(source_rows) filter(where disposition='included' and kind='commission' and brand is null),0)::integer as missing_sales_brand
   from selected
-), days as (select to_char(earned_at at time zone 'Asia/Bangkok','YYYY-MM-DD') as date,sum(amount_minor)::text as minor
+), days as (select to_char(day,'YYYY-MM-DD') as date,sum(amount_minor)::text as minor,
+  coalesce(sum(eligible_base_minor),0)::text as sales_minor
   from selected where disposition='included' group by 1),
  brand_sales as (select brand as label,sum(eligible_base_minor)::text as minor from selected
   where disposition='included' and kind='commission' and brand is not null group by brand),
@@ -51,9 +58,9 @@ select to_char(statement_timestamp() at time zone 'UTC',${dateSql}) as as_of,
   coalesce((select jsonb_agg(jsonb_build_object('from',to_char(period_from at time zone 'UTC',${dateSql}),
     'toExclusive',to_char(period_to at time zone 'UTC',${dateSql}),'timezone','Asia/Bangkok')) from pubs),'[]') as periods,
   (select to_jsonb(totals) from totals) as totals,
-  (select count(*)::integer from rows where disposition='excluded') as excluded,
-  (select count(*)::integer from rows where disposition='included' and content_id is not null and metadata_id is null) as missing_metadata,
-  (select count(*)::integer from rows where disposition='included' and brand is null) as unknown_brand,
+  (select coalesce(sum(source_rows),0)::integer from rows where disposition='excluded') as excluded,
+  (select coalesce(sum(source_rows),0)::integer from rows where disposition='included' and content_id is not null and metadata_id is null) as missing_metadata,
+  (select coalesce(sum(source_rows),0)::integer from rows where disposition='included' and brand is null) as unknown_brand,
   coalesce((select jsonb_agg(to_jsonb(days) order by date) from days),'[]') as days,
   coalesce((select jsonb_agg(to_jsonb(brand_sales) order by minor::numeric desc,label) from brand_sales),'[]') as sales_by_brand,
   coalesce((select jsonb_agg(brand order by brand) from brands),'[]') as brands,
@@ -158,9 +165,15 @@ export function createOverviewReader(access: ReturnType<typeof createPartnerAcce
               : null,
             contentCount: known ? t.content_count : null,
             trend: known
-              ? row.days.map((r: MinorRow & { date: string }) => ({
+              ? row.days.map((r: MinorRow & { date: string; sales_minor: string }) => ({
                   date: r.date,
                   amount: money(r.minor),
+                  // Daily eligible-sales base from the same MVCC snapshot, signed consistently with
+                  // t.sales. The source payload cannot authoritatively map a sale to a platform, so
+                  // the known daily sale is reported as a single unattributed subtotal rather than a
+                  // fabricated Facebook (or any other) split.
+                  sales: money(r.sales_minor),
+                  salesByPlatform: [{ platform: 'unattributed' as const, sales: money(r.sales_minor) }],
                 }))
               : [],
             topContent: known

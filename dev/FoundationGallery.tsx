@@ -1,6 +1,8 @@
 'use client';
+import { GlassSurface } from '@/shared/ui/GlassSurface';
+import { ActionArrow } from '@/shared/ui/ActionArrow';
 import { useMemo, useRef, useState } from 'react';
-import { ArrowUpRight, Sparkles, Wallet, Video } from 'lucide-react';
+import { Sparkles, Wallet, Video } from 'lucide-react';
 import { AppShell } from '@/features/shell/AppShell';
 import { NotificationButton } from '@/features/shell/NotificationButton';
 import { MusicToggle } from '@/features/shell/MusicToggle';
@@ -23,6 +25,7 @@ import { scenario, scenarioNames, type ScenarioName } from './scenarios';
 import { money } from './scenarios/ready';
 import type { ChangesValue } from '@/contracts/changes';
 import { Text } from '@/shared/ui/Text';
+import { TextGroup } from '@/shared/ui/TextGroup';
 import styles from './gallery.module.css';
 const scope = { userId: 'user-1', partnerId: 'partner-1', permissionRevision: '1' };
 const defaultFilter = { from: '2026-07-01', toExclusive: '2026-09-01', brand: null };
@@ -99,13 +102,13 @@ function Gallery() {
             <Card className={styles.profile}>
               <div className={styles.portrait}>
                 <img src="/media/celebrity-thumbnail.png" alt="มดดำ คชาภา" />
-                <div className={styles.identity}>
+                <GlassSurface className={styles.identity}>
                   <img src="/media/celebrity-avatar.png" alt="" />
                   <div>
                     <strong>มดดำ คชาภา</strong>
                     <span>Celebrity partner</span>
                   </div>
-                </div>
+                </GlassSurface>
               </div>
               <div className={styles.profileBody}>
                 <h2>คอมมิชชันของฉัน</h2>
@@ -127,7 +130,7 @@ function Gallery() {
                 </div>
                 <div className={styles.divider} />
                 <Button onClick={() => setDialog('วิธีคิดคอมมิชชัน')}>
-                  ดูวิธีคิดคอมมิชชัน <ArrowUpRight size={16} />
+                  ดูวิธีคิดคอมมิชชัน <ActionArrow />
                 </Button>
               </div>
             </Card>
@@ -169,7 +172,7 @@ function Gallery() {
                 <span>โอนเงิน</span>
               </div>
               <Button variant="primary" onClick={() => setSheet(true)}>
-                ดูรายการจ่ายเงิน <ArrowUpRight size={18} />
+                ดูรายการจ่ายเงิน <ActionArrow />
               </Button>
             </Card>
             <Card
@@ -193,7 +196,7 @@ function Gallery() {
               description="คลิปที่สร้างคอมมิชชันสูงสุด"
               action={
                 <Button onClick={() => setActive('content')}>
-                  ดูทั้งหมด <ArrowUpRight size={16} />
+                  ดูทั้งหมด <ActionArrow />
                 </Button>
               }
             >
@@ -207,7 +210,7 @@ function Gallery() {
                   <strong>
                     <Money value={x.earned} />
                   </strong>
-                  <ArrowUpRight size={16} />
+                  <ActionArrow />
                 </button>
               ))}
             </Card>
@@ -241,7 +244,7 @@ function Gallery() {
                   <Money value={x.earned} />
                 </div>
                 <Button onClick={() => setDialog(x.title)}>
-                  ดูรายละเอียด <ArrowUpRight size={16} />
+                  ดูรายละเอียด <ActionArrow />
                 </Button>
               </Card>
             ))}
@@ -257,21 +260,38 @@ function Gallery() {
           <Money value={s.overview.obligation.confirmedUnpaid} className={styles.figure} />
           <p className="muted">ยอดคงเหลือ ณ เวลาสรุป</p>
           <Button variant="primary" onClick={() => setSheet(true)}>
-            ดูรายละเอียดรอบจ่าย <ArrowUpRight size={18} />
+            ดูรายละเอียดรอบจ่าย <ActionArrow />
           </Button>
         </Card>
       )}
       <Card title="Typography" description="ชุดข้อความกลางที่ทุกหน้าใช้ร่วมกัน">
-        <Text variant="sectionTitle" as="h3">
-          หัวข้อส่วน · Section title
-        </Text>
-        <Text>เนื้อหาหลัก 16px · อ่านรายละเอียดรายได้และคอมมิชชันได้ชัดเจน</Text>
-        <Text variant="label" as="span">
-          ป้ายกำกับ 16px
-        </Text>
-        <Text variant="caption" tone="muted">
-          ข้อความประกอบขั้นต่ำ 16px · ใช้ขนาดเดียวกันในทุกหน้าจอ
-        </Text>
+        <TextGroup>
+          <TextGroup spacing="tight">
+            <Text variant="sectionTitle" as="h3">
+              หัวข้อส่วน · Section title
+            </Text>
+            <Text variant="caption" tone="muted">
+              ข้อความประกอบ 16px · Compact leading 1.35
+            </Text>
+          </TextGroup>
+          <Text>เนื้อหาหลัก 16px · Body leading 1.45 สำหรับข้อความทั่วไป</Text>
+          <Text leading="reading">
+            ย่อหน้าอธิบาย · Reading leading 1.6 สำหรับเนื้อหาต่อเนื่องที่ต้องอ่านหลายบรรทัด
+            โดยระยะระหว่างส่วนยังเป็นหน้าที่ของหน้าและการ์ด
+          </Text>
+          <TextGroup
+            layout="inline"
+            spacing="tight"
+            aria-label="ตัวอย่างกลุ่มข้อความขึ้นบรรทัดใหม่"
+          >
+            <Text as="span" leading="compact">
+              สวัสดี คุณพาร์ทเนอร์
+            </Text>
+            <Text as="span" variant="caption" tone="muted">
+              Your content · Your impact
+            </Text>
+          </TextGroup>
+        </TextGroup>
       </Card>
       <section className={styles.scenarioPanel} aria-label="ชุดตรวจส่วนประกอบ">
         <h2>Foundation components</h2>

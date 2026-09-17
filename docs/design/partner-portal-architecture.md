@@ -1,4 +1,11 @@
+> Implementation status update (D116, 2026-09-11): the credential/invitation transition is implemented in the current worktree; the older “still needs transition” wording below is historical. See [current audit](../implementation/remaining-work-audit.md) for evidence and unresolved release acceptance. Design requirements remain separate from proof of deployment.
+
+> Current source-workflow amendment (D052, 2026-09-10): Marketing registers Ad IDs for Facebook, Shopee, Lazada and TikTok; automated API sync replaces generic per-file manual review as the next planned workflow. Company Marketplace is excluded. See [Ad ID integration design](ad-id-automatic-integration.md). Existing financial invariants and implemented approval/file-import controls remain; this amendment does not claim live support or authorize their removal.
+
 # Labs D x Partner: frontend-first integration architecture
+
+> Current access override D-025 (2026-09-09): [Invitation-only access](invitation-only-access.md) replaces social-provider login with staff-issued invitations and user-selected username/password after the deal. Its credential/invitation/recovery boundaries supersede all social-first sections and provider release gates below. Existing source still needs the documented transition; no financial or visual architecture changes.
+
 
 Date: 2026-09-07. Scope: small invitation-based partner portal over existing Labs D systems. This is a proposed build design, not a deployed-system claim. Execution order: [implementation plan](../superpowers/plans/2026-09-07-partner-portal.md). Preserve [Phase1 theme](phase-1-theme-design-system.md) and [reduced scope](../research/2026-09-07-partner-portal-reuse-scope.md).
 
@@ -92,7 +99,7 @@ scripts/{import-once,verify-build,verify-no-demo}.ts
 
 Dependency direction: routes → feature/server service → owning domain contract → repositories/adapters. Domain math imports only contracts/pure helpers; provider adapters import shared ingestion types, not UI. Feature A cannot import Feature B internals; share stable behavior through contracts/shared only after actual reuse. Only integration owner edits routes, contract versions and root provider composition across work packages. One migration-number owner. No extra package needed solely because a folder is a module.
 
-## 4. Login and membership contract
+## 4. Historical social-first login contract — superseded by D-025
 
 Flows: login → provider redirect/callback → verified external identity → app session → active membership → requested authorized route. A valid provider account with no membership lands on `access/pending`, with no finance data. Invite tokens are single-use, hashed at rest, expiring and consumed transactionally. A link alone is not sufficient financial access: staff pre-bind a verified provider identity, or approve the claimed identity before membership activation. This supports LINE without email and Apple relay addresses.
 

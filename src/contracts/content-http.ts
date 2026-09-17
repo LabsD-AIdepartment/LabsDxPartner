@@ -34,7 +34,7 @@ export const ContentQuery = z
       ? !q.contentId && !q.adId
       : !!q.contentId && (q.resource === 'ad' ? !!q.adId : !q.adId),
   )
-  .refine((q) => !q.cursor || ['list', 'earnings'].includes(q.resource));
+  .refine((q) => !q.cursor || ['list', 'earnings', 'ads'].includes(q.resource));
 
 const scope = {
   partnerId: Id,

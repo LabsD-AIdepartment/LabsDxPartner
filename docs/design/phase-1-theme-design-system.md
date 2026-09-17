@@ -1,6 +1,14 @@
 # Labs D x Partner — Phase 1 Theme Design System
 
-Version: 1.0 · Captured: 2026-09-07 · Status: current local visual baseline for owner review.
+Version: 1.1 · Captured: 2026-09-07 · UI amendment: 2026-09-10 · Status: local visual baseline for owner review.
+
+### 2026-09-10 — Compact action arrows and glass identity
+
+The current portal uses `src/shared/ui/ActionArrow.tsx` for every upward-right navigation cue, including previews and the login illustration. Its decorative SVG has a short diagonal shaft, rounded 1.5-unit stroke, and a square size controlled by `--icon-action-size`, tied to the minimum supporting text token (currently 16px). Do not use the Unicode arrow glyph or page-specific icon sizes for this cue. The icon is hidden from accessible names; the visible link text supplies the label. This does not alter link destinations or hit areas.
+
+The portrait identity strip uses `src/shared/ui/GlassSurface.tsx`, shared with the foundation gallery. Its design is a translucent, frosted surface with a diagonal reflection, light rim, inner highlights, and a soft shadow. `--glass-*` tokens in `src/shared/theme/tokens.css` own Day/Dark fill, text, secondary text, border, reflection and shadow colors. The shared surface applies 20px backdrop blur and 155% saturation; layout and portrait geometry stay in their feature styles. Solid surfaces are the fallback without backdrop-filter support or when reduced transparency is requested; forced colors use system colors. Limit this material to identity overlays so it does not compete with financial data cards.
+
+This amendment concerns appearance only. Service-status descriptions in the original September 7 baseline below are historical; current implementation and integration scope live in project context and the architecture plan.
 
 This document describes the implemented appearance and interaction choices of the Celeb Collapse partner dashboard. It consolidates the owner's iterative direction; it is not a claim of production readiness or a newly approved backend plan. Values below come from the current source files. Existing Day styling is the preservation baseline; Dark is an alternate theme of the same system.
 
@@ -137,6 +145,12 @@ Desktop uses a table with clip/brand, date, type, commission and status. Pending
 - Theme icon represents **current mode**: sun for Day, moon for Dark. Accessible label describes the action to switch to the other mode; `aria-pressed=true` means Dark.
 - Notification badge shows the sample array length (currently 3), hides at zero, and caps display at `99+`. This is not an unread/read backend.
 - Dialogs support close button/backdrop dismissal, focus return and scrolling within the viewport.
+
+#### Current popup and heading conventions — 2026-09-17 (D191)
+
+- Withdrawal entry, review and recovery use the shared centered `Dialog`, not the edge-aligned `Sheet`. The public `WithdrawalRequestSheet` component name and state/callback API remain compatible. Dialog width is at most 560px, limited to viewport width minus32px; height follows content up to viewport height minus32px, then scrolls internally. No mobile fullscreen override applies to this flow.
+- The compact D188 calendar is already at its normal maximum size: at most448px for two months above640px viewport width, at most280px for stacked months at640px and below, always bounded by viewport width minus24px. Its12.8px local text, spacing and circular date highlights do not grow when more viewport space is available. Smaller screens may constrain its width; more available space must not enlarge it.
+- System-authored English headings use spaced words and title case: **Clip Driven Sales**. Do not insert decorative or intraword hyphens into headings. This convention does not rewrite source-provided content names, references/identifiers or date-range punctuation.
 
 ## 6. Charts
 

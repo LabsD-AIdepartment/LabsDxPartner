@@ -1,3 +1,4 @@
+import { ensureTestIdentityBinding } from '../helpers/identity-binding';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHmac, randomUUID } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -39,6 +40,7 @@ type Profile = { sub: string; email?: string; pause?: () => Promise<void> };
 const profiles = new Map<string, Profile>();
 beforeAll(async () => {
   sql = await connectTestDatabase();
+  await ensureTestIdentityBinding(sql, identityBindingDigest(config));
   const factory = drizzleAdapter(drizzle(sql), {
     provider: 'pg',
     schema: authSchema,

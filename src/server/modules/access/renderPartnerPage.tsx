@@ -1,3 +1,6 @@
+import { notFound } from 'next/navigation';
+import { pitchModeEnabled, canUsePitch } from '@/server/platform/pitch-mode';
+import { pitchSearch } from '@/features/pitch/routes';
 import { requirePartnerAccess } from './requirePartnerAccess';
 import { PartnerApplication } from '@/features/partner-application/PartnerApplication';
 import type { PartnerScreen } from '@/features/partner-application/types';
@@ -8,6 +11,11 @@ export async function renderPartnerPage(
   search: Record<string, string | string[] | undefined> = {},
 ) {
   const session = await requirePartnerAccess(destination);
+  if (pitchModeEnabled()) {
+    if (!canUsePitch(session)) notFound();
+    const { PitchApplication } = await import('@partner-pitch');
+    return <PitchApplication session={session} screen={screen} search={pitchSearch(search)} />;
+  }
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(search))
     if (typeof value === 'string') params.set(key, value);

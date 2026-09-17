@@ -6,7 +6,11 @@ type Options = {
   initial?: ChangesValue;
   reconcileInitial?: boolean;
   load: (signal: AbortSignal) => Promise<unknown>;
-  onChange: (groups: ChangeGroup[], snapshot: ChangesValue) => void;
+  onChange: (
+    groups: ChangeGroup[],
+    snapshot: ChangesValue,
+    signal: AbortSignal,
+  ) => void | Promise<void>;
   onAccessLost: () => void;
   onError?: (error: unknown) => void;
   random?: () => number;
@@ -54,8 +58,30 @@ export class RevisionWatcher {
     const request = new AbortController();
     this.request = request;
     const sequence = ++this.sequence;
+    let timedOut = false;
+    let rejectInterrupted!: (reason: Error) => void;
+    const interrupted = new Promise<never>((_, reject) => {
+      rejectInterrupted = reject;
+    });
+    const abort = () =>
+      rejectInterrupted(new Error(timedOut ? 'Refresh timed out' : 'Refresh canceled'));
+    request.signal.addEventListener('abort', abort, { once: true });
+    // Bound metadata + reconciliation together. Abort releases real fetches;
+    // racing also releases adapters that ignore the signal.
+    const deadline = setTimeout(() => {
+      timedOut = true;
+      request.abort();
+    }, 10_000);
+    const withinDeadline = <T>(work: () => T | Promise<T>) =>
+      Promise.race([
+        interrupted,
+        Promise.resolve().then(() => {
+          request.signal.throwIfAborted();
+          return work();
+        }),
+      ]);
     try {
-      const next = Changes.parse(await this.options.load(request.signal));
+      const next = Changes.parse(await withinDeadline(() => this.options.load(request.signal)));
       if (sequence !== this.sequence || !this.active || this.stopped) return;
       if (
         next.partnerId !== this.options.scope.partnerId ||
@@ -74,11 +100,16 @@ export class RevisionWatcher {
           else next[key] = this.baseline[key];
         }
       }
+      if (groups.length)
+        await withinDeadline(() => this.options.onChange(groups, next, request.signal));
+      if (sequence !== this.sequence || !this.active || this.stopped || request.signal.aborted)
+        return;
+      // A metadata revision is acknowledged only after affected reads succeed.
+      // Otherwise the same revision must trigger reconciliation on the retry.
       this.baseline = next;
       this.failures = 0;
-      if (groups.length) this.options.onChange(groups, next);
     } catch (error) {
-      if (sequence !== this.sequence || request.signal.aborted) return;
+      if (sequence !== this.sequence || (request.signal.aborted && !timedOut)) return;
       if (error instanceof AccessLost) {
         this.options.onAccessLost();
         this.stop();
@@ -87,6 +118,8 @@ export class RevisionWatcher {
       this.failures++;
       this.options.onError?.(error);
     } finally {
+      clearTimeout(deadline);
+      request.signal.removeEventListener('abort', abort);
       if (sequence === this.sequence) {
         this.request = null;
         if (this.active && !this.stopped) {

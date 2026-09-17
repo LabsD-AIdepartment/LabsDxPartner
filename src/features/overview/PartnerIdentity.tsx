@@ -1,5 +1,7 @@
+import { TextGroup } from '@/shared/ui/TextGroup';
 import { BadgeCheck } from 'lucide-react';
 import { CoverImage } from '@/shared/ui/CoverImage';
+import { GlassSurface } from '@/shared/ui/GlassSurface';
 import type { PartnerPresentation } from './EarningsSummary';
 import styles from './overview.module.css';
 export function PartnerIdentity({ partner }: { partner?: PartnerPresentation }) {
@@ -10,14 +12,14 @@ export function PartnerIdentity({ partner }: { partner?: PartnerPresentation }) 
         alt={partner ? `ภาพโปรไฟล์ ${partner.name}` : 'ภาพโปรไฟล์พาร์ทเนอร์'}
         loading="eager"
       />
-      <div className={styles.identity}>
+      <GlassSurface className={styles.identity}>
         <CoverImage src={partner?.avatar ?? null} alt="" />
-        <div>
+        <TextGroup spacing="tight">
           <strong>{partner?.name ?? 'พาร์ทเนอร์'}</strong>
           <span>{partner?.role ?? 'Partner'}</span>
-        </div>
+        </TextGroup>
         <BadgeCheck size={19} aria-hidden />
-      </div>
+      </GlassSurface>
     </div>
   );
 }

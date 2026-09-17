@@ -6,7 +6,7 @@ test('Overview old earnings period sees later payment and returns with filters',
   await expect(page.getByText('฿37,360', { exact: true }).first()).toBeVisible();
   await page.getByRole('combobox', { name: 'แบรนด์', exact: true }).selectOption('Axtion');
   await expect(page.getByText('฿15,920', { exact: true }).first()).toBeVisible();
-  await page.getByRole('link', { name: 'ดูรอบจ่ายนี้ ↗' }).click();
+  await page.getByRole('link', { name: 'ดูรอบจ่ายนี้' }).click();
   await expect(page.getByText('฿25,520', { exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: 'จำลองบันทึกจ่าย 10,000 บาท' }).click();
   await expect(page.getByText('฿15,520', { exact: true }).first()).toBeVisible();

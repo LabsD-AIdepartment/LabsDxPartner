@@ -1,8 +1,10 @@
 import { constants } from 'node:fs';
 import { open, realpath } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
-import { z } from 'zod';
+import { ReviewReference as RecordId } from '@/contracts/review-reference';
 import { CatalogueSnapshot } from '@/contracts/catalogue';
+import { AccountProfile } from '@/contracts/account-profile';
+import type { AccountProfileRepository } from '@/server/modules/account/profile';
 import { ApprovalContext, INTAKE_LIMITS } from '@/server/adapters/approved-period/schema';
 import type { SourceReviewRepository } from '@/server/modules/imports/approval-store';
 import type { CatalogueRepository } from '@/server/modules/content/catalogue';
@@ -16,8 +18,7 @@ export class ReviewedFileFailure extends Error {
     super(code);
   }
 }
-const RecordId = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/);
-type Folder = 'exports' | 'controls' | 'catalogues' | 'settlements';
+type Folder = 'exports' | 'controls' | 'catalogues' | 'settlements' | 'account-profiles';
 
 /** Operator-provisioned root, mounted read-only to portal processes. No browser path/upload access. */
 export function createReviewedFiles(directory: string) {
@@ -97,5 +98,13 @@ export function createReviewedFiles(directory: string) {
       return parsed.data;
     },
   };
-  return { periods, catalogues, settlements };
+  const accountProfiles: AccountProfileRepository = {
+    load: async (partnerId, id) => {
+      const parsed = AccountProfile.safeParse(await json('account-profiles', id));
+      if (!parsed.success) throw new ReviewedFileFailure('invalid_input');
+      if (parsed.data.partnerId !== partnerId) throw new ReviewedFileFailure('changed');
+      return parsed.data;
+    },
+  };
+  return { periods, catalogues, settlements, accountProfiles };
 }

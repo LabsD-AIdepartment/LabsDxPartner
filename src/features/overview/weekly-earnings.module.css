@@ -1,0 +1,49 @@
+.weekly {
+  container: weekly-earnings / inline-size;
+  width: 100%;
+  min-width: 0;
+}
+.header {
+  display: grid;
+  gap: 16px;
+}
+.heading {
+  min-width: 0;
+}
+@container weekly-earnings (min-width: 640px) {
+  .header {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    align-items: center;
+    gap: 20px;
+  }
+}
+.navigation {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 8px;
+}
+.range {
+  text-align: center;
+  font-size: var(--text-caption-size);
+  color: var(--muted);
+}
+.sample {
+  margin: 12px 0 0;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--badge);
+  color: var(--muted);
+  font-size: var(--text-caption-size);
+}
+.count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 16px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--badge);
+  font-size: var(--text-caption-size);
+}

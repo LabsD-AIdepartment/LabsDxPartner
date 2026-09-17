@@ -3,10 +3,16 @@ import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 export default function config(phase: string): NextConfig {
   return {
     agentRules: false,
+    devIndicators: false,
     poweredByHeader: false,
     reactStrictMode: true,
     turbopack: {
       resolveAlias: {
+        '@partner-pitch': phase === PHASE_DEVELOPMENT_SERVER ? './dev/PitchApplication.tsx' : './src/features/pitch/UnavailablePitch.tsx',
+        '@marketing-ads-preview':
+          phase === PHASE_DEVELOPMENT_SERVER
+            ? './dev/AdRegistrationPreview.tsx'
+            : './src/features/marketing-ads/UnavailablePreview.tsx',
         '@account-preview':
           phase === PHASE_DEVELOPMENT_SERVER
             ? './dev/AccountPreview.tsx'
@@ -27,6 +33,10 @@ export default function config(phase: string): NextConfig {
           phase === PHASE_DEVELOPMENT_SERVER
             ? './dev/OverviewPreview.tsx'
             : './src/features/overview/UnavailablePreview.tsx',
+        '@withdrawal-preview':
+          phase === PHASE_DEVELOPMENT_SERVER
+            ? './dev/WithdrawalPreview.tsx'
+            : './src/features/withdrawals/UnavailablePreview.tsx',
         '@access-preview':
           phase === PHASE_DEVELOPMENT_SERVER
             ? './dev/AccessPreview.tsx'
@@ -35,6 +45,18 @@ export default function config(phase: string): NextConfig {
           phase === PHASE_DEVELOPMENT_SERVER
             ? './dev/FoundationGallery.tsx'
             : './src/features/foundation/UnavailableGallery.tsx',
+        // Development-only demo-dataset snapshot handler. Outside the dev server this resolves to a
+        // 404 stub, so the node:sqlite read path (and its fixture marker) never ships to production.
+        '@demo-dataset-handler':
+          phase === PHASE_DEVELOPMENT_SERVER
+            ? './dev/demo-dataset/handler.ts'
+            : './dev/demo-dataset/handler.unavailable.ts',
+        // Development-only ad-performance snapshot handler. Outside the dev server this resolves to a
+        // 404 stub, so the node:fs snapshot read path (and its fixture marker) never ships to production.
+        '@ad-performance-handler':
+          phase === PHASE_DEVELOPMENT_SERVER
+            ? './dev/ad-performance/handler.ts'
+            : './dev/ad-performance/handler.unavailable.ts',
       },
     },
     async headers() {

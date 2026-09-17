@@ -101,6 +101,7 @@ describe('active-page revision changes', () => {
     });
     w.setActive(true);
     void w.check();
+    await vi.advanceTimersByTimeAsync(0);
     expect(load).toHaveBeenCalledTimes(1);
     w.setActive(false);
     expect(oldSignal.aborted).toBe(true);
@@ -149,6 +150,67 @@ describe('active-page revision changes', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(denied).toHaveBeenCalledOnce();
     w.stop();
+  });
+  it('times out a stalled metadata request and retries without accepting its late revision', async () => {
+    vi.useFakeTimers();
+    let finish!: (value: unknown) => void;
+    let oldSignal!: AbortSignal;
+    const load = vi
+      .fn()
+      .mockImplementationOnce((signal) => {
+        oldSignal = signal;
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      })
+      .mockResolvedValue({ ...initial(), earningsRevision: '2' });
+    const change = vi.fn(),
+      error = vi.fn();
+    const watcher = new RevisionWatcher({
+      scope,
+      initial: initial(),
+      load,
+      onChange: change,
+      onError: error,
+      onAccessLost: vi.fn(),
+      random: () => 0,
+    });
+    watcher.setActive(true);
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(oldSignal.aborted).toBe(true);
+    expect(error).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(change.mock.calls[0][1].earningsRevision).toBe('2');
+    finish({ ...initial(), earningsRevision: '99' });
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(change).toHaveBeenCalledOnce();
+    watcher.stop();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it('retries a failed asynchronous reconciliation even when the server revision stays unchanged', async () => {
+    vi.useFakeTimers();
+    const change = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('read failed'))
+      .mockResolvedValue(undefined);
+    const load = vi.fn().mockResolvedValue({ ...initial(), earningsRevision: '2' });
+    const watcher = new RevisionWatcher({
+      scope,
+      initial: initial(),
+      load,
+      onChange: change,
+      onAccessLost: vi.fn(),
+      random: () => 0,
+    });
+    watcher.setActive(true);
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(change).toHaveBeenCalledTimes(2);
+    expect(change.mock.calls.map((call) => call[0])).toEqual([['earnings'], ['earnings']]);
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(change).toHaveBeenCalledTimes(2);
+    watcher.stop();
   });
   it('normalizes filters but separates identities, permissions and generations', () => {
     expect(

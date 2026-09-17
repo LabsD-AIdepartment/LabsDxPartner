@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { StaffAccessSessionValue } from '@/contracts/staff-access';
 import type { FinancePeriodValue } from '@/contracts/staff-finance';
 import { IsolatedQueryProvider } from '@/shared/query/provider';
-import { StaffShell } from '@/features/operations/StaffShell';
+import { StaffShell, nativeStaffRoutes } from '@/features/operations/StaffShell';
 import { Card } from '@/shared/ui/Card';
 import { Text } from '@/shared/ui/Text';
 import { Money } from '@/shared/ui/Money';
@@ -22,7 +22,7 @@ const states = {
   blocked: 'ต้องตรวจสอบ',
   published: 'เผยแพร่แล้ว',
 };
-export function StaffFinanceConsole({ session }: { session: StaffAccessSessionValue }) {
+export function StaffFinanceConsole({ session, marketingEnabled = false, publicationEnabled = false }: { session: StaffAccessSessionValue; marketingEnabled?: boolean; publicationEnabled?: boolean }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const change = () => setVisible(!document.hidden);
@@ -31,14 +31,14 @@ export function StaffFinanceConsole({ session }: { session: StaffAccessSessionVa
     return () => document.removeEventListener('visibilitychange', change);
   }, []);
   return (
-    <StaffShell view="periods" routes={{ partners: '/ops/access', periods: '/ops/periods' }}>
+    <StaffShell view="periods" routes={nativeStaffRoutes(marketingEnabled)}>
       <div className={forms.actions}>
         <LinkButton href="/account">บัญชีของคุณ / ออกจากระบบ</LinkButton>
         <LinkButton href="/login?next=%2Fops%2Fperiods">ยืนยันตัวตนเจ้าหน้าที่อีกครั้ง</LinkButton>
       </div>
       {visible ? (
         <IsolatedQueryProvider identity={['staff-finance', session.userId, session.revision]}>
-          <Periods session={session} />
+          <Periods session={session} publicationEnabled={publicationEnabled} />
         </IsolatedQueryProvider>
       ) : (
         <DataState state="loading" />
@@ -46,7 +46,7 @@ export function StaffFinanceConsole({ session }: { session: StaffAccessSessionVa
     </StaffShell>
   );
 }
-function Periods({ session }: { session: StaffAccessSessionValue }) {
+function Periods({ session, publicationEnabled }: { session: StaffAccessSessionValue; publicationEnabled: boolean }) {
   const [selection, setSelection] = useState<Parameters<typeof loadFinance>[1]>({});
   const [search, setSearch] = useState('');
   const [draft, setDraft] = useState<{ period: FinancePeriodValue; scheduledAt: string } | null>(
@@ -69,6 +69,7 @@ function Periods({ session }: { session: StaffAccessSessionValue }) {
   }
   return (
     <div className={forms.stack}>
+      {!publicationEnabled && <Text role="status">ยังไม่เปิดเผยแพร่งวด คุณยังดูข้อมูลและหลักฐานได้</Text>}
       <form
         className={forms.actions}
         onSubmit={(event) => {
@@ -117,6 +118,7 @@ function Periods({ session }: { session: StaffAccessSessionValue }) {
               key={period.id + ':' + period.generationId}
               period={period}
               detail={!!selection.scopeId}
+              publicationEnabled={publicationEnabled}
               onOpen={() => select({ partnerId: period.partnerId, scopeId: period.id })}
               onReview={(scheduledAt) => setDraft({ period, scheduledAt })}
             />
@@ -189,7 +191,7 @@ function Periods({ session }: { session: StaffAccessSessionValue }) {
           {selection.cursor && (
             <Button onClick={() => select({ q: search.trim() })}>กลับงวดล่าสุด</Button>
           )}
-          {draft && (
+          {publicationEnabled && draft && (
             <ConfirmAction
               key={draft.period.id + ':' + draft.period.generationId + ':' + draft.scheduledAt}
               title="ตรวจใบสรุปก่อนเผยแพร่"
@@ -247,11 +249,13 @@ function Periods({ session }: { session: StaffAccessSessionValue }) {
 function PeriodCard({
   period,
   detail,
+  publicationEnabled,
   onOpen,
   onReview,
 }: {
   period: FinancePeriodValue;
   detail: boolean;
+  publicationEnabled: boolean;
   onOpen: () => void;
   onReview: (scheduledAt: string) => void;
 }) {
@@ -301,7 +305,7 @@ function PeriodCard({
               {period.statementId ?? 'ยังไม่เผยแพร่'}
             </Text>
           </details>
-          {period.state === 'ready' && (
+          {publicationEnabled && period.state === 'ready' && (
             <form
               className={forms.actions}
               onSubmit={(event) => {

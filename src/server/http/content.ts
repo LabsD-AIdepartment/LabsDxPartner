@@ -1,8 +1,12 @@
 import { createContentReader, ContentReadFailure } from '@/server/modules/content/read-model';
 import { AccessFailure, type createPartnerAccess } from '@/server/modules/partners/access';
+import { PartnerAdReadFailure } from '@/server/modules/marketing-ads/partner-read';
 
-export function createContentHttp(access: ReturnType<typeof createPartnerAccess>) {
-  const read = createContentReader(access);
+export function createContentHttp(
+  access: ReturnType<typeof createPartnerAccess>,
+  options: { marketingEnabled?: boolean } = {},
+) {
+  const read = createContentReader(access, options);
   return async (request: Request) => {
     const headers = {
       'Cache-Control': 'private, no-store',
@@ -19,7 +23,7 @@ export function createContentHttp(access: ReturnType<typeof createPartnerAccess>
       return Response.json(await read(request.headers, input), { headers });
     } catch (error) {
       const status =
-        error instanceof ContentReadFailure
+        error instanceof ContentReadFailure || error instanceof PartnerAdReadFailure
           ? error.code === 'not_found'
             ? 404
             : 503

@@ -26,10 +26,10 @@ describe('invitation credential forms', () => {
       response({ code: 'INVALID_USERNAME_OR_PASSWORD', message: 'internal-secret' }, 401),
     );
     render(<LoginPage next="//foreign.test" />);
-    fill('ชื่อผู้ใช้', ' Partner_Name ');
-    fill('รหัสผ่าน', '  literal password  ');
-    fireEvent.click(screen.getByRole('button', { name: 'แสดงรหัสผ่าน' }));
-    expect(screen.getByLabelText('รหัสผ่าน')).toHaveAttribute('type', 'text');
+    fill('username', ' Partner_Name ');
+    fill('password', '  literal password  ');
+    fireEvent.click(screen.getByRole('button', { name: 'แสดงpassword' }));
+    expect(screen.getByLabelText('password')).toHaveAttribute('type', 'text');
     submit('เข้าสู่ระบบ');
     expect(await screen.findByRole('alert')).not.toHaveTextContent('internal-secret');
     expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({

@@ -11,6 +11,7 @@ export const StaffAccessQuery = z.strictObject({
   expectedRevision: PermissionRevision,
   partnerId: Id.optional(),
   partnerCursor: Id.nullish(),
+  partnerSearch: z.string().trim().max(100).optional(),
   memberCursor: Id.nullish(),
   inviteCursor: Id.nullish(),
 });

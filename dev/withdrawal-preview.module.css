@@ -1,0 +1,92 @@
+.toolbar {
+  display: grid;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--badge);
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-body-size);
+  min-width: 0;
+}
+.intro,
+.controls,
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  min-width: 0;
+}
+.controls label {
+  display: flex;
+  flex: 1 1 260px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.controls select {
+  flex: 1 1 220px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--card-solid);
+  color: var(--text);
+}
+.actions button {
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.warning {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card-solid);
+  color: var(--text);
+  font-size: var(--text-body-size);
+  overflow-wrap: anywhere;
+}
+
+.laneNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  min-width: 0;
+  font-size: var(--text-body-size);
+}
+
+.laneNav a {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.laneNav:empty {
+  display: none;
+}
+
+.laneDescription {
+  margin: 0 0 20px;
+  font-size: var(--text-body-size);
+  color: var(--muted);
+}
+
+@media (max-width: 600px) {
+  .detailLaneLink {
+    display: none;
+  }
+
+  .laneNav:not(:has(> :not(.detailLaneLink))) {
+    display: none;
+  }
+}

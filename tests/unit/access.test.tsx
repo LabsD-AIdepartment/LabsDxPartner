@@ -49,8 +49,8 @@ describe('untrusted access URL inputs', () => {
 describe('public access presentation', () => {
   it('uses invited username/password accounts and explains setup without public signup', () => {
     render(<LoginPage next="/content/clip-1" />);
-    expect(screen.getByLabelText('ชื่อผู้ใช้')).toHaveAttribute('autocomplete', 'username');
-    expect(screen.getByLabelText('รหัสผ่าน')).toHaveAttribute('autocomplete', 'current-password');
+    expect(screen.getByLabelText('username')).toHaveAttribute('autocomplete', 'username');
+    expect(screen.getByLabelText('password')).toHaveAttribute('autocomplete', 'current-password');
     expect(
       screen.queryByText(/เข้าสู่ระบบด้วย Google|เข้าสู่ระบบด้วย LINE|เข้าสู่ระบบด้วย Apple/),
     ).not.toBeInTheDocument();
@@ -76,8 +76,8 @@ describe('public access presentation', () => {
   it('preview transitions are explicitly injected and separate from public behavior', () => {
     const transition = vi.fn();
     render(<LoginPage next="/overview" onPreview={transition} />);
-    fireEvent.change(screen.getByLabelText('ชื่อผู้ใช้'), { target: { value: 'partner_test' } });
-    fireEvent.change(screen.getByLabelText('รหัสผ่าน'), { target: { value: 'test-password' } });
+    fireEvent.change(screen.getByLabelText('username'), { target: { value: 'partner_test' } });
+    fireEvent.change(screen.getByLabelText('password'), { target: { value: 'test-password' } });
     fireEvent.submit(screen.getByRole('button', { name: 'เข้าสู่ระบบ' }).closest('form')!);
     expect(transition).toHaveBeenCalledWith();
     expect(screen.getByText(/ไม่เชื่อมบัญชีจริง/)).toBeVisible();
@@ -93,10 +93,7 @@ describe('public access presentation', () => {
       'aria-current',
       'page',
     );
-    expect(screen.getByRole('link', { name: 'Transactions' })).toHaveAttribute(
-      'href',
-      '/transactions',
-    );
+    expect(screen.getByRole('link', { name: 'Wallet' })).toHaveAttribute('href', '/transactions');
     cleanup();
     const navigate = vi.fn();
     render(<Navigation active="overview" onNavigate={navigate} />);

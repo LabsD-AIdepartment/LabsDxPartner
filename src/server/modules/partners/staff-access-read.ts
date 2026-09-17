@@ -13,7 +13,9 @@ export function createStaffAccessReader(access: ReturnType<typeof createPartnerA
     return access.withStaff(headers, async (tx, session) => {
       if (query.expectedRevision !== session.revision) throw new AccessFailure('conflict');
       const partners = await tx`select id,name,status from portal_access.partners
-        where id > ${query.partnerCursor ?? ''} order by id limit 51`;
+        where id > ${query.partnerCursor ?? ''}
+          and (${query.partnerSearch ?? ''}='' or strpos(lower(name),lower(${query.partnerSearch ?? ''}))>0)
+        order by id limit 51`;
       let selected = null;
       if (query.partnerId) {
         const [partner] =

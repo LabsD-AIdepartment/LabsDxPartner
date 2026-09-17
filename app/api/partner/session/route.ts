@@ -1,3 +1,4 @@
+import { observeApi } from '@/server/platform/observability/api';
 import { getIdentityRuntime } from '@/server/modules/identity/runtime';
 import { handleIdentityRequest } from '@/server/modules/identity/http';
 export const runtime = 'nodejs';
@@ -9,5 +10,8 @@ const handle = (request: Request) =>
       ? { assertBinding: identity.assertBinding, handle: identity.partnerSession }
       : null;
   });
-export const GET = handle;
-export const POST = handle;
+const handleGET = handle;
+const handlePOST = handle;
+
+export const GET = observeApi('/api/partner/session', handleGET);
+export const POST = observeApi('/api/partner/session', handlePOST);

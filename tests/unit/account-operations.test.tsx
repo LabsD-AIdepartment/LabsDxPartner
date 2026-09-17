@@ -1,3 +1,4 @@
+import { CredentialAccount } from '@/features/partner-application/CredentialAccount';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { AccountPage } from '@/features/account/AccountPage';
@@ -14,6 +15,28 @@ import {
 } from '@/features/operations/model';
 import { createAccountTransport, accountFixture, accountScope } from '../../dev/account-transport';
 import { createOpsTransport, opsFixture, opsScope } from '../../dev/operations-transport';
+it('keeps typed password fields mounted when account metadata finishes loading', async () => {
+  let finish!: (value: unknown) => void;
+  const pending = new Promise((resolve) => {
+    finish = resolve;
+  });
+  render(
+    <ScopedQueryProvider scope={accountScope}>
+      <AccountPage
+        scope={accountScope}
+        transport={{ ...createAccountTransport('ready'), read: () => pending }}
+        onLogout={() => {}}
+        credentials={<CredentialAccount name="ทดสอบ" onChanged={() => {}} showIdentity={false} />}
+      />
+    </ScopedQueryProvider>,
+  );
+  const input = screen.getByLabelText('รหัสผ่านปัจจุบัน');
+  fireEvent.change(input, { target: { value: 'synthetic-password' } });
+  await act(async () => finish(accountFixture()));
+  await screen.findByText('ชื่อผู้ใช้: partner.demo');
+  expect(screen.getByLabelText('รหัสผ่านปัจจุบัน')).toBe(input);
+  expect(input).toHaveValue('synthetic-password');
+});
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute('open', '');

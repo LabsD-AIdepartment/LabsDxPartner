@@ -7,11 +7,13 @@ export function DonutChart({
   total,
   primaryLabel = 'Organic',
   secondaryLabel = 'Brand ads',
+  showMarketingCopy = true,
 }: {
   primary: string;
   total: string;
   primaryLabel?: string;
   secondaryLabel?: string;
+  showMarketingCopy?: boolean;
 }) {
   const id = useId().replaceAll(':', '');
   const p = BigInt(primary),
@@ -20,7 +22,7 @@ export function DonutChart({
   const circumference = 2 * Math.PI * 48;
   return (
     <>
-      <div className={styles.mix}>
+      <div className={`${styles.mix} ${showMarketingCopy ? '' : styles.centeredMix}`}>
         <div className={styles.ring}>
           <svg
             viewBox="0 0 120 120"
@@ -60,16 +62,18 @@ export function DonutChart({
             <small>{primaryLabel}</small>
           </div>
         </div>
-        <div>
-          <p>
-            Made by you
-            <br />
-            Earned by you
-          </p>
-          <span className="muted small">สัดส่วนคอมมิชชันของคุณ</span>
-        </div>
+        {showMarketingCopy && (
+          <div>
+            <p>
+              Made by you
+              <br />
+              Earned by you
+            </p>
+            <span className="muted small">สัดส่วนคอมมิชชันของคุณ</span>
+          </div>
+        )}
       </div>
-      <div className={styles.legend}>
+      <div className={`${styles.legend} ${showMarketingCopy ? '' : styles.centeredMix}`}>
         <span>
           <i className={styles.dot} />
           {primaryLabel}

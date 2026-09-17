@@ -6,6 +6,7 @@ import { Card } from '@/shared/ui/Card';
 import { Text } from '@/shared/ui/Text';
 import { Money } from '@/shared/ui/Money';
 import { Button } from '@/shared/ui/Button';
+import { BackLink } from '@/shared/ui/BackLink';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { Dialog } from '@/shared/ui/Dialog';
 import { DataState } from '@/shared/ui/DataState';
@@ -60,10 +61,11 @@ export function StatementDetail(props: TransactionsProps & { statementId: string
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>
-        <LinkButton href={transactionHref(props.basePath, undefined, props.returnTo)}>
-          ← กลับรอบจ่ายทั้งหมด
-        </LinkButton>
-        <LinkButton href={props.returnTo}>กลับหน้าก่อนหน้า</LinkButton>
+        <BackLink
+          href={transactionHref(props.basePath, undefined, props.returnTo)}
+          label="กลับรอบจ่ายทั้งหมด"
+        />
+        <BackLink href={props.returnTo} label="กลับหน้าก่อนหน้า" />
         <Button onClick={refresh}>รีเฟรช</Button>
       </div>
       <TransactionState pending={q.isPending} error={q.error} retry={refresh} />

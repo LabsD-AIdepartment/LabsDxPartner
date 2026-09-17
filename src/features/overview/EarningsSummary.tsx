@@ -1,3 +1,4 @@
+import { ActionArrow } from '@/shared/ui/ActionArrow';
 import { Wallet } from 'lucide-react';
 import type { OverviewValue } from '@/contracts/overview';
 import type { FilterValue } from '@/shared/ui/FilterBar';
@@ -35,7 +36,7 @@ export function EarningsSummary({
             <h2>คอมมิชชันของฉัน</h2>
             <Wallet size={17} aria-hidden />
           </div>
-          <p className="small muted">Total commission · ยืนยันแล้วในช่วงที่เลือก</p>
+          <p className="small muted">แสดงยอดตามช่วงเวลาที่เลือก</p>
           <Money value={data.earnings.confirmed} className={styles.heroMoney} />
         </div>
         <div className={styles.breakdown}>
@@ -47,7 +48,7 @@ export function EarningsSummary({
             <Money value={channels?.organic ?? null} reason="ยังไม่มีข้อมูลแยกช่องทาง" />
             <small className="muted">
               {channels?.organicRatePpm != null
-                ? `${channels.organicRatePpm / 10000}% commission`
+                ? `อัตรา ${channels.organicRatePpm / 10000}%`
                 : 'อัตราตามข้อตกลง'}
             </small>
           </div>
@@ -59,7 +60,7 @@ export function EarningsSummary({
             <Money value={channels?.brandAds ?? null} reason="ยังไม่มีข้อมูลแยกช่องทาง" />
             <small className="muted">
               {channels?.brandAdsRatePpm != null
-                ? `${channels.brandAdsRatePpm / 10000}% commission`
+                ? `อัตรา ${channels.brandAdsRatePpm / 10000}%`
                 : 'อัตราตามข้อตกลง'}
             </small>
           </div>
@@ -69,19 +70,20 @@ export function EarningsSummary({
             <span>รายได้ประเภทอื่น</span> <Money value={channels.other} />
           </p>
         )}
-        <div className={styles.estimate}>
-          <span>ประมาณการ · ยังไม่ยืนยัน</span>
-          <Money value={data.earnings.estimated} />
-          <p className="small muted">
-            {data.earnings.estimated === null
-              ? 'ยังไม่มีข้อมูลยอดประมาณการ'
-              : 'ยอดประมาณการอาจเปลี่ยนหลังตรวจสอบ ไม่ใช่ยอดพร้อมจ่าย'}
-          </p>
-        </div>
+        {(data.earnings.estimated === null || data.earnings.estimated.minor !== '0') && (
+          <div className={styles.estimate}>
+            <span>คอมมิชชันรอยืนยัน</span>
+            <Money value={data.earnings.estimated} />
+            <p className="small muted">
+              {data.earnings.estimated === null
+                ? 'ยังไม่มีข้อมูลยอดประมาณการ'
+                : 'ยอดนี้ยังถอนไม่ได้'}
+            </p>
+          </div>
+        )}
         <div className={styles.earningsFooter}>
-          <p className="small muted">ยอดยืนยันอาจรวมรายการปรับปรุงหรือคืนสินค้า</p>
           <LinkButton href={earningsHref(contentBasePath, data, filters)}>
-            ดูที่มาของรายได้ <span aria-hidden>↗</span>
+            ดูรายละเอียดของรายได้ <ActionArrow />
           </LinkButton>
         </div>
       </div>

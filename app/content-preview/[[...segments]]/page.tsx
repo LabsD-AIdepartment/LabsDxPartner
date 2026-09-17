@@ -1,3 +1,5 @@
+import { redirectPitchLegacy } from '@/server/platform/pitch-legacy';
+import { developmentPreviewsEnabled } from '@/server/platform/development-previews';
 import { notFound } from 'next/navigation';
 export default async function Page({
   params,
@@ -6,14 +8,20 @@ export default async function Page({
   params: Promise<{ segments?: string[] }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if (process.env.NODE_ENV !== 'development') notFound();
+  redirectPitchLegacy('/content-preview' + '/' + ((await params).segments ?? []).join('/'), await searchParams);
+  if (!developmentPreviewsEnabled()) notFound();
   const { segments = [] } = await params;
+  const contentSegments =
+    segments[0] === 'partner-demo' && ['a', 'b'].includes(segments[1])
+      ? segments.slice(2)
+      : segments;
+  if (segments[0] === 'partner-demo' && contentSegments === segments) notFound();
   if (!(
-    segments.length === 0 ||
-    (segments.length === 1 && /^[a-zA-Z0-9_-]+$/.test(segments[0])) ||
-    (segments.length === 3 &&
-      segments[1] === 'ads' &&
-      [segments[0], segments[2]].every((x) => /^[a-zA-Z0-9_-]+$/.test(x)))
+    contentSegments.length === 0 ||
+    (contentSegments.length === 1 && /^[a-zA-Z0-9_-]+$/.test(contentSegments[0])) ||
+    (contentSegments.length === 3 &&
+      contentSegments[1] === 'ads' &&
+      [contentSegments[0], contentSegments[2]].every((x) => /^[a-zA-Z0-9_-]+$/.test(x)))
   ))
     notFound();
   const search = new URLSearchParams();

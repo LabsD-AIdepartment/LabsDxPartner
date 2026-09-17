@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 import styles from './ui.module.css';
 export function Button({
   variant = 'secondary',
@@ -6,7 +6,7 @@ export function Button({
   className = '',
   type = 'button',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
+}: ComponentPropsWithRef<'button'> & {
   variant?: 'primary' | 'secondary';
   icon?: boolean;
 }) {
