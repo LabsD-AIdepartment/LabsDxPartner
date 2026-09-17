@@ -195,7 +195,8 @@ export const DEFAULT_DATASET_ID = DATASET_IDS.a;
 // beneficiary/reveal). D183: root has independently reviewed the generator, seeded + audited g6 for both
 // identities (same 2026-09-17T10:26:10+07:00 seed clock) with old generation row hashes and non-financial
 // facts unchanged, so the dev default is now g6. The previous g5 remains seeded/immutable and retained.
-export const DEFAULT_GENERATION = 'g6';
+// g7 adds Sep-18 to the approved frozen Sep-17 story; g6 remains immutable.
+export const DEFAULT_GENERATION = 'g7';
 // Retained statement id (reconciles the notification/return links and the readyScenario id name).
 export const CLOSED_STATEMENT_ID = 'statement-1';
 export const CLOSED_PERIOD = {
@@ -474,6 +475,46 @@ export function buildDataset(options: BuildOptions): DatasetRecords {
   const generation = options.generation ?? DEFAULT_GENERATION;
   const asOfIso = bangkokInstant(options.asOf.getTime());
   const anchorDate = options.anchorDate ?? bangkokDate(options.asOf.getTime());
+
+  if (generation === 'g7') {
+    // Extend the approved story rather than re-seeding its relative dates and redistributing history.
+    // Earlier test/seed clocks retain their own date; the Sep-18 generation deliberately stops there.
+    const extend = anchorDate >= '2026-09-18';
+    if (extend && anchorDate !== '2026-09-18')
+      throw new Error('g7 is authored through 2026-09-18; a later day requires a new generation');
+    const previous = buildDataset({
+      ...options,
+      generation: 'g6',
+      ...(extend ? { asOf: new Date('2026-09-17T10:26:10+07:00'), anchorDate: '2026-09-17' } : {}),
+    });
+    const next: DatasetRecords = {
+      ...previous,
+      meta: { ...previous.meta, generation, asOf: asOfIso, anchorDate },
+      earnings: previous.earnings.map((row) => ({ ...row, generation })),
+      allocations: previous.allocations.map((row) => ({ ...row, generation })),
+      clips: previous.clips.map((row) => ({ ...row, generation })),
+      statements: previous.statements.map((row) => ({ ...row, generation })),
+      settlements: previous.settlements.map((row) => ({ ...row, generation })),
+      withdrawals: previous.withdrawals.map((row) => ({ ...row, generation })),
+      deductions: previous.deductions.map((row) => ({ ...row, generation })),
+      beneficiaryAccounts: previous.beneficiaryAccounts?.map((row) => ({ ...row, generation })),
+    };
+    if (extend) {
+      const sourceRef = 'sale-20260918';
+      next.earnings.push({
+        datasetId, generation, id: `${datasetId}-earning-20260918`, sourceRef,
+        contentId: 'clip-2', channel: 'organic', ratePpm: RATE_PPM.organic,
+        earnedDate: '2026-09-18', status: 'confirmed', released: false,
+        eligibleBaseMinor: '21450000', amountMinor: '2145000',
+        kind: 'commission', attribution: 'content',
+      });
+      next.allocations.push({
+        datasetId, generation, id: `${datasetId}-alloc-20260918`, sourceRef,
+        platform: SEPT_PLATFORM[1], weight: 1,
+      });
+    }
+    return next;
+  }
 
   // Correction #4 — reject a seed clock outside the narrated open period (unless explicitly allowed).
   if (

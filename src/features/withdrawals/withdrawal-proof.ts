@@ -102,20 +102,15 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
   // Other scopes retain source-only documents, with no invented issuer or stamp.
   const issuer = request.scope.scenario === 'partner-demo' ? pitchVoucherIssuer : null;
   assertGeneratable(document);
-  const [{ PDFDocument }, { embedDocumentFonts, pdfColors }] = await Promise.all([
-    import('pdf-lib'),
-    import('@/shared/documents/pdf-theme'),
-  ]);
+  const [{ PDFDocument }, { embedDocumentFonts, pdfColors, pdfDocumentLayout }] = await Promise.all(
+    [import('pdf-lib'), import('@/shared/documents/pdf-theme')],
+  );
   const doc = await PDFDocument.create();
   const { body, bold } = await embedDocumentFonts(doc);
   doc.setTitle(`ใบสำคัญจ่าย - ${request.requestRef}`);
   doc.setAuthor('Labs D');
   doc.setSubject('รายละเอียดการจ่ายเงินให้พาร์ทเนอร์');
-  const W = 595.28,
-    H = 841.89,
-    margin = 48 * 1.3,
-    topMargin = 48,
-    bottom = 78;
+  const { width: W, height: H, margin, top: topMargin, bottom } = pdfDocumentLayout;
   const right = W - margin,
     contentWidth = W - margin * 2;
   const { ink, muted, rule } = pdfColors;
@@ -130,14 +125,19 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
     wrapText(value, max, (line) => width(line, font, fontSize));
   const text = (value: string, x: number, top: number, fontSize = size, font = body, color = ink) =>
     page.drawText(value, { x, y: top - fontSize, size: fontSize, font, color });
-  const line = (top: number, x = margin, end = right, color = rule, thickness = 0.4) =>
-    page.drawLine({ start: { x, y: top }, end: { x: end, y: top }, color, thickness });
+  const line = (
+    top: number,
+    x: number = margin,
+    end: number = right,
+    color = rule,
+    thickness = 0.4,
+  ) => page.drawLine({ start: { x, y: top }, end: { x: end, y: top }, color, thickness });
   const originalColumnX = margin + contentWidth * 0.56;
   const columnSpareSpace = right - originalColumnX - width('ใบสำคัญจ่าย', bold, 20);
   const rightColumnX = originalColumnX + Math.max(0, columnSpareSpace) * 0.5;
   const header = (continued = false) => {
     // Align visible glyph tops: bundled Latin at 22pt sits 3.14pt below Thai at 20pt.
-    text('Labs D', margin, y + 3.14, 22, bold);
+    text('Labs D', margin, y + pdfDocumentLayout.latinTitleLift, 22, bold);
     text('PARTNER', margin, y - 29, 8, body, muted);
     const issuerLines = issuer
       ? [

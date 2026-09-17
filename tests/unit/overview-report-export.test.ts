@@ -434,6 +434,7 @@ describe('PDF report', () => {
     expect(doc.getPageCount()).toBeGreaterThanOrEqual(1);
   });
   it('slices a single oversized long-title row across pages (no heading-only/off-page rows)', async () => {
+    const draw = vi.spyOn(PDFPage.prototype, 'drawText');
     const longTitle = Array.from(
       { length: 100 },
       () => 'พูดตรง ๆ ตัวนี้ช่วยให้เช้าวันทำงานง่ายขึ้นมากจริง ๆ',
@@ -461,6 +462,14 @@ describe('PDF report', () => {
       await overviewReportPdf(input(data, null, 'มดดำ คชาภา '.repeat(10).trim())),
     );
     expect(doc.getPageCount()).toBeGreaterThan(1);
+    for (const [value, options] of draw.mock.calls) {
+      expect(options!.x!).toBeGreaterThanOrEqual(62.4 - 0.01);
+      expect(
+        options!.x! + options!.font!.widthOfTextAtSize(value, options!.size!),
+      ).toBeLessThanOrEqual(595.28 - 62.4 + 0.01);
+      expect(options!.y!).toBeGreaterThanOrEqual(42);
+    }
+    draw.mockRestore();
   });
   it('renders a clip with unknown (null) views as unavailable in both formats', async () => {
     const data = overview('2026-07-01', '2026-09-01', {

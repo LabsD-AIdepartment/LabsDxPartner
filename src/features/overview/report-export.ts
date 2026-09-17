@@ -471,24 +471,25 @@ export function overviewReportCsv(input: OverviewReportInput): string {
  */
 export async function overviewReportPdf(input: OverviewReportInput): Promise<Uint8Array> {
   const model = buildOverviewReportModel(input);
-  const [{ PDFDocument }, { pdfColors, drawPdfCard, embedDocumentFonts }] = await Promise.all([
-    import('pdf-lib'),
-    import('@/shared/documents/pdf-theme'),
-  ]);
+  const [{ PDFDocument }, { pdfColors, pdfDocumentLayout, embedDocumentFonts }] = await Promise.all(
+    [import('pdf-lib'), import('@/shared/documents/pdf-theme')],
+  );
   const doc = await PDFDocument.create();
   const { body, bold } = await embedDocumentFonts(doc);
   doc.setTitle('รายงานภาพรวมรายได้ | Labs D');
   doc.setAuthor('Labs D');
   doc.setSubject(`${model.partnerName} · ${model.fromLabel} – ${model.inclusiveEndLabel}`);
 
-  const A4W = 595.28;
-  const A4H = 841.89;
-  const margin = 48;
+  const {
+    width: A4W,
+    height: A4H,
+    margin,
+    top: topMargin,
+    bottom: contentBottom,
+  } = pdfDocumentLayout;
   const contentWidth = A4W - margin * 2;
-  const contentBottom = 56;
 
-  const { ink, muted, accent, rule, surface, greenSurface } = pdfColors;
-  const headBg = surface;
+  const { ink, muted, rule, surface } = pdfColors;
 
   const width = (text: string, font: typeof body, size: number) =>
     font.widthOfTextAtSize(text, size);
@@ -505,33 +506,30 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
   let page = doc.addPage([A4W, A4H]);
   let y = A4H;
 
-  // Slim branded running header carried on EVERY page (brief report identity on continuations).
+  // Same optical title alignment and margins as the approved payment voucher.
   const drawRunningHeader = () => {
-    const topY = A4H - margin;
-    page.drawText('Labs D', { x: margin, y: topY - 12, size: 15, font: bold, color: ink });
-    const markW = width('Labs D', bold, 15);
-    page.drawText('รายงานภาพรวมรายได้', {
-      x: margin + markW + 8,
-      y: topY - 11,
-      size: 9.5,
+    const topY = A4H - topMargin;
+    page.drawText('Labs D', {
+      x: margin,
+      y: topY + pdfDocumentLayout.latinTitleLift - 22,
+      size: 22,
+      font: bold,
+      color: ink,
+    });
+    page.drawText('PARTNER', { x: margin, y: topY - 37, size: 8, font: body, color: muted });
+    const title = 'รายงานรายได้';
+    const originalX = margin + contentWidth * 0.56;
+    const headerX =
+      originalX + Math.max(0, A4W - margin - originalX - width(title, bold, 20)) * 0.5;
+    page.drawText(title, { x: headerX, y: topY - 20, size: 20, font: bold, color: ink });
+    page.drawText('EARNINGS REPORT', {
+      x: headerX,
+      y: topY - 37,
+      size: 8,
       font: body,
       color: muted,
     });
-    const right = 'ภาพรวมรายได้พาร์ทเนอร์';
-    page.drawText(right, {
-      x: A4W - margin - width(right, body, 9),
-      y: topY - 11,
-      size: 9,
-      font: body,
-      color: muted,
-    });
-    page.drawLine({
-      start: { x: margin, y: topY - 20 },
-      end: { x: A4W - margin, y: topY - 20 },
-      thickness: 0.8,
-      color: rule,
-    });
-    y = topY - 34;
+    y = topY - 72;
   };
 
   const newPage = () => {
@@ -558,120 +556,69 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
     if (o.gap) y -= o.gap;
   };
 
-  // Metadata rows share a card, with line-slicing for arbitrarily long partner names.
-  const metadataCard = (items: { label: string; value: string }[]) => {
-    const size = 10;
-    const lh = 16;
-    const inset = 16;
+  // Plain document metadata rows, never a dashboard card.
+  const metadataRows = (items: { label: string; value: string }[]) => {
     const labelW = 96;
-    const lines = items.flatMap(({ label, value }) =>
-      wrap(value, bold, size, contentWidth - inset * 2 - labelW).map((line, i) => ({
-        label: i === 0 ? label : '',
-        value: line,
-      })),
-    );
-    let offset = 0;
-    while (offset < lines.length) {
-      if (y - (inset * 2 + lh) < contentBottom) newPage();
-      const capacity = Math.max(1, Math.floor((y - contentBottom - inset * 2) / lh));
-      const batch = lines.slice(offset, offset + capacity);
-      const height = inset * 2 + batch.length * lh;
-      drawPdfCard(page, { x: margin, y: y - height, width: contentWidth, height, color: surface });
-      batch.forEach((line, i) => {
-        const baseline = y - inset - size - i * lh;
-        page.drawText(line.label, {
-          x: margin + inset,
-          y: baseline,
-          size,
+    for (const item of items) {
+      const lines = wrap(item.value, body, 9.5, contentWidth - labelW);
+      for (let i = 0; i < lines.length; i++) {
+        if (y - 16 < contentBottom) newPage();
+        if (i === 0)
+          page.drawText(item.label, { x: margin, y: y - 9.5, size: 9.5, font: bold, color: muted });
+        page.drawText(lines[i], {
+          x: margin + labelW,
+          y: y - 9.5,
+          size: 9.5,
           font: body,
-          color: muted,
-        });
-        page.drawText(line.value, {
-          x: margin + inset + labelW,
-          y: baseline,
-          size,
-          font: bold,
           color: ink,
         });
-      });
-      y -= height + 4;
-      offset += batch.length;
-      if (offset < lines.length) newPage();
+        y -= 16;
+      }
+      y -= 8;
     }
   };
 
   const sectionHeading = (title: string) => {
     y -= 12;
-    page.drawText(title, { x: margin, y: y - 12.5, size: 12.5, font: bold, color: ink });
-    y -= 12.5 + 6;
-    page.drawLine({
-      start: { x: margin, y: y + 3 },
-      end: { x: margin + contentWidth, y: y + 3 },
-      thickness: 1,
-      color: accent,
-    });
-    y -= 5;
+    page.drawText(title, { x: margin, y: y - 11, size: 11, font: bold, color: ink });
+    y -= 30;
   };
 
-  // Two-column metric cards mirror the web's clear hierarchy while retaining exact amounts.
+  // Compact label/amount summary, using the voucher's fine rules and right-aligned amounts.
   const summaryBlock = (title: string, items: { label: string; value: string }[]) => {
-    const gap = 12;
-    const inset = 16;
-    const cardWidth = (contentWidth - gap) / 2;
-    const innerWidth = cardWidth - inset * 2;
-    const cards = items.map((item, index) => {
-      const labelLines = wrap(item.label, body, 9.5, innerWidth);
-      const valueSize = fitSize(item.value, bold, innerWidth, index < 4 ? 18 : 16, 8);
-      const valueLines = wrap(item.value, bold, valueSize, innerWidth);
-      return {
-        ...item,
-        labelLines,
-        valueLines,
-        valueSize,
-        height: inset * 2 + labelLines.length * 14 + 8 + valueLines.length * (valueSize * 1.35),
-      };
-    });
-    const headingHeight = 36;
-    if (y - headingHeight - Math.max(cards[0]?.height ?? 0, cards[1]?.height ?? 0) < contentBottom)
-      newPage();
+    if (y - 78 < contentBottom) newPage();
     sectionHeading(title);
-    for (let index = 0; index < cards.length; index += 2) {
-      const row = cards.slice(index, index + 2);
-      const height = Math.max(...row.map((card) => card.height));
-      if (y - height < contentBottom) {
-        newPage();
-        sectionHeading(title + ' (ต่อ)');
-      }
-      row.forEach((card, column) => {
-        const x = margin + column * (cardWidth + gap);
-        drawPdfCard(page, {
-          x,
-          y: y - height,
-          width: cardWidth,
-          height,
-          color: index + column === 0 ? greenSurface : surface,
-        });
-        card.labelLines.forEach((line, i) =>
-          page.drawText(line, {
-            x: x + inset,
-            y: y - inset - 9.5 - i * 14,
-            size: 9.5,
-            font: body,
-            color: muted,
-          }),
-        );
-        const valueTop = y - inset - card.labelLines.length * 14 - 8;
-        card.valueLines.forEach((line, i) =>
-          page.drawText(line, {
-            x: x + inset,
-            y: valueTop - card.valueSize - i * card.valueSize * 1.35,
-            size: card.valueSize,
+    const valueW = 180;
+    for (const item of items) {
+      const labels = wrap(item.label, body, 9.5, contentWidth - valueW - 16);
+      const valueSize = fitSize(item.value, bold, valueW, 11, 8);
+      const values = wrap(item.value, bold, valueSize, valueW);
+      const count = Math.max(labels.length, values.length);
+      for (let i = 0; i < count; i++) {
+        if (y - 20 < contentBottom) {
+          newPage();
+          sectionHeading(title + ' (ต่อ)');
+        }
+        if (labels[i])
+          page.drawText(labels[i], { x: margin, y: y - 10, size: 9.5, font: body, color: ink });
+        if (values[i])
+          page.drawText(values[i], {
+            x: A4W - margin - width(values[i], bold, valueSize),
+            y: y - valueSize,
+            size: valueSize,
             font: bold,
-            color: index + column === 0 ? accent : ink,
-          }),
-        );
+            color: ink,
+          });
+        y -= 17;
+      }
+      y -= 5;
+      page.drawLine({
+        start: { x: margin, y },
+        end: { x: A4W - margin, y },
+        thickness: 0.4,
+        color: rule,
       });
-      y -= height + gap;
+      y -= 5;
     }
   };
 
@@ -682,13 +629,11 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
     const totalW = cols.reduce((s, c) => s + c.width, 0);
     const drawColHeader = () => {
       const h = lh + 3;
-      drawPdfCard(page, {
-        x: margin,
-        y: y - h + 2,
-        width: totalW,
-        height: h,
-        radius: 5,
-        color: headBg,
+      page.drawLine({
+        start: { x: margin, y: y + 2 },
+        end: { x: margin + totalW, y: y + 2 },
+        thickness: 0.4,
+        color: rule,
       });
       let x = margin;
       for (const c of cols) {
@@ -700,7 +645,7 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
       page.drawLine({
         start: { x: margin, y: y + 1 },
         end: { x: margin + totalW, y: y + 1 },
-        thickness: 0.6,
+        thickness: 0.4,
         color: rule,
       });
     };
@@ -715,7 +660,7 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
           : { lines: wrap(row[i], body, size, c.width - 8), size },
       );
     // Keep the heading + column header + the first data LINE together (never a heading-only page).
-    if (y - (12 + 12.5 + 6 + 5 + lh + 3 + lh + 4) < contentBottom) newPage();
+    if (y - (42 + lh + 3 + lh + 4) < contentBottom) newPage();
     sectionHeading(title);
     drawColHeader();
     for (const row of data) {
@@ -726,6 +671,7 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
       for (let li = 0; li < rowLines; li++) {
         if (y - lh < contentBottom) {
           newPage();
+          sectionHeading(title + ' (ต่อ)');
           drawColHeader();
         }
         let x = margin;
@@ -743,6 +689,13 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
             });
           }
           x += c.width;
+          if (i < cols.length - 1)
+            page.drawLine({
+              start: { x, y },
+              end: { x, y: y - lh - (li === rowLines - 1 ? 4 : 0) },
+              thickness: pdfDocumentLayout.ruleWidth,
+              color: rule,
+            });
         });
         y -= lh;
       }
@@ -757,11 +710,7 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
   };
 
   // ---- Page 1 title block ----
-  y -= 6;
-  paragraph('รายงานภาพรวมรายได้', { font: bold, size: 20 });
-  y -= 2;
-  y -= 10;
-  metadataCard([
+  metadataRows([
     { label: 'พาร์ทเนอร์', value: model.partnerName },
     { label: 'ช่วงรายงาน', value: `${model.fromLabel} – ${model.inclusiveEndLabel}` },
     { label: 'แบรนด์', value: model.brandLabel },
@@ -782,7 +731,7 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
       height: boxH,
       color: surface,
       borderColor: rule,
-      borderWidth: 0.6,
+      borderWidth: 0.4,
     });
     let ty = y - 8;
     for (const line of lines) {
@@ -896,23 +845,23 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
   const pages = doc.getPages();
   pages.forEach((p, i) => {
     const label = `หน้า ${i + 1} / ${pages.length}`;
-    const size = 9;
+    const size = 7.5;
     p.drawLine({
-      start: { x: margin, y: 46 },
-      end: { x: A4W - margin, y: 46 },
-      thickness: 0.6,
+      start: { x: margin, y: 59 },
+      end: { x: A4W - margin, y: 59 },
+      thickness: 0.4,
       color: rule,
     });
     p.drawText('Labs D · Partner report', {
       x: margin,
-      y: 30,
-      size: 8.5,
+      y: 42,
+      size: 7.5,
       font: body,
       color: muted,
     });
     p.drawText(label, {
       x: A4W - margin - body.widthOfTextAtSize(label, size),
-      y: 30,
+      y: 42,
       size,
       font: body,
       color: muted,

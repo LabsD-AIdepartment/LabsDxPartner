@@ -10,6 +10,17 @@ export const pdfColors = {
   greenSurface: rgb(239 / 255, 246 / 255, 234 / 255),
 };
 
+/** Approved ruled-document layout, shared by vouchers and analytical reports. */
+export const pdfDocumentLayout = {
+  width: 595.28,
+  height: 841.89,
+  margin: 48 * 1.3,
+  top: 48,
+  bottom: 78,
+  ruleWidth: 0.4,
+  latinTitleLift: 3.14,
+} as const;
+
 /** Both renderers embed identical, offline, licensed web-family glyphs. */
 export async function embedDocumentFonts(doc: PDFDocument) {
   const [fontkitModule, fonts] = await Promise.all([
