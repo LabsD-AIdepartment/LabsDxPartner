@@ -498,62 +498,77 @@ describe('proof PDF stays within bounded pages for long valid inputs', () => {
     providerReference: null,
   });
 
-  it('a normal short input renders one branded A4 record with exact grouped money', async () => {
-    const c = make();
-    const ref = submitAccepted(c, '500000', 'k');
-    c.markPaid(ref);
-    const d = c.detail(ref);
-    if (d.state !== 'found' || d.detail.documents.state !== 'available')
-      throw new Error('expected paid');
-    const draw = vi.spyOn(PDFPage.prototype, 'drawText');
-    const bytes = await buildWithdrawalProofPdf({
-      document: d.detail.documents.documents[0],
-      request: d.detail.request,
-    });
-    const { PDFDocument } = await import('pdf-lib');
-    const loaded = await PDFDocument.load(bytes);
-    expect(loaded.getPageCount()).toBe(1);
-    const text = draw.mock.calls.map(([value]) => value).join(' ');
-    expect(text).toContain('Labs D');
-    expect(text).toContain('ใบสำคัญจ่าย');
-    expect(text).toContain('รายการหักรวม');
-    expect(text).toContain('฿5,000.00');
-    expect(text).toContain(d.detail.request.requestRef);
-    expect(text).toContain(d.detail.documents.documents[0].documentId);
-    expect(text).not.toMatch(/LabsD|ข้อมูลตัวอย่าง|สลิปธนาคาร/);
-    expect(loaded.getAuthor()).toBe('Labs D');
-    draw.mockRestore();
-  });
+  it.each(['golden', 'partner-demo'])(
+    'a short %s record fits A4; fictional issuer data is pitch-only',
+    async (scenario) => {
+      const c = make();
+      const ref = submitAccepted(c, '500000', 'k');
+      c.markPaid(ref);
+      const d = c.detail(ref);
+      if (d.state !== 'found' || d.detail.documents.state !== 'available')
+        throw new Error('expected paid');
+      const draw = vi.spyOn(PDFPage.prototype, 'drawText');
+      const bytes = await buildWithdrawalProofPdf({
+        document: d.detail.documents.documents[0],
+        request: { ...d.detail.request, scope: { ...d.detail.request.scope, scenario } },
+      });
+      const { PDFDocument } = await import('pdf-lib');
+      const loaded = await PDFDocument.load(bytes);
+      expect(loaded.getPageCount()).toBe(1);
+      const text = draw.mock.calls.map(([value]) => value).join(' ');
+      expect(text).toContain('Labs D');
+      expect(text).toContain('ใบสำคัญจ่าย');
+      expect(text).toContain('รายการหักรวม');
+      expect(text).toContain('฿5,000.00');
+      expect(text).toContain(d.detail.request.requestRef);
+      expect(text).toContain(d.detail.documents.documents[0].documentId);
+      expect(text).not.toMatch(/LabsD|ข้อมูลตัวอย่าง|สลิปธนาคาร/);
+      expect(text).not.toMatch(/ผู้จัดทำ|ผู้ตรวจสอบ/);
+      for (const value of ['finance@labsd.example', '0000000000000', 'COMPANY SEAL']) {
+        if (scenario === 'partner-demo') expect(text).toContain(value);
+        else expect(text).not.toContain(value);
+      }
+      expect(loaded.getAuthor()).toBe('Labs D');
+      draw.mockRestore();
+    },
+  );
 
-  it('long ids / names / bank name / 10 deductions paginate within a bounded page count', async () => {
-    const request = longRequest();
-    const draw = vi.spyOn(PDFPage.prototype, 'drawText');
-    const bytes = await buildWithdrawalProofPdf({ document: longDoc(request.net.minor), request });
-    expect(String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3])).toBe('%PDF');
-    const { PDFDocument } = await import('pdf-lib');
-    const loaded = await PDFDocument.load(bytes);
-    const pages = loaded.getPageCount();
-    // Never a single overflowing page, never an unbounded blow-up: bounded because every field is
-    // length-capped and deductions are capped at 10.
-    expect(pages).toBeGreaterThanOrEqual(1);
-    expect(pages).toBeLessThanOrEqual(6);
-    // Every page stays A4 and every glyph stays within the printable content area.
-    for (let i = 0; i < pages; i++) {
-      const { width, height } = loaded.getPage(i).getSize();
-      expect(width).toBe(595.28);
-      expect(height).toBe(841.89);
-    }
-    for (const [value, options] of draw.mock.calls) {
-      expect(options?.y).toBeGreaterThanOrEqual(42);
-      expect(options?.x).toBeGreaterThanOrEqual(48 * 1.3);
-      const right = options!.x! + options!.font!.widthOfTextAtSize(value, options!.size!);
-      expect(right).toBeLessThanOrEqual(595.28 - 48 * 1.3 + 0.01);
-    }
-    const rendered = draw.mock.calls.map(([value]) => value).join(' ');
-    expect(rendered).toContain('฿95,000,000.00');
-    expect(rendered).toContain('รายการหักลำดับที่ 10');
-    draw.mockRestore();
-  });
+  it.each(['golden', 'partner-demo'])(
+    'long %s ids / names / deductions stay within page bounds',
+    async (scenario) => {
+      const request = longRequest();
+      request.scope = { ...request.scope, scenario };
+      const draw = vi.spyOn(PDFPage.prototype, 'drawText');
+      const bytes = await buildWithdrawalProofPdf({
+        document: longDoc(request.net.minor),
+        request,
+      });
+      expect(String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3])).toBe('%PDF');
+      const { PDFDocument } = await import('pdf-lib');
+      const loaded = await PDFDocument.load(bytes);
+      const pages = loaded.getPageCount();
+      // Never a single overflowing page, never an unbounded blow-up: bounded because every field is
+      // length-capped and deductions are capped at 10.
+      expect(pages).toBeGreaterThanOrEqual(1);
+      expect(pages).toBeLessThanOrEqual(6);
+      // Every page stays A4 and every glyph stays within the printable content area.
+      for (let i = 0; i < pages; i++) {
+        const { width, height } = loaded.getPage(i).getSize();
+        expect(width).toBe(595.28);
+        expect(height).toBe(841.89);
+      }
+      for (const [value, options] of draw.mock.calls) {
+        expect(options?.y).toBeGreaterThanOrEqual(42);
+        expect(options?.x).toBeGreaterThanOrEqual(48 * 1.3);
+        const right = options!.x! + options!.font!.widthOfTextAtSize(value, options!.size!);
+        expect(right).toBeLessThanOrEqual(595.28 - 48 * 1.3 + 0.01);
+      }
+      const rendered = draw.mock.calls.map(([value]) => value).join(' ');
+      expect(rendered).toContain('฿95,000,000.00');
+      expect(rendered).toContain('รายการหักลำดับที่ 10');
+      draw.mockRestore();
+    },
+  );
 });
 
 // =====================================================================================

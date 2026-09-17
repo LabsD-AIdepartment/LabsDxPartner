@@ -5,6 +5,7 @@ import type {
 } from '@/contracts/withdrawal-journey';
 import { wrapText } from '@/features/overview/report-export';
 import { formatMinor } from '@/shared/ui/format-money';
+import { pitchVoucherIssuer } from './voucher-presentation';
 
 // Shared-theme A4 withdrawal document renderer for a settled withdrawal —
 // using the same licensed font families as the web, shared PDF theme and the `wrapText` helper
@@ -97,6 +98,9 @@ const thb = (minor: string): string => formatMinor(minor);
 // continued details/table rows paginate before crossing the footer. No content is truncated.
 export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Promise<Uint8Array> {
   const { document, request } = input;
+  // The existing filled-data pitch lane may show owner-authorized fictional issuer details.
+  // Other scopes retain source-only documents, with no invented issuer or stamp.
+  const issuer = request.scope.scenario === 'partner-demo' ? pitchVoucherIssuer : null;
   assertGeneratable(document);
   const [{ PDFDocument }, { embedDocumentFonts, pdfColors }] = await Promise.all([
     import('pdf-lib'),
@@ -128,16 +132,29 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
     page.drawText(value, { x, y: top - fontSize, size: fontSize, font, color });
   const line = (top: number, x = margin, end = right, color = rule, thickness = 0.4) =>
     page.drawLine({ start: { x, y: top }, end: { x: end, y: top }, color, thickness });
+  const originalColumnX = margin + contentWidth * 0.56;
+  const columnSpareSpace = right - originalColumnX - width('ใบสำคัญจ่าย', bold, 20);
+  const rightColumnX = originalColumnX + Math.max(0, columnSpareSpace) * 0.5;
   const header = (continued = false) => {
-    text('Labs D', margin, y, 22, bold);
+    // Align visible glyph tops: bundled Latin at 22pt sits 3.14pt below Thai at 20pt.
+    text('Labs D', margin, y + 3.14, 22, bold);
     text('PARTNER', margin, y - 29, 8, body, muted);
-    const headerX = margin + contentWidth * 0.56;
+    const issuerLines = issuer
+      ? [
+          issuer.legalName,
+          ...issuer.address.split('\n'),
+          `เลขผู้เสียภาษี ${issuer.taxId}`,
+          issuer.branch,
+        ]
+      : [];
+    issuerLines.forEach((value, i) => text(value, margin, y - 47 - i * 12, 8, body, muted));
+    const headerX = rightColumnX;
     const headerW = right - headerX;
     text(continued ? 'ใบสำคัญจ่าย (ต่อ)' : 'ใบสำคัญจ่าย', headerX, y, 20, bold);
     text('PAYMENT VOUCHER', headerX, y - 29, 8, body, muted);
     const ids = wrap('เลขที่ ' + document.documentId, headerW, body, 8);
     ids.forEach((value, i) => text(value, headerX, y - 47 - i * 12, 8, body, muted));
-    y -= 68 + ids.length * 12;
+    y -= Math.max(68 + ids.length * 12, issuerLines.length ? 68 + issuerLines.length * 12 : 0);
     pageBodyTop = y;
   };
   const newPage = () => {
@@ -148,7 +165,7 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
   header();
 
   const leftW = contentWidth * 0.5;
-  const detailX = margin + contentWidth * 0.56;
+  const detailX = rightColumnX;
   type Detail = { value: string; heading?: boolean };
   const details = (label: string, value: string, max: number): Detail[] => [
     { value: label, heading: true },
@@ -266,10 +283,16 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
     lines: wrap(row.amount, amountMax, row.strong ? bold : body, row.strong ? 11 : size),
   }));
   const totalHeight = totals.reduce((sum, row) => sum + row.lines.length * leading + 12, 12);
-  if (y - totalHeight < bottom) newPage();
+  if (y - Math.max(totalHeight, issuer ? 112 : 0) < bottom) newPage();
   const totalTop = y - 14;
   text('ผู้ออกเอกสาร', margin, totalTop, 8, bold);
-  text('Labs D', margin, totalTop - 16, 8.5, body, muted);
+  text(issuer?.legalName ?? 'Labs D', margin, totalTop - 16, 8.5, body, muted);
+  if (issuer) {
+    text('ติดต่อฝ่ายบัญชี', margin, totalTop - 46, 8, bold);
+    [issuer.phone, issuer.email, issuer.website].forEach((value, i) =>
+      text(value, margin, totalTop - 62 - i * 12, 8, body, muted),
+    );
+  }
   y = totalTop;
   for (const row of totals) {
     if (row.strong) {
@@ -289,17 +312,29 @@ export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Prom
     y -= row.lines.length * leading + 10;
   }
 
-  // Empty signing fields are for completion on paper; no signature or approval is asserted.
-  const signatureHeight = 96;
-  if (y - signatureHeight < bottom) newPage();
-  y -= 64;
-  const signatureGap = 24;
-  const signatureW = (contentWidth - signatureGap * 2) / 3;
-  ['ผู้จัดทำ', 'ผู้ตรวจสอบ', 'ผู้รับเงิน'].forEach((label, index) => {
-    const x = margin + index * (signatureW + signatureGap);
-    line(y, x, x + signatureW);
-    text(label, x + (signatureW - width(label, body, 8)) / 2, y - 8, 8, body, muted);
-  });
+  // Pitch-only brand stamp: a design fixture, never an approval/signature or payment assertion.
+  const stampHeight = 96;
+  if (y - stampHeight < bottom) newPage();
+  const stampCenterX = (totalX + right) / 2;
+  if (issuer) {
+    const stampCenterY = y - 43;
+    for (const radius of [35, 31])
+      page.drawCircle({
+        x: stampCenterX,
+        y: stampCenterY,
+        size: radius,
+        borderWidth: 0.5,
+        borderColor: muted,
+      });
+    const stampText = (value: string, top: number, fontSize: number, font = body) =>
+      text(value, stampCenterX - width(value, font, fontSize) / 2, top, fontSize, font, muted);
+    stampText('Labs D', stampCenterY + 12, 13, bold);
+    stampText('PARTNER', stampCenterY - 7, 6.5);
+    stampText('COMPANY SEAL', stampCenterY - 17, 5);
+  }
+  y -= stampHeight;
+  const stampLabel = 'ตราประทับบริษัท';
+  text(stampLabel, totalX + (right - totalX - width(stampLabel, body, 8)) / 2, y, 8, body, muted);
 
   const pages = doc.getPages();
   pages.forEach((p, i) => {
