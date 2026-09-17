@@ -181,7 +181,6 @@ function WithdrawalTransactionsPreview({
               เจ้าหน้าที่จำลอง
             </LinkButton>
           </PreviewTools>
-          {returnTo !== summaryHref && <LinkButton href={returnTo}>กลับรายงานเดิม</LinkButton>}
         </nav>
         {runtime?.controller.view().persistenceWarning && (
           <p role="status" className={withdrawalStyles.warning}>
