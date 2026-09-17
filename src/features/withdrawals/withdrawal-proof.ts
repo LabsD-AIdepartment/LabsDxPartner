@@ -4,13 +4,13 @@ import type {
   WithdrawalRequestValue,
 } from '@/contracts/withdrawal-journey';
 import { wrapText } from '@/features/overview/report-export';
-import { formatThbMinor } from './model';
+import { formatMinor } from '@/shared/ui/format-money';
 
-// A NEW, focused withdrawal-proof renderer. It produces a COMPACT PDF for a settled withdrawal —
-// reusing the existing licensed Thai Sarabun fonts + pdf-lib/fontkit and the shared `wrapText` helper
+// Shared-theme A4 withdrawal document renderer for a settled withdrawal —
+// using the same licensed font families as the web, shared PDF cards and the `wrapText` helper
 // — WITHOUT copying the hundred-line overview report renderer. It renders an immutable snapshot of the
-// paid request (reference, masked beneficiary, gross, deductions, net and the paid instant) plus an
-// explicit 'ข้อมูลตัวอย่าง' + system-issued disclosure. It makes NO tax-invoice / signature /
+// paid request (reference, masked beneficiary, gross, deductions, net and the paid instant) plus a
+// system-issued record identity. It makes NO tax-invoice / signature /
 // bank-logo / bank-slip claim, and never fabricates a provider reference.
 //
 // HONESTY BOUNDARY — provider bank slips are NOT generated. No original provider bytes and no
@@ -43,7 +43,7 @@ function assertGeneratable(document: WithdrawalProofDocumentValue): void {
   if (document.kind !== 'system_acknowledgment')
     throw new WithdrawalProofUnsupportedError(
       'A provider bank slip cannot be generated: no original provider document or authenticated ' +
-        'download exists yet. Only the system-issued acknowledgment (LabsD) is available.',
+        'download exists yet. Only the system-issued acknowledgment (Labs D) is available.',
     );
 }
 
@@ -90,7 +90,7 @@ function bangkokThaiDateTime(instant: string): string {
   return `${day} ${month} ${year} ${hh}:${mm}`;
 }
 
-const thb = (minor: string): string => `฿${formatThbMinor(minor)}`;
+const thb = (minor: string): string => formatMinor(minor);
 
 // Build the compact proof PDF bytes. Exposed so a test can assert selectable Thai text + the correct
 // net without triggering a browser download. Long identifiers / beneficiary + bank names / a full set
@@ -100,163 +100,176 @@ const thb = (minor: string): string => `฿${formatThbMinor(minor)}`;
 // bottom margin.
 export async function buildWithdrawalProofPdf(input: WithdrawalProofInput): Promise<Uint8Array> {
   const { document, request } = input;
-  // Never fabricate a provider bank slip — refuse before any rendering work begins.
   assertGeneratable(document);
-  const [{ PDFDocument, rgb }, fontkitModule, fonts] = await Promise.all([
+  const [{ PDFDocument }, { embedDocumentFonts, drawPdfCard, pdfColors }] = await Promise.all([
     import('pdf-lib'),
-    import('@pdf-lib/fontkit'),
-    import('@/features/overview/assets/report-fonts'),
+    import('@/shared/documents/pdf-theme'),
   ]);
-  const fontkit = (fontkitModule as { default: unknown }).default ?? fontkitModule;
-  const toBytes = (b64: string): Uint8Array => {
-    if (typeof atob === 'function') {
-      const binary = atob(b64);
-      const out = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
-      return out;
-    }
-    return Uint8Array.from(Buffer.from(b64, 'base64'));
-  };
-
   const doc = await PDFDocument.create();
-  doc.registerFontkit(fontkit as Parameters<typeof doc.registerFontkit>[0]);
-  const body = await doc.embedFont(toBytes(fonts.sarabunRegularBase64), { subset: true });
-  const bold = await doc.embedFont(toBytes(fonts.sarabunSemiBoldBase64), { subset: true });
-
-  // A compact half-A4 (A5-ish) page — smaller than the multi-page overview report.
-  const W = 420;
-  const H = 560;
-  const margin = 36;
-  const bottomLimit = margin; // never draw below this baseline
+  const { body, bold } = await embedDocumentFonts(doc);
+  doc.setTitle(`บันทึกการถอนเงิน - ${request.requestRef}`);
+  doc.setAuthor('Labs D');
+  doc.setSubject('บันทึกรายการจ่ายเงินจากระบบ Labs D');
+  const W = 595.28,
+    H = 841.89,
+    margin = 44,
+    bottom = 76;
   const contentWidth = W - margin * 2;
-  const ink = rgb(0.13, 0.15, 0.19);
-  const muted = rgb(0.45, 0.47, 0.52);
-  const accent = rgb(0.36, 0.22, 0.6);
-  const rule = rgb(0.85, 0.86, 0.9);
-
-  const width = (text: string, font: typeof body, size: number) => font.widthOfTextAtSize(text, size);
-
+  const { ink, muted, accent, rule, greenSurface } = pdfColors;
   let page = doc.addPage([W, H]);
   let y = H - margin;
-
-  // Start a fresh page when the next block would cross the bottom margin. A tiny continuation marker
-  // keeps every page honestly labelled as sample data.
+  const width = (text: string, font = body, size = 11) => font.widthOfTextAtSize(text, size);
+  const wrapped = (text: string, max: number, font = body, size = 11) =>
+    wrapText(text, max, (value) => width(value, font, size));
+  const text = (value: string, x: number, top: number, size = 11, font = body, color = ink) =>
+    page.drawText(value, { x, y: top - size, size, font, color });
+  const header = (continued = false) => {
+    text('Labs D', margin, y, 23, bold);
+    text('PARTNER', margin + 88, y - 7, 9, body, muted);
+    const category = 'WITHDRAWAL RECORD';
+    text(category, W - margin - width(category, body, 8), y - 8, 8, body, muted);
+    y -= 46;
+    text(continued ? 'บันทึกการถอนเงิน (ต่อ)' : 'บันทึกการถอนเงิน', margin, y, 22, bold);
+    y -= 34;
+    text('รายละเอียดรายการและยอดจ่ายให้พาร์ทเนอร์', margin, y, 10, body, muted);
+    y -= 30;
+  };
   const newPage = () => {
     page = doc.addPage([W, H]);
     y = H - margin;
-    page.drawText('ข้อมูลตัวอย่าง (ต่อ)', {
-      x: W - margin - width('ข้อมูลตัวอย่าง (ต่อ)', body, 9),
-      y: y - 9,
-      size: 9,
+    header(true);
+  };
+  header();
+
+  type Field = { label: string; value: string; strong?: boolean };
+  // Rows are measured before painting. A card splits only between complete rows, and repeats its
+  // heading on continuation pages. Long names, identifiers and deductions retain their full text.
+  const fieldCard = (title: string, fields: Field[]) => {
+    const inset = 20,
+      labelW = 133,
+      gap = 16,
+      lineHeight = 17;
+    const valueW = contentWidth - inset * 2 - labelW - gap;
+    const rows = fields.map((field) => {
+      const labels = wrapped(field.label, labelW, body, 10);
+      const values = wrapped(field.value, valueW, field.strong ? bold : body, 11);
+      return {
+        ...field,
+        labels,
+        values,
+        height: Math.max(labels.length, values.length) * lineHeight + 12,
+      };
+    });
+    let offset = 0;
+    while (offset < rows.length) {
+      const cap = 51,
+        tail = 10;
+      if (y - cap - rows[offset].height - tail < bottom) newPage();
+      const batch: typeof rows = [];
+      let h = cap + tail;
+      while (offset < rows.length && y - h - rows[offset].height >= bottom) {
+        h += rows[offset].height;
+        batch.push(rows[offset++]);
+      }
+      // Contract fields are bounded, but an unrestricted caller display name may be longer than a
+      // page. Slice such a value across continuation cards rather than loop or clip it.
+      if (batch.length === 0) {
+        const row = rows[offset];
+        const take = Math.max(1, Math.floor((y - bottom - cap - tail - 12) / lineHeight));
+        batch.push({
+          ...row,
+          labels: row.labels.slice(0, take),
+          values: row.values.slice(0, take),
+          height: take * lineHeight + 12,
+        });
+        row.labels = row.labels.slice(take);
+        row.values = row.values.slice(take);
+        row.height = Math.max(row.labels.length, row.values.length) * lineHeight + 12;
+        h += take * lineHeight + 12;
+        if (!row.labels.length && !row.values.length) offset++;
+      }
+      drawPdfCard(page, { x: margin, y: y - h, width: contentWidth, height: h });
+      text(title, margin + inset, y - 17, 12, bold);
+      let top = y - cap;
+      for (const row of batch) {
+        row.labels.forEach((line, i) =>
+          text(line, margin + inset, top - i * lineHeight, 10, body, muted),
+        );
+        row.values.forEach((line, i) =>
+          text(
+            line,
+            margin + inset + labelW + gap,
+            top - i * lineHeight,
+            11,
+            row.strong ? bold : body,
+          ),
+        );
+        top -= row.height;
+      }
+      y -= h + 16;
+    }
+  };
+  fieldCard('ข้อมูลรายการ', [
+    { label: 'เลขอ้างอิงคำขอ', value: request.requestRef, strong: true },
+    { label: 'เลขที่เอกสาร', value: document.documentId },
+    { label: 'วันที่ชำระเงิน', value: bangkokThaiDateTime(document.issuedAt) },
+  ]);
+  fieldCard('ผู้รับเงิน', [
+    {
+      label: 'ชื่อผู้รับเงิน',
+      value: input.displayName ?? request.beneficiary.displayName,
+      strong: true,
+    },
+    { label: 'ธนาคาร', value: request.beneficiary.bankName },
+    { label: 'เลขที่บัญชี', value: request.beneficiary.maskedAccount },
+  ]);
+  fieldCard('รายละเอียดจำนวนเงิน', [
+    { label: 'ยอดก่อนหัก', value: thb(request.gross.minor) },
+    ...request.deductions.map((d) => ({ label: d.label, value: `- ${thb(d.amount.minor)}` })),
+  ]);
+  const net = thb(document.net.minor);
+  let size = 28;
+  while (size > 12 && width(net, bold, size) > contentWidth - 40) size -= 0.5;
+  const netLines = wrapped(net, contentWidth - 40, bold, size);
+  const netH = 57 + netLines.length * (size * 1.4);
+  if (y - netH < bottom) newPage();
+  drawPdfCard(page, {
+    x: margin,
+    y: y - netH,
+    width: contentWidth,
+    height: netH,
+    color: greenSurface,
+  });
+  text('ยอดสุทธิที่โอน', margin + 20, y - 16, 11, body, muted);
+  netLines.forEach((line, i) =>
+    text(line, margin + 20, y - 39 - i * size * 1.4, size, bold, accent),
+  );
+
+  const pages = doc.getPages();
+  pages.forEach((p, i) => {
+    p.drawLine({
+      start: { x: margin, y: 59 },
+      end: { x: W - margin, y: 59 },
+      thickness: 0.6,
+      color: rule,
+    });
+    p.drawText('เอกสารอ้างอิงรายการในระบบ Labs D', {
+      x: margin,
+      y: 42,
+      size: 8,
       font: body,
       color: muted,
     });
-    y -= 18;
-  };
-  const ensure = (needed: number) => {
-    if (y - needed < bottomLimit) newPage();
-  };
-
-  const line = (
-    text: string,
-    o: { font?: typeof body; size?: number; color?: typeof ink; gap?: number } = {},
-  ) => {
-    const font = o.font ?? body;
-    const size = o.size ?? 10;
-    const lh = size * 1.5;
-    for (const l of wrapText(text, contentWidth, (s) => width(s, font, size))) {
-      ensure(lh);
-      page.drawText(l, { x: margin, y: y - size, size, font, color: o.color ?? ink });
-      y -= lh;
-    }
-    if (o.gap) y -= o.gap;
-  };
-
-  // A label / value row. The value is right-aligned beside the label WHEN it fits (money, short refs);
-  // otherwise it drops onto its own indented, wrapped line(s) so a long id / beneficiary / bank name
-  // can NEVER overlap the label or leave the page. Money and Thai text are laid out verbatim, never
-  // truncated or altered.
-  const kv = (label: string, value: string, o: { bold?: boolean } = {}) => {
-    const size = 10.5;
-    const lh = size * 1.6;
-    const valFont = o.bold ? bold : body;
-    const labelWidth = width(label, body, size);
-    const valueWidth = width(value, valFont, size);
-    const gap = 12; // minimum breathing room between a label and an inline value
-    if (labelWidth + gap + valueWidth <= contentWidth) {
-      // Single inline row: label left, value right-aligned.
-      ensure(lh);
-      page.drawText(label, { x: margin, y: y - size, size, font: body, color: muted });
-      page.drawText(value, {
-        x: W - margin - valueWidth,
-        y: y - size,
-        size,
-        font: valFont,
-        color: ink,
-      });
-      y -= lh;
-      return;
-    }
-    // Stacked row: the label on its own line, then the value wrapped and indented beneath it.
-    ensure(lh);
-    page.drawText(label, { x: margin, y: y - size, size, font: body, color: muted });
-    y -= lh;
-    const indent = 12;
-    const valueColumn = contentWidth - indent;
-    for (const l of wrapText(value, valueColumn, (s) => width(s, valFont, size))) {
-      ensure(lh);
-      page.drawText(l, { x: margin + indent, y: y - size, size, font: valFont, color: ink });
-      y -= lh;
-    }
-  };
-
-  const hr = () => {
-    ensure(12);
-    page.drawLine({ start: { x: margin, y }, end: { x: W - margin, y }, thickness: 0.8, color: rule });
-    y -= 12;
-  };
-
-  // Header
-  page.drawText('LabsD', { x: margin, y: y - 14, size: 15, font: bold, color: accent });
-  page.drawText('ข้อมูลตัวอย่าง', {
-    x: W - margin - width('ข้อมูลตัวอย่าง', body, 10),
-    y: y - 12,
-    size: 10,
-    font: body,
-    color: muted,
+    const count = `${i + 1} / ${pages.length}`;
+    p.drawText(count, {
+      x: W - margin - width(count, body, 8),
+      y: 42,
+      size: 8,
+      font: body,
+      color: muted,
+    });
   });
-  y -= 26;
-  line('หลักฐานการถอนเงิน (เอกสารรับรองที่ระบบออก)', { font: bold, size: 12, gap: 2 });
-  // Only the system-issued acknowledgment is ever rendered (provider slips are rejected above).
-  line('ออกโดยระบบ LabsD (ยังไม่ใช่สลิปธนาคาร)', { size: 9.5, color: muted, gap: 6 });
-  hr();
-
-  // Fields
-  kv('เลขอ้างอิงคำขอ', request.requestRef, { bold: true });
-  kv('เลขที่เอกสาร', document.documentId);
-  const beneficiaryName = input.displayName ?? request.beneficiary.displayName;
-  kv('ผู้รับเงิน', beneficiaryName);
-  kv('บัญชีรับเงิน', `${request.beneficiary.bankName} ${request.beneficiary.maskedAccount}`);
-  kv('วันที่ชำระเงิน', bangkokThaiDateTime(document.issuedAt));
-  y -= 4;
-  hr();
-
-  // Money breakdown
-  kv('ยอดก่อนหัก', thb(request.gross.minor));
-  for (const d of request.deductions) kv(d.label, `- ${thb(d.amount.minor)}`);
-  kv('ยอดสุทธิที่โอน', thb(document.net.minor), { bold: true });
-  y -= 4;
-  hr();
-
-  // Disclosure — no tax-invoice / receipt / bank-slip / signature claim.
-  line(
-    'เอกสารนี้เป็นข้อมูลตัวอย่างจากระบบ ไม่ใช่ใบกำกับภาษีหรือใบเสร็จรับเงินตามกฎหมาย และไม่ใช่สลิปธนาคาร',
-    { size: 9, color: muted, gap: 2 },
-  );
-  line('ไม่มีการลงลายมือชื่อหรือตราสัญลักษณ์ธนาคาร', { size: 9, color: muted });
-
-  const bytes = await doc.save();
-  return bytes as Uint8Array;
+  return doc.save();
 }
 
 // A minimal blob download (kept local so this module never edits the shared report-export helper).

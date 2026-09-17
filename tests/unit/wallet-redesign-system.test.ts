@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { PDFPage } from 'pdf-lib';
 import { createWithdrawalController } from '../../dev/withdrawals/controller';
 import { createWithdrawalTransport } from '../../dev/withdrawals/transport';
 import { memoryStorage, type DevKeyValueStorage } from '../../dev/withdrawals/store';
@@ -50,7 +51,14 @@ function make(storage?: DevKeyValueStorage) {
 }
 function submissionFrom(q: WithdrawalQuoteValue, key: string): WithdrawalSubmissionValue {
   if (q.state !== 'quoted') throw new Error('quote is not confirmable');
-  return { scope: q.scope, idempotencyKey: key, quoteId: q.quoteId, gross: q.gross, net: q.net, bindings: q.bindings };
+  return {
+    scope: q.scope,
+    idempotencyKey: key,
+    quoteId: q.quoteId,
+    gross: q.gross,
+    net: q.net,
+    bindings: q.bindings,
+  };
 }
 function submitAccepted(c: ReturnType<typeof make>, gross: string, key: string): string {
   const r = c.submit(submissionFrom(c.quote(gross), key));
@@ -88,7 +96,12 @@ describe('automatic initiation on submit', () => {
     // allowedActions for processing never offer cancel.
     expect(res.request.allowedActions).not.toContain('cancel');
     const s = c.summary();
-    expect(s.balance).toMatchObject({ state: 'known', available: m('1500000'), reserved: m('500000'), settled: m('0') });
+    expect(s.balance).toMatchObject({
+      state: 'known',
+      available: m('1500000'),
+      reserved: m('500000'),
+      settled: m('0'),
+    });
     // Timeline is submitted -> processing (two honest events, one record).
     const d = c.detail(res.request.requestRef);
     if (d.state !== 'found') throw new Error('expected found');
@@ -102,7 +115,8 @@ describe('automatic initiation on submit', () => {
     const first = c.submit(submissionFrom(q, 'k'));
     const replay = c.submit(submissionFrom(q, 'k'));
     expect(replay.outcome).toBe('accepted');
-    if (first.outcome === 'rejected' || replay.outcome === 'rejected') throw new Error('unexpected reject');
+    if (first.outcome === 'rejected' || replay.outcome === 'rejected')
+      throw new Error('unexpected reject');
     expect(replay.request.requestRef).toBe(first.request.requestRef);
     expect(replay.request.status).toBe('processing');
     expect(c.summary().balance).toMatchObject({ available: m('1500000'), reserved: m('500000') });
@@ -177,10 +191,21 @@ function historyFake(over: Partial<WithdrawalHistoryTransport>): WithdrawalHisto
     quote: async () => ({}),
     submit: async () => ({}),
     recover: async () => ({ state: 'missing' }),
-    list: async () => ({ scope, asOf: '2026-09-16T00:00:00Z', items: [], nextCursor: null, revision: 'r1' }),
+    list: async () => ({
+      scope,
+      asOf: '2026-09-16T00:00:00Z',
+      items: [],
+      nextCursor: null,
+      revision: 'r1',
+    }),
     detail: async () => ({ state: 'missing', scope, requestRef: 'req-a' }),
     cancel: async () => ({ outcome: 'unknown', receipt: {} }),
-    recoverCancellation: async () => ({ state: 'missing', scope, operationKey: 'op', requestRef: 'req-a' }),
+    recoverCancellation: async () => ({
+      state: 'missing',
+      scope,
+      operationKey: 'op',
+      requestRef: 'req-a',
+    }),
     ...over,
   };
 }
@@ -208,7 +233,11 @@ describe('per-transaction proof', () => {
     expect(proof.issuedAt).toBe(paidEvent?.at);
     // Loader accepts the coherent paid proof through the transport.
     const t = createWithdrawalTransport(c, { latencyMs: 0 });
-    const loaded = await loadWithdrawalDetail(t as unknown as WithdrawalHistoryTransport, { scope, requestRef: ref, signal });
+    const loaded = await loadWithdrawalDetail(t as unknown as WithdrawalHistoryTransport, {
+      scope,
+      requestRef: ref,
+      signal,
+    });
     expect(loaded.state === 'found' && loaded.detail.documents.state).toBe('available');
   });
 
@@ -234,7 +263,13 @@ describe('per-transaction proof', () => {
         detail: {
           request,
           timeline: [
-            { seq: 1, at: '2026-09-16T00:00:00Z', kind: 'submitted', status: 'requested', detail: null },
+            {
+              seq: 1,
+              at: '2026-09-16T00:00:00Z',
+              kind: 'submitted',
+              status: 'requested',
+              detail: null,
+            },
             { seq: 2, at: '2026-09-16T01:00:00Z', kind: 'paid', status: 'paid', detail: null },
           ],
           historyComplete: true,
@@ -261,16 +296,26 @@ describe('per-transaction proof', () => {
       };
     };
     const run = (detailRaw: unknown) =>
-      loadWithdrawalDetail(historyFake({ detail: async () => detailRaw }), { scope, requestRef: 'req-a', signal });
+      loadWithdrawalDetail(historyFake({ detail: async () => detailRaw }), {
+        scope,
+        requestRef: 'req-a',
+        signal,
+      });
 
     // Forged issuer (system_acknowledgment claiming a provider reference).
-    await expect(run(base({ providerReference: 'ref-x' }))).rejects.toBeInstanceOf(WithdrawalResponseError);
+    await expect(run(base({ providerReference: 'ref-x' }))).rejects.toBeInstanceOf(
+      WithdrawalResponseError,
+    );
     // Forged net.
     await expect(run(base({ net: m('490000') }))).rejects.toBeInstanceOf(WithdrawalResponseError);
     // Forged requestRef scope.
-    await expect(run(base({ requestRef: 'other' }))).rejects.toBeInstanceOf(WithdrawalResponseError);
+    await expect(run(base({ requestRef: 'other' }))).rejects.toBeInstanceOf(
+      WithdrawalResponseError,
+    );
     // issuedAt that is not a recorded paid-event instant.
-    await expect(run(base({ issuedAt: '2020-01-01T00:00:00Z' }))).rejects.toBeInstanceOf(WithdrawalResponseError);
+    await expect(run(base({ issuedAt: '2020-01-01T00:00:00Z' }))).rejects.toBeInstanceOf(
+      WithdrawalResponseError,
+    );
   });
 
   it('renders a compact PDF with selectable Thai bytes and the correct net', async () => {
@@ -278,7 +323,8 @@ describe('per-transaction proof', () => {
     const ref = submitAccepted(c, '500000', 'k');
     c.markPaid(ref);
     const d = c.detail(ref);
-    if (d.state !== 'found' || d.detail.documents.state !== 'available') throw new Error('expected paid available');
+    if (d.state !== 'found' || d.detail.documents.state !== 'available')
+      throw new Error('expected paid available');
     const bytes = await buildWithdrawalProofPdf({
       document: d.detail.documents.documents[0],
       request: d.detail.request,
@@ -297,9 +343,7 @@ describe('per-transaction proof', () => {
   });
 
   // A helper: a fully coherent paid detail whose single available document is the given descriptor.
-  const paidDetailWith = (
-    document: WithdrawalProofDocumentValue,
-  ): WithdrawalRequestDetailValue => {
+  const paidDetailWith = (document: WithdrawalProofDocumentValue): WithdrawalRequestDetailValue => {
     const request: WithdrawalRequestValue = {
       requestRef: document.requestRef,
       idempotencyKey: 'key-a',
@@ -318,7 +362,13 @@ describe('per-transaction proof', () => {
     return {
       request,
       timeline: [
-        { seq: 1, at: '2026-09-16T00:00:00Z', kind: 'submitted', status: 'requested', detail: null },
+        {
+          seq: 1,
+          at: '2026-09-16T00:00:00Z',
+          kind: 'submitted',
+          status: 'requested',
+          detail: null,
+        },
         { seq: 2, at: '2026-09-16T01:00:00Z', kind: 'paid', status: 'paid', detail: null },
       ],
       historyComplete: true,
@@ -342,7 +392,10 @@ describe('per-transaction proof', () => {
 
   it('the renderer refuses to fabricate a provider_bank_slip (unsupported, even WITH a reference)', async () => {
     await expect(
-      buildWithdrawalProofPdf({ document: providerSlip, request: paidDetailWith(providerSlip).request }),
+      buildWithdrawalProofPdf({
+        document: providerSlip,
+        request: paidDetailWith(providerSlip).request,
+      }),
     ).rejects.toBeInstanceOf(WithdrawalProofUnsupportedError);
   });
 
@@ -445,12 +498,14 @@ describe('proof PDF stays within bounded pages for long valid inputs', () => {
     providerReference: null,
   });
 
-  it('a normal short input renders a single compact page', async () => {
+  it('a normal short input renders one branded A4 record with exact grouped money', async () => {
     const c = make();
     const ref = submitAccepted(c, '500000', 'k');
     c.markPaid(ref);
     const d = c.detail(ref);
-    if (d.state !== 'found' || d.detail.documents.state !== 'available') throw new Error('expected paid');
+    if (d.state !== 'found' || d.detail.documents.state !== 'available')
+      throw new Error('expected paid');
+    const draw = vi.spyOn(PDFPage.prototype, 'drawText');
     const bytes = await buildWithdrawalProofPdf({
       document: d.detail.documents.documents[0],
       request: d.detail.request,
@@ -458,10 +513,19 @@ describe('proof PDF stays within bounded pages for long valid inputs', () => {
     const { PDFDocument } = await import('pdf-lib');
     const loaded = await PDFDocument.load(bytes);
     expect(loaded.getPageCount()).toBe(1);
+    const text = draw.mock.calls.map(([value]) => value).join(' ');
+    expect(text).toContain('Labs D');
+    expect(text).toContain('฿5,000.00');
+    expect(text).toContain(d.detail.request.requestRef);
+    expect(text).toContain(d.detail.documents.documents[0].documentId);
+    expect(text).not.toMatch(/LabsD|ข้อมูลตัวอย่าง|สลิปธนาคาร/);
+    expect(loaded.getAuthor()).toBe('Labs D');
+    draw.mockRestore();
   });
 
   it('long ids / names / bank name / 10 deductions paginate within a bounded page count', async () => {
     const request = longRequest();
+    const draw = vi.spyOn(PDFPage.prototype, 'drawText');
     const bytes = await buildWithdrawalProofPdf({ document: longDoc(request.net.minor), request });
     expect(String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3])).toBe('%PDF');
     const { PDFDocument } = await import('pdf-lib');
@@ -471,12 +535,22 @@ describe('proof PDF stays within bounded pages for long valid inputs', () => {
     // length-capped and deductions are capped at 10.
     expect(pages).toBeGreaterThanOrEqual(1);
     expect(pages).toBeLessThanOrEqual(6);
-    // Every page is a real, non-degenerate A5-ish page (nothing collapsed / off-canvas).
+    // Every page stays A4 and every glyph stays within the printable content area.
     for (let i = 0; i < pages; i++) {
       const { width, height } = loaded.getPage(i).getSize();
-      expect(width).toBe(420);
-      expect(height).toBe(560);
+      expect(width).toBe(595.28);
+      expect(height).toBe(841.89);
     }
+    for (const [value, options] of draw.mock.calls) {
+      expect(options?.y).toBeGreaterThanOrEqual(42);
+      expect(options?.x).toBeGreaterThanOrEqual(44);
+      const right = options!.x! + options!.font!.widthOfTextAtSize(value, options!.size!);
+      expect(right).toBeLessThanOrEqual(595.28 - 44 + 0.01);
+    }
+    const rendered = draw.mock.calls.map(([value]) => value).join(' ');
+    expect(rendered).toContain('฿95,000,000.00');
+    expect(rendered).toContain('รายการหักลำดับที่ 10');
+    draw.mockRestore();
   });
 });
 
@@ -511,7 +585,10 @@ describe('wallet ledger helper', () => {
   it('maps both lanes to kind-prefixed ids and sorts by date DESCENDING (stable)', () => {
     const result = buildWalletLedger({
       released: [release('p1', '2026-09-01T00:00:00+07:00')],
-      withdrawals: [withdrawal('w1', '2026-09-03T00:00:00+07:00'), withdrawal('w2', '2026-09-02T00:00:00+07:00')],
+      withdrawals: [
+        withdrawal('w1', '2026-09-03T00:00:00+07:00'),
+        withdrawal('w2', '2026-09-02T00:00:00+07:00'),
+      ],
     });
     expect(result.dated.map((e) => e.id)).toEqual(['withdrawal:w1', 'withdrawal:w2', 'release:p1']);
     expect(result.undatedReleases).toEqual([]);
@@ -528,7 +605,11 @@ describe('wallet ledger helper', () => {
   });
 
   it('each lane is independent — an absent lane contributes nothing (no fabricated rows)', () => {
-    expect(buildWalletLedger({ withdrawals: [withdrawal('w1', '2026-09-03T00:00:00+07:00')] }).dated.map((e) => e.id)).toEqual(['withdrawal:w1']);
+    expect(
+      buildWalletLedger({ withdrawals: [withdrawal('w1', '2026-09-03T00:00:00+07:00')] }).dated.map(
+        (e) => e.id,
+      ),
+    ).toEqual(['withdrawal:w1']);
     expect(buildWalletLedger({ released: null, withdrawals: null }).dated).toEqual([]);
     expect(buildWalletLedger({}).undatedReleases).toEqual([]);
   });

@@ -1,0 +1,24 @@
+{
+  "sources": {
+    "latin": {
+      "path": "node_modules/@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2",
+      "sha256": "9fea608a947e67020c33cad9a6fe3d60c54119dfb8cff87768a8117a15ed7543"
+    },
+    "thai": {
+      "path": "node_modules/@fontsource-variable/noto-sans-thai/files/noto-sans-thai-thai-wght-normal.woff2",
+      "sha256": "1f5a173641bbcb3ca4fb0a986858b6b07f8cd5dd2ed61236b40548c7a3c7292f"
+    }
+  },
+  "outputs": {
+    "documentRegularBase64": {
+      "weight": 400,
+      "bytes": 49180,
+      "sha256": "ed296411a64a76af67d6009ebef6823d2784c122e5bfaddd40f66251b8800074"
+    },
+    "documentSemiBoldBase64": {
+      "weight": 600,
+      "bytes": 49188,
+      "sha256": "7c382539cf57a68d6767fb91c95248fc23908572099406b9ae6526faad48dbb8"
+    }
+  }
+}

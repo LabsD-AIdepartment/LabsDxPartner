@@ -53,9 +53,7 @@ export function decimalMinor(minor: string): string {
  */
 export function csvText(value: string): string {
   return (
-    '"' +
-    (/^(?:\s*[=+@-]|[\t\r\n])/.test(value) ? "'" + value : value).replaceAll('"', '""') +
-    '"'
+    '"' + (/^(?:\s*[=+@-]|[\t\r\n])/.test(value) ? "'" + value : value).replaceAll('"', '""') + '"'
   );
 }
 
@@ -175,7 +173,10 @@ export function buildOverviewReportModel(input: OverviewReportInput): OverviewRe
     // Unknown daily sales stays null (an explicit "unavailable" token downstream), never zero.
     sales: point.sales ?? null,
     platforms: point.salesByPlatform
-      ? point.salesByPlatform.map((entry) => ({ platform: entry.platform, minor: entry.sales.minor }))
+      ? point.salesByPlatform.map((entry) => ({
+          platform: entry.platform,
+          minor: entry.sales.minor,
+        }))
       : null,
   }));
   const brands = e.salesByBrand
@@ -372,7 +373,10 @@ export function overviewReportCsv(input: OverviewReportInput): string {
   const meta: [string, string][] = [
     ['พาร์ทเนอร์ (Partner)', model.partnerName],
     ['ช่วงรายงาน (Range)', `${model.fromLabel} – ${model.inclusiveEndLabel}`],
-    ['ช่วงข้อมูล ISO (Range ISO, end exclusive)', `${model.rangeIso.from} / ${model.rangeIso.toExclusive}`],
+    [
+      'ช่วงข้อมูล ISO (Range ISO, end exclusive)',
+      `${model.rangeIso.from} / ${model.rangeIso.toExclusive}`,
+    ],
     ['แบรนด์ (Brand)', model.brandLabel],
     ['สถานะข้อมูล (Data state)', model.dataState],
     ['ความครอบคลุม (Coverage)', model.coverageStatus],
@@ -459,7 +463,7 @@ export function overviewReportCsv(input: OverviewReportInput): string {
 // -------------------------------------------------------------------------------------------------
 
 /**
- * Clean, professional multi-page A4 PDF: a branded LabsD header carried on every page, a clear
+ * Clean, professional multi-page A4 PDF: a branded Labs D header carried on every page, a clear
  * report title, human-readable Thai dates, concise Thai labels with right-aligned exact money, and
  * "หน้า X / Y" page numbering. Tables repeat their column headers on continued pages and never
  * orphan a heading or a lone row. pdf-lib + fontkit and the font bytes are all loaded on demand so
@@ -467,26 +471,15 @@ export function overviewReportCsv(input: OverviewReportInput): string {
  */
 export async function overviewReportPdf(input: OverviewReportInput): Promise<Uint8Array> {
   const model = buildOverviewReportModel(input);
-  const [{ PDFDocument, rgb }, fontkitModule, fonts] = await Promise.all([
+  const [{ PDFDocument }, { pdfColors, drawPdfCard, embedDocumentFonts }] = await Promise.all([
     import('pdf-lib'),
-    import('@pdf-lib/fontkit'),
-    import('./assets/report-fonts'),
+    import('@/shared/documents/pdf-theme'),
   ]);
-  const fontkit = (fontkitModule as { default: unknown }).default ?? fontkitModule;
-  const toBytes = (b64: string): Uint8Array => {
-    if (typeof atob === 'function') {
-      const binary = atob(b64);
-      const out = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
-      return out;
-    }
-    return Uint8Array.from(Buffer.from(b64, 'base64'));
-  };
-
   const doc = await PDFDocument.create();
-  doc.registerFontkit(fontkit as Parameters<typeof doc.registerFontkit>[0]);
-  const body = await doc.embedFont(toBytes(fonts.sarabunRegularBase64), { subset: true });
-  const bold = await doc.embedFont(toBytes(fonts.sarabunSemiBoldBase64), { subset: true });
+  const { body, bold } = await embedDocumentFonts(doc);
+  doc.setTitle('รายงานภาพรวมรายได้ | Labs D');
+  doc.setAuthor('Labs D');
+  doc.setSubject(`${model.partnerName} · ${model.fromLabel} – ${model.inclusiveEndLabel}`);
 
   const A4W = 595.28;
   const A4H = 841.89;
@@ -494,11 +487,8 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
   const contentWidth = A4W - margin * 2;
   const contentBottom = 56;
 
-  const ink = rgb(0.13, 0.15, 0.19);
-  const muted = rgb(0.45, 0.47, 0.52);
-  const accent = rgb(0.36, 0.22, 0.6);
-  const rule = rgb(0.85, 0.86, 0.9);
-  const headBg = rgb(0.955, 0.95, 0.98);
+  const { ink, muted, accent, rule, surface, greenSurface } = pdfColors;
+  const headBg = surface;
 
   const width = (text: string, font: typeof body, size: number) =>
     font.widthOfTextAtSize(text, size);
@@ -518,8 +508,8 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
   // Slim branded running header carried on EVERY page (brief report identity on continuations).
   const drawRunningHeader = () => {
     const topY = A4H - margin;
-    page.drawText('LabsD', { x: margin, y: topY - 12, size: 13, font: bold, color: accent });
-    const markW = width('LabsD', bold, 13);
+    page.drawText('Labs D', { x: margin, y: topY - 12, size: 15, font: bold, color: ink });
+    const markW = width('Labs D', bold, 15);
     page.drawText('รายงานภาพรวมรายได้', {
       x: margin + markW + 8,
       y: topY - 11,
@@ -568,19 +558,46 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
     if (o.gap) y -= o.gap;
   };
 
-  // "label: value" info line with a muted label and inked value. The value wraps and paginates
-  // line-by-line; the label is drawn once beside the first value line (continuations are value-only).
-  const infoLine = (label: string, value: string) => {
-    const size = 10.5;
-    const lh = size * 1.6;
-    const labelW = width(label + '  ', body, size);
-    const lines = wrap(value, bold, size, contentWidth - labelW);
-    lines.forEach((line, i) => {
-      if (y - lh < contentBottom) newPage();
-      if (i === 0) page.drawText(label, { x: margin, y: y - size, size, font: body, color: muted });
-      page.drawText(line, { x: margin + labelW, y: y - size, size, font: bold, color: ink });
-      y -= lh;
-    });
+  // Metadata rows share a card, with line-slicing for arbitrarily long partner names.
+  const metadataCard = (items: { label: string; value: string }[]) => {
+    const size = 10;
+    const lh = 16;
+    const inset = 16;
+    const labelW = 96;
+    const lines = items.flatMap(({ label, value }) =>
+      wrap(value, bold, size, contentWidth - inset * 2 - labelW).map((line, i) => ({
+        label: i === 0 ? label : '',
+        value: line,
+      })),
+    );
+    let offset = 0;
+    while (offset < lines.length) {
+      if (y - (inset * 2 + lh) < contentBottom) newPage();
+      const capacity = Math.max(1, Math.floor((y - contentBottom - inset * 2) / lh));
+      const batch = lines.slice(offset, offset + capacity);
+      const height = inset * 2 + batch.length * lh;
+      drawPdfCard(page, { x: margin, y: y - height, width: contentWidth, height, color: surface });
+      batch.forEach((line, i) => {
+        const baseline = y - inset - size - i * lh;
+        page.drawText(line.label, {
+          x: margin + inset,
+          y: baseline,
+          size,
+          font: body,
+          color: muted,
+        });
+        page.drawText(line.value, {
+          x: margin + inset + labelW,
+          y: baseline,
+          size,
+          font: bold,
+          color: ink,
+        });
+      });
+      y -= height + 4;
+      offset += batch.length;
+      if (offset < lines.length) newPage();
+    }
   };
 
   const sectionHeading = (title: string) => {
@@ -596,49 +613,65 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
     y -= 5;
   };
 
-  // Summary: wrapped concise labels + right-aligned exact money; row height = max(label lines).
-  const summaryBlock = (
-    title: string,
-    items: { label: string; value: string }[],
-  ) => {
-    const size = 10.5;
-    const lh = size * 1.5;
-    const valueW = 150;
-    const labelW = contentWidth - valueW - 12;
-    // Keep the heading with its first row.
-    if (y - (12 + 12.5 + 6 + 5 + lh + 3) < contentBottom) newPage();
+  // Two-column metric cards mirror the web's clear hierarchy while retaining exact amounts.
+  const summaryBlock = (title: string, items: { label: string; value: string }[]) => {
+    const gap = 12;
+    const inset = 16;
+    const cardWidth = (contentWidth - gap) / 2;
+    const innerWidth = cardWidth - inset * 2;
+    const cards = items.map((item, index) => {
+      const labelLines = wrap(item.label, body, 9.5, innerWidth);
+      const valueSize = fitSize(item.value, bold, innerWidth, index < 4 ? 18 : 16, 8);
+      const valueLines = wrap(item.value, bold, valueSize, innerWidth);
+      return {
+        ...item,
+        labelLines,
+        valueLines,
+        valueSize,
+        height: inset * 2 + labelLines.length * 14 + 8 + valueLines.length * (valueSize * 1.35),
+      };
+    });
+    const headingHeight = 36;
+    if (y - headingHeight - Math.max(cards[0]?.height ?? 0, cards[1]?.height ?? 0) < contentBottom)
+      newPage();
     sectionHeading(title);
-    for (const item of items) {
-      const labelLines = wrap(item.label, body, size, labelW);
-      // Adaptive value size; if even the smallest size cannot fit (e.g. a 40-digit amount), wrap the
-      // value onto extra lines so it stays inside the value column and never crosses the label.
-      const valueSize = fitSize(item.value, bold, valueW, size, 6.5);
-      const valueLines =
-        width(item.value, bold, valueSize) <= valueW
-          ? [item.value]
-          : wrap(item.value, bold, valueSize, valueW);
-      const rh = Math.max(labelLines.length, valueLines.length, 1) * lh + 3;
-      if (y - rh < contentBottom) newPage();
-      const top = y;
-      labelLines.forEach((line, i) =>
-        page.drawText(line, { x: margin, y: top - size - i * lh, size, font: body, color: muted }),
-      );
-      valueLines.forEach((line, i) =>
-        page.drawText(line, {
-          x: margin + contentWidth - width(line, bold, valueSize),
-          y: top - valueSize - i * lh,
-          size: valueSize,
-          font: bold,
-          color: ink,
-        }),
-      );
-      y = top - rh;
-      page.drawLine({
-        start: { x: margin, y: y + 1 },
-        end: { x: margin + contentWidth, y: y + 1 },
-        thickness: 0.4,
-        color: rule,
+    for (let index = 0; index < cards.length; index += 2) {
+      const row = cards.slice(index, index + 2);
+      const height = Math.max(...row.map((card) => card.height));
+      if (y - height < contentBottom) {
+        newPage();
+        sectionHeading(title + ' (ต่อ)');
+      }
+      row.forEach((card, column) => {
+        const x = margin + column * (cardWidth + gap);
+        drawPdfCard(page, {
+          x,
+          y: y - height,
+          width: cardWidth,
+          height,
+          color: index + column === 0 ? greenSurface : surface,
+        });
+        card.labelLines.forEach((line, i) =>
+          page.drawText(line, {
+            x: x + inset,
+            y: y - inset - 9.5 - i * 14,
+            size: 9.5,
+            font: body,
+            color: muted,
+          }),
+        );
+        const valueTop = y - inset - card.labelLines.length * 14 - 8;
+        card.valueLines.forEach((line, i) =>
+          page.drawText(line, {
+            x: x + inset,
+            y: valueTop - card.valueSize - i * card.valueSize * 1.35,
+            size: card.valueSize,
+            font: bold,
+            color: index + column === 0 ? accent : ink,
+          }),
+        );
       });
+      y -= height + gap;
     }
   };
 
@@ -649,7 +682,14 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
     const totalW = cols.reduce((s, c) => s + c.width, 0);
     const drawColHeader = () => {
       const h = lh + 3;
-      page.drawRectangle({ x: margin, y: y - h + 2, width: totalW, height: h, color: headBg });
+      drawPdfCard(page, {
+        x: margin,
+        y: y - h + 2,
+        width: totalW,
+        height: h,
+        radius: 5,
+        color: headBg,
+      });
       let x = margin;
       for (const c of cols) {
         const tx = c.align === 'right' ? x + c.width - 6 - width(c.header, bold, size) : x + 4;
@@ -694,7 +734,13 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
           if (line !== undefined) {
             const cellSize = cells[i].size;
             const lx = c.align === 'right' ? x + c.width - 6 - width(line, body, cellSize) : x + 4;
-            page.drawText(line, { x: lx, y: y - cellSize - 2, size: cellSize, font: body, color: ink });
+            page.drawText(line, {
+              x: lx,
+              y: y - cellSize - 2,
+              size: cellSize,
+              font: body,
+              color: ink,
+            });
           }
           x += c.width;
         });
@@ -714,10 +760,13 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
   y -= 6;
   paragraph('รายงานภาพรวมรายได้', { font: bold, size: 20 });
   y -= 2;
-  infoLine('พาร์ทเนอร์  ', model.partnerName);
-  infoLine('ช่วงรายงาน  ', `${model.fromLabel} – ${model.inclusiveEndLabel}`);
-  infoLine('แบรนด์  ', model.brandLabel);
-  if (model.dataThrough) infoLine('ข้อมูล ณ  ', timestamp(model.dataThrough));
+  y -= 10;
+  metadataCard([
+    { label: 'พาร์ทเนอร์', value: model.partnerName },
+    { label: 'ช่วงรายงาน', value: `${model.fromLabel} – ${model.inclusiveEndLabel}` },
+    { label: 'แบรนด์', value: model.brandLabel },
+    ...(model.dataThrough ? [{ label: 'ข้อมูล ณ', value: timestamp(model.dataThrough) }] : []),
+  ]);
 
   // Status is shown ONLY when it changes the reading of the figures (partial/stale/unavailable).
   if (model.statusNote) {
@@ -731,32 +780,29 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
       y: y - boxH,
       width: contentWidth,
       height: boxH,
-      color: rgb(0.99, 0.96, 0.9),
-      borderColor: rgb(0.85, 0.7, 0.3),
+      color: surface,
+      borderColor: rule,
       borderWidth: 0.6,
     });
     let ty = y - 8;
     for (const line of lines) {
-      page.drawText(line, { x: margin + 8, y: ty - size, size, font: body, color: rgb(0.5, 0.36, 0.05) });
+      page.drawText(line, { x: margin + 8, y: ty - size, size, font: body, color: ink });
       ty -= size * 1.45;
     }
     y -= boxH;
   }
 
   // ---- Summary ----
-  summaryBlock(
-    'สรุปยอด',
-    [
-      ...model.summary.map((s) => ({
-        label: s.label,
-        value: s.amount ? formatMinor(s.amount.minor) : UNAVAILABLE_TH,
-      })),
-      ...model.counts.map((c) => ({
-        label: c.label,
-        value: c.count === null ? UNAVAILABLE_TH : c.count.toLocaleString('en-US'),
-      })),
-    ],
-  );
+  summaryBlock('สรุปยอด', [
+    ...model.summary.map((s) => ({
+      label: s.label,
+      value: s.amount ? formatMinor(s.amount.minor) : UNAVAILABLE_TH,
+    })),
+    ...model.counts.map((c) => ({
+      label: c.label,
+      value: c.count === null ? UNAVAILABLE_TH : c.count.toLocaleString('en-US'),
+    })),
+  ]);
 
   // ---- Daily commission ----
   if (model.daily.length)
@@ -807,9 +853,7 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
 
   // ---- Channel breakdown (drop an all-zero "other" row to reduce clutter) ----
   if (model.channels) {
-    const channelRows = model.channels.filter(
-      (c) => c.key !== 'other' || BigInt(c.minor) !== 0n,
-    );
+    const channelRows = model.channels.filter((c) => c.key !== 'other' || BigInt(c.minor) !== 0n);
     tableBlock(
       'สัดส่วนตามช่องทาง',
       [
@@ -842,9 +886,7 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
     );
 
   // ---- Notes (only meaningful ones; no generic invoice disclaimer) ----
-  const notes = [model.estimatedNote, model.unassignedNote].filter(
-    (n): n is string => Boolean(n),
-  );
+  const notes = [model.estimatedNote, model.unassignedNote].filter((n): n is string => Boolean(n));
   if (notes.length) {
     y -= 10;
     for (const note of notes) paragraph('• ' + note, { size: 9.5, color: muted });
@@ -855,8 +897,21 @@ export async function overviewReportPdf(input: OverviewReportInput): Promise<Uin
   pages.forEach((p, i) => {
     const label = `หน้า ${i + 1} / ${pages.length}`;
     const size = 9;
+    p.drawLine({
+      start: { x: margin, y: 46 },
+      end: { x: A4W - margin, y: 46 },
+      thickness: 0.6,
+      color: rule,
+    });
+    p.drawText('Labs D · Partner report', {
+      x: margin,
+      y: 30,
+      size: 8.5,
+      font: body,
+      color: muted,
+    });
     p.drawText(label, {
-      x: (A4W - body.widthOfTextAtSize(label, size)) / 2,
+      x: A4W - margin - body.widthOfTextAtSize(label, size),
       y: 30,
       size,
       font: body,

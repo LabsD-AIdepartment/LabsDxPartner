@@ -56,8 +56,11 @@ function overview(
 }
 
 const input = (data: OverviewValue, brand: string | null = null, partnerName = 'มดดำ คชาภา') =>
-  ({ data, filters: { from: '2026-07-01', toExclusive: '2026-09-01', brand }, partnerName }) as
-    OverviewReportInput;
+  ({
+    data,
+    filters: { from: '2026-07-01', toExclusive: '2026-09-01', brand },
+    partnerName,
+  }) as OverviewReportInput;
 
 describe('exact money + rate formatting', () => {
   it('decimalMinor renders satang as two decimals for zero, huge and negative amounts', () => {
@@ -76,7 +79,17 @@ describe('exact money + rate formatting', () => {
     expect(ratePercent(12345)).toBe('1.2345%');
   });
   it('csvText matches the server statement export neutralisation', () => {
-    for (const text of ['คุณก้อง', 'a,"b"', '=1+1', ' +SUM(A1:A2)', '-1+2', '@cmd', '\t=x', '\r=x', '\n=x'])
+    for (const text of [
+      'คุณก้อง',
+      'a,"b"',
+      '=1+1',
+      ' +SUM(A1:A2)',
+      '-1+2',
+      '@cmd',
+      '\t=x',
+      '\r=x',
+      '\n=x',
+    ])
       expect(csvText(text)).toBe(serverCsvText(text));
   });
 });
@@ -241,7 +254,13 @@ describe('CSV report', () => {
       'ประมาณการแยกจากคอมมิชชันที่ยืนยันแล้ว และอาจเปลี่ยนแปลงก่อนตัดรอบ',
     );
     const noEstimate = overviewReportCsv(
-      input(overview('2026-07-01', '2026-09-01', { confirmed: m('100'), estimated: m('0'), trend: [{ date: '2026-08-01', amount: m('100') }] })),
+      input(
+        overview('2026-07-01', '2026-09-01', {
+          confirmed: m('100'),
+          estimated: m('0'),
+          trend: [{ date: '2026-08-01', amount: m('100') }],
+        }),
+      ),
     );
     expect(noEstimate).not.toContain('ประมาณการแยกจาก');
   });
@@ -289,6 +308,15 @@ describe('PDF report', () => {
       const rendered = drawText.mock.calls.map(([value]) => value).join(' ');
       expect(rendered).not.toMatch(/ยอดวิว|812,000/);
       expect(rendered).toContain('12,800');
+      expect(rendered).toContain('Labs D');
+      expect(rendered).not.toContain('LabsD');
+      expect(rendered).toContain('฿37,360.00');
+      expect(rendered).toContain('฿550,000.00');
+      expect(doc.getAuthor()).toBe('Labs D');
+      for (const [, options] of drawText.mock.calls) {
+        expect(options?.y).toBeGreaterThanOrEqual(30);
+        expect(options?.y).toBeLessThan(800);
+      }
     } finally {
       drawText.mockRestore();
     }
@@ -310,14 +338,32 @@ describe('PDF report', () => {
       eligibleSales: m('0'),
       trend,
     });
-    const doc = await parse(
-      await overviewReportPdf({
-        data,
-        filters: { from: '2026-07-01', toExclusive: '2027-07-01', brand: null },
-        partnerName: 'มดดำ คชาภา',
-      }),
-    );
-    expect(doc.getPageCount()).toBeGreaterThan(1);
+    const drawText = vi.spyOn(PDFPage.prototype, 'drawText');
+    try {
+      const doc = await parse(
+        await overviewReportPdf({
+          data,
+          filters: { from: '2026-07-01', toExclusive: '2027-07-01', brand: null },
+          partnerName: 'มดดำ คชาภา',
+        }),
+      );
+      expect(doc.getPageCount()).toBeGreaterThan(1);
+      const rendered = drawText.mock.calls.map(([text]) => text);
+      expect(rendered.filter((text) => text === 'Labs D')).toHaveLength(doc.getPageCount());
+      expect(rendered.filter((text) => text === 'คอมมิชชัน (THB)')).toHaveLength(
+        doc.getPageCount(),
+      );
+      // Every daily amount survives the more spacious card layout and page breaks.
+      for (let i = 0; i < 365; i++) expect(rendered).toContain(`฿${decimalMinor(String(100 + i))}`);
+      for (let i = 1; i <= doc.getPageCount(); i++)
+        expect(rendered).toContain(`หน้า ${i} / ${doc.getPageCount()}`);
+      for (const [text, options] of drawText.mock.calls) {
+        if (!text.startsWith('หน้า ') && text !== 'Labs D · Partner report')
+          expect(options?.y).toBeGreaterThan(46);
+      }
+    } finally {
+      drawText.mockRestore();
+    }
   });
   it('renders huge and negative amounts and an unavailable scenario without throwing', async () => {
     const huge = overview('2026-07-01', '2026-09-01', {
@@ -388,7 +434,10 @@ describe('PDF report', () => {
     expect(doc.getPageCount()).toBeGreaterThanOrEqual(1);
   });
   it('slices a single oversized long-title row across pages (no heading-only/off-page rows)', async () => {
-    const longTitle = Array.from({ length: 100 }, () => 'พูดตรง ๆ ตัวนี้ช่วยให้เช้าวันทำงานง่ายขึ้นมากจริง ๆ').join(' ');
+    const longTitle = Array.from(
+      { length: 100 },
+      () => 'พูดตรง ๆ ตัวนี้ช่วยให้เช้าวันทำงานง่ายขึ้นมากจริง ๆ',
+    ).join(' ');
     const data = overview('2026-07-01', '2026-09-01', {
       confirmed: m('1280000'),
       estimated: m('0'),
@@ -564,8 +613,8 @@ describe('filename', () => {
     expect(reportBaseFilename(input(overview('2026-07-01', '2026-09-01'), null, 'มดดำ'))).toBe(
       'overview-report_partner_2026-07-01_to_2026-09-01',
     );
-    expect(reportBaseFilename(input(overview('2026-07-01', '2026-09-01'), null, 'Ant Kachapa'))).toBe(
-      'overview-report_ant-kachapa_2026-07-01_to_2026-09-01',
-    );
+    expect(
+      reportBaseFilename(input(overview('2026-07-01', '2026-09-01'), null, 'Ant Kachapa')),
+    ).toBe('overview-report_ant-kachapa_2026-07-01_to_2026-09-01');
   });
 });
