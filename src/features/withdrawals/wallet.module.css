@@ -1,4 +1,5 @@
 .wallet {
+  container: wallet-page / inline-size;
   display: grid;
   gap: 20px;
   min-width: 0;

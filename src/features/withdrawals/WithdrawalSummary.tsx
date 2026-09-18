@@ -52,6 +52,7 @@ export function WithdrawalSummary({
   onRetry,
   className = '',
   compact = false,
+  layout = 'card',
 }: {
   data: WithdrawalSummaryData | null;
   state?: 'ready' | 'loading' | 'error' | 'stale';
@@ -59,6 +60,7 @@ export function WithdrawalSummary({
   onRetry?: () => void;
   className?: string;
   compact?: boolean;
+  layout?: 'card' | 'wide';
 }) {
   const visible = state === 'loading' || state === 'error' ? null : data;
   const balance = visible?.balance.state === 'known' ? visible.balance : null;
@@ -71,7 +73,7 @@ export function WithdrawalSummary({
     <WalletCard
       compact={compact}
       title="ยอดพร้อมถอน"
-      className={`${styles.summary} ${!compact ? styles.summaryWallet : ''} ${className}`}
+      className={`${styles.summary} ${!compact ? styles.summaryWallet : ''} ${!compact && layout === 'wide' ? styles.summaryWide : ''} ${className}`}
       action={
         !compact && <Wallet className={styles.summaryWalletIcon} size={22} aria-hidden="true" />
       }

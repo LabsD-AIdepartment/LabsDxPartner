@@ -32,6 +32,7 @@ type Props = {
   requestHref?: (requestRef: string) => string;
   historyHref?: string;
   compactSummary?: boolean;
+  summaryLayout?: 'card' | 'wide';
   children: (value: {
     renderSummary: (className: string) => ReactNode;
     persistenceWarning: string | null;
@@ -67,6 +68,7 @@ function ScopedExperience({
   requestHref,
   historyHref,
   compactSummary,
+  summaryLayout,
   children,
 }: Props) {
   const client = useQueryClient();
@@ -458,6 +460,7 @@ function ScopedExperience({
         renderSummary: (className) => (
           <WithdrawalSummary
             compact={compactSummary}
+            layout={summaryLayout}
             data={summary ?? null}
             state={state}
             className={className}

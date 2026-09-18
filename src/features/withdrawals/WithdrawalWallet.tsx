@@ -172,7 +172,7 @@ function ScopedWallet({
       refreshKey={refreshKey}
       requestHref={requestHref}
       historyHref={backHref}
-      compactSummary
+      summaryLayout="wide"
     >
       {({ renderSummary, persistenceWarning }) => (
         <div className={styles.wallet}>
