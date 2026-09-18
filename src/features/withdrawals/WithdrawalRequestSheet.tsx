@@ -115,7 +115,11 @@ export function WithdrawalRequestSheet({
   const content = useRef<HTMLDivElement>(null);
   const fieldError = view.state === 'editing' ? view.fieldError : undefined;
   useEffect(() => {
-    if (open) stageHeading.current?.focus();
+    if (open)
+      (
+        stageHeading.current ??
+        content.current?.querySelector<HTMLInputElement>('input[type="radio"]:checked')
+      )?.focus();
   }, [open, view.state]);
   useEffect(() => {
     if (open && fieldError)
@@ -124,7 +128,7 @@ export function WithdrawalRequestSheet({
 
   const heading =
     view.state === 'editing'
-      ? 'ระบุยอดที่ต้องการถอน'
+      ? null
       : view.state === 'quoting'
         ? 'กำลังตรวจสอบรายการ'
         : view.state === 'review'
@@ -140,9 +144,11 @@ export function WithdrawalRequestSheet({
   return (
     <WalletDialog open={open} onClose={onClose} title="ถอนเงิน" className={styles.walletSheet}>
       <div className={styles.sheetContent} ref={content}>
-        <h3 className={styles.sheetStage} tabIndex={-1} ref={stageHeading}>
-          {heading}
-        </h3>
+        {heading && (
+          <h3 className={styles.sheetStage} tabIndex={-1} ref={stageHeading}>
+            {heading}
+          </h3>
+        )}
         {(view.state === 'editing' || view.state === 'quoting') && (
           <form
             className={styles.sheetForm}
