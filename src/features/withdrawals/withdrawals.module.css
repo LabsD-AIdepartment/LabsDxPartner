@@ -580,6 +580,10 @@
   min-width: 0;
 }
 
+.detailProof > div:first-child {
+  align-items: center;
+}
+
 .detailPage button,
 .detailPage a {
   min-width: 0;

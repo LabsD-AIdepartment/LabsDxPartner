@@ -294,13 +294,18 @@ export function WithdrawalDetail({
             )}
           </div>
 
-          <Card title="หลักฐานการโอน" aria-label="เอกสารของคำขอ">
-            {visible.documents.state === 'available' ? (
-              <div className={styles.detailActions}>
-                <Text>{visible.documents.documents[0].title}</Text>
-                {fresh && proofAction}
-              </div>
-            ) : (
+          <Card
+            title="หลักฐานการโอน"
+            aria-label="เอกสารของคำขอ"
+            className={styles.detailProof}
+            description={
+              visible.documents.state === 'available'
+                ? visible.documents.documents[0].title
+                : undefined
+            }
+            action={visible.documents.state === 'available' && fresh ? proofAction : undefined}
+          >
+            {visible.documents.state !== 'available' && (
               <>
                 <Text>หลักฐานจะพร้อมเมื่อโอนเงินสำเร็จ</Text>
                 <ul className={styles.detailReasons}>
