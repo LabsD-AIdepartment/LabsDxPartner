@@ -68,18 +68,45 @@ export function WithdrawalSummary({
   const requestDisabled = state !== 'ready' || visible?.readiness.requestGate !== 'ready';
   const showRows =
     !compact || !!(balance && (balance.held.minor !== '0' || balance.deficit.minor !== '0'));
+  const wide = !compact && layout === 'wide';
+  const amount = (
+    <Money
+      value={balance?.available ?? null}
+      reason="ยังไม่มีข้อมูลยอดพร้อมถอน"
+      className={styles.summaryAmount}
+    />
+  );
+  const withdrawalAction = action && (
+    <Button
+      variant="primary"
+      className={styles.summaryAction}
+      onClick={action.onClick}
+      disabled={action.disabled || (action.kind === 'request' && requestDisabled)}
+    >
+      {action.label ?? (action.kind === 'request' ? 'ถอนเงิน' : 'ตรวจสอบคำขอ')}
+    </Button>
+  );
 
   return (
     <WalletCard
       compact={compact}
-      title="ยอดพร้อมถอน"
-      className={`${styles.summary} ${!compact ? styles.summaryWallet : ''} ${!compact && layout === 'wide' ? styles.summaryWide : ''} ${className}`}
+      title={wide ? undefined : 'ยอดพร้อมถอน'}
+      className={`${styles.summary} ${!compact ? styles.summaryWallet : ''} ${wide ? styles.summaryWide : ''} ${className}`}
       action={
         !compact && <Wallet className={styles.summaryWalletIcon} size={22} aria-hidden="true" />
       }
       aria-label="สรุปยอดพร้อมถอน"
       aria-busy={state === 'loading'}
     >
+      {wide && (
+        <section className={styles.summaryPrimary} aria-label="ยอดพร้อมถอน">
+          <Text as="h2" variant="cardTitle">
+            ยอดพร้อมถอน
+          </Text>
+          {state !== 'loading' && state !== 'error' && amount}
+          {withdrawalAction}
+        </section>
+      )}
       {state === 'loading' || state === 'error' ? (
         <div className={styles.summaryFeedback}>
           <DataState
@@ -90,19 +117,26 @@ export function WithdrawalSummary({
         </div>
       ) : (
         <>
-          <Money
-            value={balance?.available ?? null}
-            reason="ยังไม่มีข้อมูลยอดพร้อมถอน"
-            className={styles.summaryAmount}
-          />
-          {!compact && visible?.beneficiary?.state === 'known' && (
+          {!wide && amount}
+          {!compact && (wide || visible?.beneficiary?.state === 'known') && (
             <section className={styles.summaryBank} aria-label="บัญชีรับเงินที่ผูกไว้">
               <Landmark size={20} aria-hidden="true" />
               <div>
-                <span>{visible.beneficiary.bankName}</span>
-                <span className={styles.summaryBankAccount}>
-                  {visible.beneficiary.maskedAccount}
-                </span>
+                {wide && (
+                  <Text as="h3" variant="label">
+                    บัญชีรับเงิน
+                  </Text>
+                )}
+                {visible?.beneficiary?.state === 'known' ? (
+                  <>
+                    <span>{visible.beneficiary.bankName}</span>
+                    <span className={styles.summaryBankAccount}>
+                      {visible.beneficiary.maskedAccount}
+                    </span>
+                  </>
+                ) : (
+                  <span>ยังไม่มีบัญชีรับเงินที่พร้อมใช้งาน</span>
+                )}
               </div>
             </section>
           )}
@@ -204,16 +238,7 @@ export function WithdrawalSummary({
           )}
         </>
       )}
-      {action && (
-        <Button
-          variant="primary"
-          className={styles.summaryAction}
-          onClick={action.onClick}
-          disabled={action.disabled || (action.kind === 'request' && requestDisabled)}
-        >
-          {action.label ?? (action.kind === 'request' ? 'ถอนเงิน' : 'ตรวจสอบคำขอ')}
-        </Button>
-      )}
+      {!wide && withdrawalAction}
     </WalletCard>
   );
 }

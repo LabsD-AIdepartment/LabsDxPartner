@@ -837,139 +837,141 @@
   }
 }
 
-/* Wallet page: a prominent balance with open, compact supporting metrics. */
-.summaryWide .summaryWalletIcon {
-  display: none;
+/* Four related wallet cards reflow with the width of their own band. */
+.summary.summaryWide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
 }
 
-.summaryWide > :first-child h2 {
-  color: var(--muted);
-  font-weight: var(--weight-medium);
-}
-
-.summaryWide .summaryAmount {
-  justify-content: flex-start;
-  text-align: start;
-  font-size: var(--text-hero);
-  letter-spacing: -2px;
-  margin-block: 12px 28px;
-}
-
-.summaryWide .summaryBank {
-  padding: 20px;
+.summaryWide .summaryPrimary,
+.summaryWide .summaryBank,
+.summaryWide .summaryTile {
+  min-width: 0;
+  min-height: 184px;
+  margin: 0;
+  padding: 22px;
+  border: 0;
   border-radius: 20px;
   background: var(--wallet-panel);
 }
 
-.summaryWide .summaryRows {
-  gap: 24px;
-  margin-block: 0 28px;
+.summaryWide .summaryPrimary {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  container: wallet-balance / inline-size;
 }
 
-.summaryWide .summaryTile {
-  display: grid;
-  grid-template-rows: auto auto auto;
-  align-content: start;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  gap: 6px;
-}
-
-.summaryWide .summaryTile dt {
-  display: contents;
-}
-
-.summaryWide .summaryTile dt > span:not([class]) {
-  grid-row: 1;
-  padding-inline-start: 28px;
-  color: var(--text);
-  font-weight: var(--weight-medium);
-}
-
-.summaryWide .summaryTile dt > .summaryDate {
-  grid-row: 3;
-}
-
-.summaryWide .summaryTile dt > .summaryFlowIcon {
-  top: 0;
-  left: 0;
-  right: auto;
-  bottom: auto;
-}
-
-.summaryWide .summaryTile dd {
-  grid-row: 2;
-  order: 0;
-}
-
-.summaryWide .summaryAction {
-  align-self: stretch;
+.summaryPrimary h2 {
   margin: 0;
 }
 
-@container wallet-page (min-width: 760px) {
+.summaryWide .summaryAmount {
+  flex: none;
+  justify-content: flex-start;
+  text-align: start;
+  font-size: var(--text-withdrawal-balance);
+  letter-spacing: -1px;
+  margin: 0;
+}
+
+.summaryWide .summaryAction {
+  margin-top: auto;
+}
+
+.summaryWide .summaryRows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin: 0;
+  order: 1;
+}
+
+.summaryWide .summaryTile {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  container: wallet-metric / inline-size;
+}
+
+.summaryWide .summaryTile dt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-wrap: pretty;
+}
+
+.summaryWide .summaryTile dd {
+  font-size: var(--text-metric-large);
+}
+
+.summaryWide .summaryTile dt > .summaryFlowIcon {
+  right: 18px;
+  bottom: 18px;
+}
+
+.summaryWide .summaryBank {
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+}
+
+.summaryWide .summaryBank > svg {
+  width: 24px;
+  height: 24px;
+}
+
+.summaryWide .summaryBank > div {
+  gap: 6px;
+}
+
+.summaryWide .summaryBank h3 {
+  color: var(--text);
+  margin: 0;
+}
+
+.summaryWide .summaryBankAccount {
+  font-size: var(--font-size-18);
+  letter-spacing: 0;
+}
+
+.summaryWide .summaryFeedback,
+.summaryWide .summaryNotice {
+  grid-column: 1 / -1;
+  order: 3;
+}
+
+/* Two cards fit at 2 x 240px + 16px gap + 32px outer padding. */
+@container wallet-page (min-width: 528px) {
   .summary.summaryWide {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    grid-template-rows: auto auto 1fr;
-    grid-template-areas:
-      'heading bank'
-      'amount bank'
-      'metrics action';
-    column-gap: 48px;
-    padding: 36px;
-    align-items: start;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .summaryWide > :first-child {
-    grid-area: heading;
-  }
-
-  .summaryWide .summaryAmount {
-    grid-area: amount;
-  }
-
   .summaryWide .summaryBank {
-    grid-area: bank;
-    align-self: start;
-    justify-self: end;
-    width: 100%;
-    max-width: 380px;
-    min-height: 112px;
-    margin: 0;
-    padding: 24px;
-    gap: 16px;
+    grid-column: 2;
+    grid-row: 1;
   }
-
-  .summaryWide .summaryBank > svg {
-    width: 28px;
-    height: 28px;
-  }
-
-  .summaryWide .summaryBankAccount {
-    font-size: var(--font-size-20);
-  }
-
   .summaryWide .summaryRows {
-    grid-area: metrics;
-    width: 100%;
-    max-width: 560px;
-    margin: 0;
-  }
-
-  .summaryWide .summaryAction {
-    grid-area: action;
-    justify-self: end;
-    align-self: end;
-    max-width: 380px;
-  }
-
-  .summaryWide .summaryFeedback,
-  .summaryWide .summaryNotice {
     grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Four cards fit at 4 x 240px + 3 x 16px gaps + 32px outer padding. */
+@container wallet-page (min-width: 1040px) {
+  .summary.summaryWide {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .summaryWide .summaryRows {
+    grid-column: 2 / span 2;
+    grid-row: 1;
+  }
+  .summaryWide .summaryBank {
+    grid-column: 4;
   }
 }
 
