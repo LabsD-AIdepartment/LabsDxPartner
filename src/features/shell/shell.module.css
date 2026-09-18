@@ -22,7 +22,8 @@
   text-decoration: none;
 }
 .nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   font-size: var(--text-caption-size);
 }
@@ -270,6 +271,9 @@
   .header .nav {
     flex: 0 0 auto;
     font-size: var(--text-menu-compact);
+  }
+  .header .nav :is(button, a) {
+    padding-inline: 0.5em;
   }
   .controls {
     flex: 0 0 auto;
