@@ -226,22 +226,28 @@
   gap: 8px;
   padding: 10px 8px;
   background: var(--wallet-panel);
+  border: 0;
 }
 .walletSheet .sheetChoices label:has(input:checked) {
-  background: var(--wallet-selection);
-  border-color: var(--wallet-selection-border);
+  background: var(--wallet-panel);
+  font-weight: var(--weight-semibold);
 }
 .walletSheet .sheetChoices input {
   accent-color: var(--wallet-selection-border);
 }
 .walletSheet .sheetForm input[type='text'] {
   background: var(--wallet-panel);
+  border: 0;
   border-radius: 14px;
+}
+.walletSheet .sheetForm input[type='text']:focus-visible {
+  outline: 2px solid var(--wallet-selection-border);
+  outline-offset: 2px;
 }
 .walletSheet .beneficiary {
   padding: 14px;
   background: var(--wallet-panel);
-  border-color: color-mix(in srgb, var(--card-solid) 90%, transparent);
+  border: 0;
   border-radius: 18px;
 }
 .walletSheet .beneficiaryHeading {
@@ -264,6 +270,14 @@
 }
 .walletSheet .sheetAmounts dt {
   flex-basis: 150px;
+}
+.walletSheet .sheetNotice,
+.walletSheet .sheetActiveList > li {
+  background: var(--wallet-panel);
+  border: 0;
+}
+.walletSheet .sheetNet {
+  border: 0;
 }
 @container withdrawal-form (max-width: 290px) {
   .walletSheet .beneficiaryDetails > div:not(:last-child) {

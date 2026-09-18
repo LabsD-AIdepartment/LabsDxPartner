@@ -24,7 +24,13 @@
 }
 
 .surface.dialog {
-  width: min(392px, calc(100vw - 32px));
+  --wallet-panel: #fff;
+  --button-secondary-fill: var(--wallet-panel);
+  width: min(560px, calc(100vw - 32px));
   padding: 20px;
   border-radius: 26px;
+}
+
+:global([data-theme='dark']) .surface.dialog {
+  --wallet-panel: var(--card-solid);
 }
