@@ -127,6 +127,24 @@ beforeEach(() => vi.stubEnv('NODE_ENV', 'development'));
 afterEach(() => vi.unstubAllEnvs());
 
 describe('dev ad-performance handler — auto-refresh ON', () => {
+  it('database mode reads only PostgreSQL, even when legacy visit refresh is enabled', async () => {
+    const raw = snapshotFor('2026-07-01', '2026-09-01', fresh);
+    const readDatabase = vi.fn(async () => ({ raw, stale: false }));
+    const autoRefresh = vi.fn(), readSnapshot = vi.fn(), fetch = vi.fn();
+    const deps = { env: { ...env, LABSD_AD_SNAPSHOT_DATABASE: '1', LABSD_AD_SNAPSHOT_REFRESH_ON_VISIT: '1' },
+      now, readDatabase, autoRefresh, readSnapshot, fetch };
+    const response = await handleAdPerformanceRequest(req(CONFIGURED), deps);
+    expect(response.status).toBe(200);
+    expect((await response.json()).performance.fetchedAt).toBe(fresh);
+    const missing = await handleAdPerformanceRequest(req(CONFIGURED), { ...deps, readDatabase: async () => null });
+    expect(missing.status).toBe(404);
+    const broken = await handleAdPerformanceRequest(req(CONFIGURED), { ...deps, readDatabase: async () => { throw new Error('DB down'); } });
+    expect(broken.status).toBe(503);
+    const staleResponse = await handleAdPerformanceRequest(req(CONFIGURED), { ...deps, readDatabase: async () => ({ raw, stale: true }) });
+    expect((await staleResponse.json()).performance.state).toBe('stale');
+    expect(autoRefresh).not.toHaveBeenCalled(); expect(readSnapshot).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('refreshes every visit even with a fresh cache, and marks failed refresh as stale', async () => {
     const store = makeStore({ 'a__clip-3.json': snapshotFor('2026-07-01', '2026-09-01', fresh) });
     let clock = NOW + 1;

@@ -106,5 +106,9 @@
   {
     "id": "0027_partner_account_profiles.sql",
     "checksum": "708376535f235dd99737a8ccac4b7b11afd815a5e3e92e3bf92a1e0c6e701785"
+  },
+  {
+    "id": "0028_external_ad_snapshots.sql",
+    "checksum": "c0d898c0c70796459f4a2c55f26170526b9c653e617c6c0e85b6fd3c8981c336"
   }
 ]

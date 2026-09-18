@@ -35,10 +35,10 @@ The single HTTPS4443 runtime serves canonical `/overview`, `/content`, `/transac
 `/account`. The approved partner-demo compositions are reused behind native authentication;
 legacy preview links redirect to canonical paths. Old controls and alternate sample identities
 are unavailable. Dataset, stored ad snapshot and exact-file sample media requests require the
-same native session and allowlist. The owner enabled live read refresh for both existing Facebook bindings. Each page visit requests
-the exact selected window; concurrent reads share one in-flight acquisition, and failed refreshes
-are marked stale. Provider credentials resolve from `LABSD_LOCAL_KEYCHAIN_REFS` at startup and
-are never stored as values in configuration. See `docs/dev/ad-performance-snapshot.md`.
+same native session and allowlist. External ad reports now come from PostgreSQL through the
+hourly worker described below. Provider credentials resolve from `LABSD_LOCAL_KEYCHAIN_REFS`
+at startup and are injected into the worker only when database mode is enabled.
+They are never stored as values in configuration. See `docs/dev/ad-performance-snapshot.md`.
 The account page and password change remain native. Sample withdrawal balances and mutations
 are illustrative and stored separately in user/partner-namespaced browser storage; they never
 transfer money or modify native financial records. A footer identifies the sample presentation.
@@ -79,3 +79,44 @@ Logout, public access routes, verification failure and native scope changes clea
 retained clients. A live permission revision change hides the report and refreshes
 server authorization before reuse. Nothing is written to browser persistent storage;
 non-pitch query providers retain their original isolation and disposal behavior.
+
+### Hourly external data worker
+
+`LABSD_AD_SNAPSHOT_DATABASE=1` makes the connected-ad endpoint read PostgreSQL only.
+`LABSD_EXTERNAL_DATA_WORKER_ENABLED=1` starts a supervised worker with `npm run dev`.
+Keep `LABSD_AD_SNAPSHOT_AUTO_REFRESH=0` and `LABSD_AD_SNAPSHOT_REFRESH_ON_VISIT=0` in
+this mode. Even if accidentally enabled, the database read path takes precedence.
+The web child receives no configured Facebook token/app-secret environment values.
+
+The current external-data inventory serving the pitch consists of the two configured
+Facebook ad bindings. The native marketing and TikTok Shop paths already read PostgreSQL;
+their disabled acquisition lanes and unrelated registered fixtures are not activated here.
+The approved sample accounting dataset and withdrawal state retain their own authority.
+A report observation does not become a confirmed payable simply because it was refreshed.
+
+Migration `0028_external_ad_snapshots.sql` adds the isolated provider read model.
+`scripts/seed-external-snapshots.ts`, run with the existing local environment injected,
+imports validated exact-binding reports once and preserves their original timestamps.
+Post-cutover the web never falls back to files or an external request on a database miss.
+
+Each configured/default window and rolling current-month/latest-seven-day window stays
+active. Other requested exact windows stay active for seven days after last use. Each
+successful report is refreshed after one hour; failures retry after one hour and retain
+last-good data. New valid date windows register a bounded database job and initially
+show unavailable ad values; the worker polls every 15 seconds and fills the window
+independently of the page request. At most128 active windows per binding are admitted.
+Dates remain exact; overlapping full-period reports are never added or averaged.
+Reload/normal query refresh reads newly stored results. Saved reports are retained after
+retirement; there is no automatic deletion. This preserves provider-defined ratios.
+
+The worker verifies the native namespace, complete binding identity and exact period,
+uses expiring SQL leases, and bounds each source fetch to20 seconds. Restart/startup
+catches up due work. The launcher supervises crashes/stalls via the existing heartbeat
+supervisor, owns shutdown, and opens no additional frontend or health port. It logs
+state/attention changes without raw provider error text. A source failure or report older
+than two hours is returned stale with its original update time. The current local worker
+runs while the local launcher and Mac are running; it is not an always-on hosted service.
+
+Rollback: stop the launcher, disable both new flags, and restart with the previously
+approved snapshot policy. Keep the additive table and reports; code rollback needs no
+schema rollback. Never enable broad native acquisition merely to start this lane.

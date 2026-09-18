@@ -51,6 +51,7 @@ export interface HandlerDeps {
   now?: () => number;
   fetch?: typeof fetch;
   autoRefresh?: AutoRefreshFn;
+  readDatabase?: (binding: AdSnapshotBindingConfigValue) => Promise<{ raw: unknown; stale: boolean } | null>;
 }
 
 const JSON_HEADERS = {
@@ -253,6 +254,22 @@ export async function handleAdPerformanceRequest(
   const binding = findAdSnapshotBinding(bindings, identity, clipId);
   if (!binding) return notFound('unknown binding');
 
+  if (env.LABSD_AD_SNAPSHOT_DATABASE === '1') {
+    let derived: AdSnapshotBindingConfigValue;
+    try {
+      derived = deriveRequestedWindowBinding(binding, from, to);
+      // No future reporting windows can create background provider work.
+      const tomorrow = new Date((deps.now?.() ?? Date.now()) + 7 * 3600_000).toISOString().slice(0, 10);
+      if (Date.parse(to) > Date.parse(tomorrow) + 86400_000) return notFound('invalid window');
+    } catch { return notFound('invalid window'); }
+    try {
+      const readDatabase = deps.readDatabase ?? (await import('@/server/modules/marketing-ads/facebook/snapshot-database-runtime')).readDatabaseAdSnapshot;
+      const stored = await readDatabase(derived);
+      if (!stored) return notFound('awaiting scheduled report');
+      return serve(stored.raw, { identity, clipId, from, to }, derived, null, stored.stale);
+    } catch { return unavailable('database report unavailable'); }
+  }
+
   const dir = deps.dir ?? adSnapshotDir(env);
   const read = deps.readSnapshot ?? readSnapshotFile;
   const isConfiguredWindow = from === binding.from && to === binding.toExclusive;
@@ -357,6 +374,7 @@ function serve(
   request: { identity: string; clipId: string; from: string; to: string },
   binding: AdSnapshotBindingConfigValue,
   automaticRefreshFrom: string | null,
+  storedStale = false,
 ): Response {
   try {
     const projected = projectAdSnapshot(
@@ -366,7 +384,9 @@ function serve(
     );
     const refreshFailed = automaticRefreshFrom !== null &&
       (!projected.fetchedAt || Date.parse(projected.fetchedAt) < Date.parse(automaticRefreshFrom));
-    const performance = automaticRefreshFrom ? {
+    const performance = storedStale && projected.state !== 'unavailable' ? {
+      ...projected, state: 'stale', reasons: [...projected.reasons, 'แสดงข้อมูลล่าสุดที่บันทึกไว้ รอการอัปเดตรอบถัดไป'],
+    } : automaticRefreshFrom ? {
       ...projected,
       automaticRefreshFrom,
       ...(refreshFailed && projected.state !== 'unavailable' ? {
