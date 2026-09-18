@@ -31,7 +31,7 @@ const SEPT_CONFIRMED = 32_200_000n; // September confirmed-but-UNRELEASED daily 
 const LATEST_7 = 13_584_000n; // latest-7 window (g6 Sep 11..17) = 135,840 THB
 const SEPT_ESTIMATED = 7_000_000n; // September estimated = 70,000 THB
 const CURRENT_PENDING = SEPT_CONFIRMED + SEPT_ESTIMATED; // ยอดรอตัดรอบ = 392,000 THB
-const INITIAL_SETTLED = 10_000_000n; // four PAID 25,000 = 100,000 THB
+const INITIAL_SETTLED = 10_000_000n; // four varied PAID withdrawals = 100,000 THB
 const INITIAL_RESERVED = 2_500_000n; // one PENDING 25,000 = 25,000 THB
 const INITIAL_AVAILABLE = RELEASED - INITIAL_SETTLED - INITIAL_RESERVED; // 248,600 THB
 const CLOSED_FROM = '2026-07-01'; // seed coverage floor (start of the closed Jul–Aug period)
@@ -439,7 +439,7 @@ describe('projectTransactions / projectDocument', () => {
     const evidence = detail.data.documents.find((d) => d.kind === 'payment-evidence')!;
     const evidenceCsv = projectDocument(dataset, 'statement-1', evidence.id);
     expect(evidenceCsv).toContain('payment_reference,');
-    expect(evidenceCsv).toContain('cash_satang,2500000');
+    expect(evidenceCsv).toContain('cash_satang,1250000');
   });
 });
 
@@ -474,8 +474,8 @@ describe('bootstrapWithdrawal / controller seam', () => {
     expect(summary.balance.available.minor).toBe(INITIAL_AVAILABLE.toString());
     expect(summary.currentPeriodPending?.minor).toBe(CURRENT_PENDING.toString());
     // Last withdrawal = the newest genuinely PAID row (Sep-12), its ACTUAL net cash — not an aggregate.
-    expect(summary.lastWithdrawal?.net.minor).toBe('2500000');
-    expect(summary.lastWithdrawal?.paidAt).toBe('2026-09-12T12:00:00+07:00');
+    expect(summary.lastWithdrawal?.net.minor).toBe('3675000');
+    expect(summary.lastWithdrawal?.paidAt).toBe('2026-09-12T13:24:00+07:00');
   });
 
   it('existing stored state wins on restore (the seed never overwrites a live session)', () => {

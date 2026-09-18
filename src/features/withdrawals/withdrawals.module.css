@@ -978,7 +978,7 @@
 }
 
 .summaryWide .summaryBankAccount {
-  font-size: var(--font-size-18);
+  font-size: inherit;
   letter-spacing: 0;
 }
 

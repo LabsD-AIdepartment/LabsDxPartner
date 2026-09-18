@@ -196,7 +196,8 @@ export const DEFAULT_DATASET_ID = DATASET_IDS.a;
 // identities (same 2026-09-17T10:26:10+07:00 seed clock) with old generation row hashes and non-financial
 // facts unchanged, so the dev default is now g6. The previous g5 remains seeded/immutable and retained.
 // g7 adds Sep-18 to the approved frozen Sep-17 story; g6 remains immutable.
-export const DEFAULT_GENERATION = 'g7';
+// g8 varies sample withdrawals while preserving paid/reserved totals and all g7 earnings.
+export const DEFAULT_GENERATION = 'g8';
 // Retained statement id (reconciles the notification/return links and the readyScenario id name).
 export const CLOSED_STATEMENT_ID = 'statement-1';
 export const CLOSED_PERIOD = {
@@ -475,6 +476,52 @@ export function buildDataset(options: BuildOptions): DatasetRecords {
   const generation = options.generation ?? DEFAULT_GENERATION;
   const asOfIso = bangkokInstant(options.asOf.getTime());
   const anchorDate = options.anchorDate ?? bangkokDate(options.asOf.getTime());
+
+  if (generation === 'g8') {
+    const previous = buildDataset({ ...options, generation: 'g7' });
+    const next: DatasetRecords = {
+      ...previous,
+      meta: { ...previous.meta, generation },
+      earnings: previous.earnings.map((row) => ({ ...row, generation })),
+      allocations: previous.allocations.map((row) => ({ ...row, generation })),
+      clips: previous.clips.map((row) => ({ ...row, generation })),
+      statements: previous.statements.map((row) => ({ ...row, generation })),
+      settlements: previous.settlements.map((row) => ({ ...row, generation })),
+      withdrawals: previous.withdrawals.map((row) => ({ ...row, generation })),
+      deductions: previous.deductions.map((row) => ({ ...row, generation })),
+      beneficiaryAccounts: previous.beneficiaryAccounts?.map((row) => ({ ...row, generation })),
+    };
+    // Authored sample activity, never randomized or applied to real withdrawals.
+    // Paid total remains 100,000 THB; the pending reservation remains 25,000 THB.
+    const activity = [
+      { amount: '1250000', submitted: '10:18', paid: '11:32' },
+      { amount: '3200000', submitted: '14:42', paid: '15:18' },
+      { amount: '1875000', submitted: '09:26', paid: '10:47' },
+      { amount: '3675000', submitted: '16:05', paid: '13:24' },
+      { amount: '2500000', submitted: '11:36', paid: null },
+    ];
+    next.withdrawals = next.withdrawals.map((row, index) => {
+      const sample = activity[index];
+      return {
+        ...row,
+        grossMinor: sample.amount,
+        netMinor: sample.amount,
+        submittedAt: `${row.submittedAt.slice(0, 10)}T${sample.submitted}:00+07:00`,
+        paidAt:
+          row.paidAt && sample.paid ? `${row.paidAt.slice(0, 10)}T${sample.paid}:00+07:00` : null,
+      };
+    });
+    next.settlements = next.settlements.map((row) => {
+      const withdrawal = next.withdrawals.find((item) => item.requestRef === row.withdrawalRef)!;
+      return {
+        ...row,
+        cashMinor: withdrawal.netMinor,
+        obligationSettledMinor: withdrawal.grossMinor,
+        recordedAt: withdrawal.paidAt!,
+      };
+    });
+    return next;
+  }
 
   if (generation === 'g7') {
     // Extend the approved story rather than re-seeding its relative dates and redistributing history.
