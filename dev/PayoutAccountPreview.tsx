@@ -169,7 +169,7 @@ function PayoutAccountPreviewContent({
           transactions: historyHref,
         }}
       >
-        <PayoutHeadingBack href={summaryHref} />
+        <PayoutHeadingBack href={accountHref} />
         <div className={layout.form}>
           {runtime?.controller.view().persistenceWarning && (
             <p role="status">{runtime.controller.view().persistenceWarning}</p>
@@ -181,7 +181,7 @@ function PayoutAccountPreviewContent({
           </PreviewTools>
           {runtime ? (
             <PayoutBeneficiaryExperience
-              action={<BackLink href={summaryHref} label="กลับหน้าหลัก" mobileOnly />}
+              action={<BackLink href={accountHref} label="กลับหน้าจัดการบัญชี" mobileOnly />}
               scope={scope}
               transport={runtime.transport}
               refreshKey={version}
@@ -200,7 +200,7 @@ function PayoutHeadingBack({ href }: { href: string }) {
   const placement = useMobileHeaderActions();
   return placement?.mobile ? null : (
     <PageTitleActions>
-      <BackLink href={href} label="กลับหน้าหลัก" />
+      <BackLink href={href} label="กลับหน้าจัดการบัญชี" />
     </PageTitleActions>
   );
 }
