@@ -19,3 +19,4 @@ jobs:
       - run: npm test
       - run: npm run verify:no-demo
       - run: npm run build
+      - run: node scripts/build-hosted-demo.mjs

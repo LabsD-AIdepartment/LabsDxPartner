@@ -1,0 +1,13 @@
+.git
+.worktrees
+.agent-work
+.local
+_Reff
+node_modules
+.next
+.env*
+*.log
+*.tsbuildinfo
+coverage
+test-results
+playwright-report

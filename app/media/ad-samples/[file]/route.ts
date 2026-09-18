@@ -15,7 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ file
   const { file } = await params;
   if (!Object.hasOwn(files, file)) return new Response(null, { status: 404 });
   try {
-    const bytes = await readFile(resolve(process.cwd(), '.local/pitch/media', file));
+    const bytes = await readFile(resolve(process.env.LABSD_HOSTED_DATA_DIR ? resolve(process.env.LABSD_HOSTED_DATA_DIR, 'media') : resolve(process.cwd(), '.local/pitch/media'), file));
     return new Response(bytes, {
       headers: {
         'content-type': files[file],

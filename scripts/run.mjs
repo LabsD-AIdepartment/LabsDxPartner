@@ -45,11 +45,11 @@ const cmds = {
   ],
   'test:e2e': ['@playwright/test/cli.js', 'test'],
 };
-if (command === 'services:monitor') {
+if (command === 'services:monitor' || command === 'test:restored-app') {
   // Loader mode avoids the tsx CLI's IPC socket under long project-local temporary paths.
   const result = spawnSync(
     process.execPath,
-    ['--import', 'tsx', resolve(root, 'scripts/service-monitor.ts'), ...args],
+    ['--import', 'tsx', resolve(root, command === 'services:monitor' ? 'scripts/service-monitor.ts' : 'tests/helpers/restored-app-acceptance.ts'), ...args],
     {
       cwd: root,
       env,

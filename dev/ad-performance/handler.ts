@@ -199,6 +199,11 @@ export async function handleAdPerformanceRequest(
   if (request.method !== 'GET') return notFound('method');
   if (!isLoopbackRequest(request)) return notFound('loopback-only');
 
+  return handleAuthorizedAdPerformanceRequest(request, deps);
+}
+
+/** Shared validated read projection. Callers must enforce their own authentication boundary. */
+export async function handleAuthorizedAdPerformanceRequest(request: Request, deps: HandlerDeps = {}): Promise<Response> {
   const env = deps.env ?? process.env;
   const url = new URL(request.url);
   // Accept EXACTLY identity+clip+from+to. Reject any unknown key and any duplicated value so an
@@ -236,7 +241,7 @@ export async function handleAdPerformanceRequest(
         deriveRequestedWindowBinding(b, from, to);
         const target = new URL(request.url);
         target.searchParams.set('clip', b.clipId);
-        const response = await handleAdPerformanceRequest(new Request(target, { headers: request.headers }), deps);
+        const response = await handleAuthorizedAdPerformanceRequest(new Request(target, { headers: request.headers }), deps);
         const body = response.ok ? await response.json() : null;
         const rate = rates[`${identity}:${b.clipId}`];
         return { clipId: b.clipId, adId: b.adId,
