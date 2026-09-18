@@ -7,7 +7,7 @@ export type ApplicationPresentation = {
   sampleData?: boolean;
   connectedAds?: boolean;
   /** Visibility only. Source reads, amounts and access checks keep their existing ownership. */
-  showConnectedAds?: boolean;
+  showConnectedAdNotices?: boolean;
 };
 const defaultPresentation: ApplicationPresentation = { resolveHref: (href) => href };
 export const ApplicationPresentationContext = createContext(defaultPresentation);

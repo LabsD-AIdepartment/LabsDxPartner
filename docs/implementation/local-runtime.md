@@ -49,22 +49,19 @@ explicit packaging/deployment task; do not deploy the default build expecting sa
 Source regressions in `dev/` remain test support, not extra running applications. Inactive
 mockup copies and historical builds are archived under ignored `.agent-work/`.
 
-### Connected-ad presentation flag
+### Connected-ad notice flag
 
-`LABSD_PITCH_SHOW_CONNECTED_ADS` defaults to OFF (unset or `0`). Set it to `1` in
-local runtime configuration and restart the canonical server to show linked-ad
-commission details, IDs and performance sections in Overview and My content.
-This flag is resolved on the server for the local pitch composition only; URL
-parameters cannot enable it. Production presentation is unaffected.
+`LABSD_PITCH_SHOW_AD_NOTICES` defaults OFF (unset or `0`). Set it to `1` in local
+runtime configuration and restart the canonical server to show the connected-ad
+status messages beside their Overview earnings entries. URL parameters cannot
+enable it. Production presentation is unaffected.
 
-This is a visibility switch, not an integration or authorization switch: existing
-source reads, accounting projections, confirmed earnings, wallet amounts, exports
-and native access checks remain unchanged. No fallback amounts are added. When
-visible, linked-ad pending reasons appear next to their earnings entries rather
-than as a whole-page Overview warning. Unrelated missing-data and stale/error
-notices remain visible. Set `0` (or remove the key) and restart to return to pitch
-presentation; no data migration is needed.
-Known aggregate pending earnings remain visible; the switch hides connected-ad
-breakdowns, not financial totals. The additive `accountingStatus` metadata keeps
-accounting warnings distinct from ad enrichment warnings, even with identical
-wording. Older responses without this metadata retain their original notices.
+This flag controls notification text only. All approved content KPIs, ad IDs,
+performance reports, ad lists, commission details, amounts and pending totals stay
+visible in both states. Source reads, financial calculations, exports and native
+authorization are unchanged.
+
+Overview retains base accounting status separately from ad enrichment status, so
+ad-specific messages appear in their earnings context rather than a whole-page
+banner. Unrelated accounting warnings remain visible, even if wording matches an
+ad message. Older payloads without provenance retain their original notices.

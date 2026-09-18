@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import {
   pitchModeEnabled,
   canUsePitch,
-  pitchConnectedAdsVisible,
+  pitchConnectedAdNoticesVisible,
 } from '@/server/platform/pitch-mode';
 import { pitchSearch } from '@/features/pitch/routes';
 import { requirePartnerAccess } from './requirePartnerAccess';
@@ -23,7 +23,7 @@ export async function renderPartnerPage(
         session={session}
         screen={screen}
         search={pitchSearch(search)}
-        showConnectedAds={pitchConnectedAdsVisible()}
+        showConnectedAdNotices={pitchConnectedAdNoticesVisible()}
       />
     );
   }

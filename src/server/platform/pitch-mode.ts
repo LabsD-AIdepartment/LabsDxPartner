@@ -3,8 +3,8 @@ export function pitchModeEnabled(env: NodeJS.ProcessEnv = process.env) {
   return env.NODE_ENV === 'development' && env.LABSD_PRESENTATION_MODE === 'pitch';
 }
 /** Presentation switch only; it does not enable provider access or change financial data. */
-export function pitchConnectedAdsVisible(env: NodeJS.ProcessEnv = process.env) {
-  return pitchModeEnabled(env) && env.LABSD_PITCH_SHOW_CONNECTED_ADS === '1';
+export function pitchConnectedAdNoticesVisible(env: NodeJS.ProcessEnv = process.env) {
+  return pitchModeEnabled(env) && env.LABSD_PITCH_SHOW_AD_NOTICES === '1';
 }
 export function canUsePitch(session: SessionValue, env: NodeJS.ProcessEnv = process.env) {
   const member = session.memberships.find((entry) => entry.partnerId === session.activePartnerId);

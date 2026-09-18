@@ -1,6 +1,6 @@
 'use client';
-import { ActionArrow } from '@/shared/ui/ActionArrow';
 import { useApplicationPresentation } from '@/shared/routing/ApplicationPresentation';
+import { ActionArrow } from '@/shared/ui/ActionArrow';
 import { Wallet } from 'lucide-react';
 import type { OverviewValue } from '@/contracts/overview';
 import type { FilterValue } from '@/shared/ui/FilterBar';
@@ -28,13 +28,8 @@ export function EarningsSummary({
   partner?: PartnerPresentation;
   contentBasePath?: string;
 }) {
+  const { showConnectedAdNotices = true } = useApplicationPresentation();
   const channels = data.earnings.channelBreakdown;
-  const { showConnectedAds = true } = useApplicationPresentation();
-  const hiddenPendingAds =
-    !showConnectedAds &&
-    !!data.earnings.connectedAdEarnings?.length &&
-    data.accountingStatus?.state === 'ready' &&
-    data.earnings.estimated === null;
   return (
     <Card className={styles.earnings} aria-label="โปรไฟล์และคอมมิชชัน">
       <PartnerIdentity partner={partner} />
@@ -78,26 +73,25 @@ export function EarningsSummary({
             <span>รายได้ประเภทอื่น</span> <Money value={channels.other} />
           </p>
         )}
-        {!hiddenPendingAds &&
-          (data.earnings.estimated === null || data.earnings.estimated.minor !== '0') && (
-            <div className={styles.estimate}>
-              <span>คอมมิชชันรอยืนยัน</span>
-              <Money value={data.earnings.estimated} />
-              <p className="small muted">
-                {data.earnings.estimated === null
-                  ? 'ยังไม่มีข้อมูลยอดประมาณการ'
-                  : 'ยอดนี้ยังถอนไม่ได้'}
-              </p>
-            </div>
-          )}
-        {showConnectedAds && !!data.earnings.connectedAdEarnings?.length && (
+        {(data.earnings.estimated === null || data.earnings.estimated.minor !== '0') && (
           <div className={styles.estimate}>
-            <span>ค่าคอมจากโฆษณาที่เชื่อมต่อ</span>
+            <span>คอมมิชชันรอยืนยัน</span>
+            <Money value={data.earnings.estimated} />
+            <p className="small muted">
+              {data.earnings.estimated === null
+                ? 'ยังไม่มีข้อมูลยอดประมาณการ'
+                : 'ยอดนี้ยังถอนไม่ได้'}
+            </p>
+          </div>
+        )}
+        {!!data.earnings.connectedAdEarnings?.length && (
+          <div className={styles.estimate}>
+            <span>ค่าคอมจากโฆษณาที่เชื่อมต่อ · รวมในยอดรอยืนยัน</span>
             {data.earnings.connectedAdEarnings.map((entry) => (
               <p key={entry.clipId} className="small">
                 {entry.title} · <Money value={entry.amount} reason={entry.reason ?? undefined} />
                 {entry.ratePpm !== null && ` (${entry.ratePpm / 10000}%)`}
-                {entry.reason && (
+                {showConnectedAdNotices && entry.reason && (
                   <small className="muted" role="status">
                     <br />
                     {entry.reason}
