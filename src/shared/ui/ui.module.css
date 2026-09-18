@@ -91,6 +91,17 @@
   font-size: var(--text-caption-size);
   color: var(--muted);
 }
+/* Keep pre-layout loading announcements accessible without a top-left flash. */
+:global(body) > .dataState[data-loading='true'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .dataState p {
   margin: 0;
   flex: 1;
