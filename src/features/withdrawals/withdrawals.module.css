@@ -569,17 +569,17 @@
   flex-direction: column;
   border: 1px solid #ffffffa6;
   background:
-    radial-gradient(ellipse at 100% 65%, #cbb4efaa, transparent 62%),
-    radial-gradient(ellipse at 38% 72%, #f4b5c1aa, transparent 66%),
-    linear-gradient(155deg, #fff 18%, #fcf7fb 50%, #eee7f6);
+    radial-gradient(ellipse at 100% 65%, #a8d9d2aa, transparent 62%),
+    radial-gradient(ellipse at 38% 72%, #a5dfbeaa, transparent 66%),
+    linear-gradient(155deg, #fff 18%, #f2faf5 50%, #deeee5);
 }
 
 :global([data-theme='dark']) .summary.summaryWallet {
-  border-color: #ad94c32b;
+  border-color: #83b6a32b;
   background:
-    radial-gradient(ellipse at 100% 65%, #70519166, transparent 62%),
-    radial-gradient(ellipse at 38% 72%, #8a4e6666, transparent 66%),
-    linear-gradient(155deg, #14191b 18%, #22202c 65%, #2e253c);
+    radial-gradient(ellipse at 100% 65%, #376f7366, transparent 62%),
+    radial-gradient(ellipse at 38% 72%, #32805c66, transparent 66%),
+    linear-gradient(155deg, #111d19 18%, #142e25 65%, #1b3b32);
 }
 
 .summaryWalletIcon {
@@ -649,11 +649,16 @@
 .summaryTile dt,
 .summaryTile dt.summaryPendingLabel {
   flex: none;
-  padding-inline-end: 24px;
+  padding-inline-end: 0;
   white-space: normal;
   font-size: var(--text-caption-size);
   line-height: 1.45;
   text-wrap: balance;
+}
+
+.summaryTile dt > .summaryDate {
+  display: block;
+  white-space: nowrap;
 }
 
 .summaryTile dt > .summaryFlowIcon {
@@ -703,8 +708,14 @@
 
 @container withdrawal-summary (max-width: 290px) {
   .summaryRows > .summaryTile {
-    padding: 16px 10px;
+    padding: 16px 10px 42px;
     border-radius: 14px;
+  }
+}
+
+@container withdrawal-summary (max-width: 260px) {
+  .summaryWallet .summaryRows {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

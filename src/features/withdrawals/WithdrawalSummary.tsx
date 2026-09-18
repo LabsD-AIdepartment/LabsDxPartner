@@ -37,22 +37,11 @@ function blockingLabel(reason: BlockingReasonValue): string {
   return `${prerequisiteLabels[reason.prerequisite]}ยังไม่พร้อม ต้องตรวจสอบข้อมูลก่อนถอน`;
 }
 
-function pendingLabel(period: WithdrawalSummaryData['currentPeriod'] | undefined): string {
-  if (!period) return 'ยอดรอตัดรอบ';
+function pendingDate(period: WithdrawalSummaryData['currentPeriod'] | undefined): string | null {
+  if (!period) return null;
   const end = Date.parse(period.toExclusive);
-  if (!Number.isFinite(end)) return 'ยอดรอตัดรอบ';
-  const cutoff = new Date(end - 1);
-  const parts = new Intl.DateTimeFormat('th-TH-u-ca-buddhist', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit',
-    numberingSystem: 'latn',
-    timeZone: 'Asia/Bangkok',
-  }).formatToParts(cutoff);
-  const date = ['day', 'month', 'year']
-    .map((part) => parts.find((item) => item.type === part)?.value)
-    .join('-');
-  return `ยอดรอตัดรอบ ${date}`;
+  if (!Number.isFinite(end)) return null;
+  return dateLabel(new Date(end - 1).toISOString());
 }
 
 /** Read-only projection. Amounts and readiness arrive from the transport; actions are injected. */
@@ -73,6 +62,7 @@ export function WithdrawalSummary({
 }) {
   const visible = state === 'loading' || state === 'error' ? null : data;
   const balance = visible?.balance.state === 'known' ? visible.balance : null;
+  const cutoffDate = pendingDate(visible?.currentPeriod);
   const requestDisabled = state !== 'ready' || visible?.readiness.requestGate !== 'ready';
   const showRows =
     !compact || !!(balance && (balance.held.minor !== '0' || balance.deficit.minor !== '0'));
@@ -145,7 +135,8 @@ export function WithdrawalSummary({
                       <span className={styles.summaryFlowIcon}>
                         <ArrowUpRight size={22} aria-hidden="true" />
                       </span>
-                      <span>{pendingLabel(visible?.currentPeriod)}</span>
+                      <span>ยอดรอตัดรอบ</span>
+                      {cutoffDate && <span className={styles.summaryDate}>{cutoffDate}</span>}
                     </dt>
                     <dd>
                       <Money
@@ -160,12 +151,12 @@ export function WithdrawalSummary({
                       <span className={styles.summaryFlowIcon}>
                         <ArrowDownRight size={22} aria-hidden="true" />
                       </span>
-                      <span>
-                        ถอนล่าสุด
-                        {visible?.lastWithdrawal
-                          ? ` · ${dateLabel(visible.lastWithdrawal.paidAt)}`
-                          : ''}
-                      </span>
+                      <span>ถอนล่าสุด</span>
+                      {visible?.lastWithdrawal && (
+                        <span className={styles.summaryDate}>
+                          {dateLabel(visible.lastWithdrawal.paidAt)}
+                        </span>
+                      )}
                     </dt>
                     <dd>
                       {visible?.lastWithdrawal === null ? (

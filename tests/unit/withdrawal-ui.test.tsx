@@ -145,7 +145,7 @@ describe('Withdrawal summary presentation', () => {
         data={summary({ currentPeriod: { ...current, toExclusive: '2026-09-30T17:00:00Z' } })}
       />,
     );
-    expect(screen.getByText('ยอดรอตัดรอบ 30-09-69')).toBeVisible();
+    expect(screen.getByText('30 ก.ย. 2569')).toBeVisible();
     expect(screen.queryByText(current.label)).not.toBeInTheDocument();
     view.rerender(<WithdrawalSummary data={summary({ currentPeriod: null })} />);
     expect(screen.getByText('ยอดรอตัดรอบ')).toBeVisible();
@@ -176,8 +176,8 @@ describe('Withdrawal summary presentation', () => {
     expect(screen.getByText('฿4,850')).toBeVisible();
     expect(screen.queryByText('฿5,000')).toBeNull();
     expect(screen.queryByText('฿27,000')).toBeNull();
-    expect(screen.getByText('ยอดรอตัดรอบ 30-09-69')).toBeVisible();
-    expect(screen.getByText('ถอนล่าสุด · 11 ก.ย. 2569')).toBeVisible();
+    expect(screen.getByText('30 ก.ย. 2569')).toBeVisible();
+    expect(screen.getByText('11 ก.ย. 2569')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'ถอนเงิน' }));
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('link')).toBeNull();
