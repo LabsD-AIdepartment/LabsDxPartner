@@ -1,0 +1,30 @@
+/* One palette for the overview wallet and its withdrawal flow. */
+.surface.surface {
+  --wallet-panel: color-mix(in srgb, var(--card-solid) 86%, transparent);
+  --wallet-selection: #e0f0e8;
+  --wallet-selection-border: #789a89;
+  border: 1px solid #ffffffa6;
+  background:
+    radial-gradient(ellipse 30% 42% at 0% 76%, #ffffffd6, transparent 100%),
+    radial-gradient(ellipse 25% 32% at 100% 88%, #ffffffa6, transparent 100%),
+    radial-gradient(ellipse 68% 28% at 40% 108%, #fffffff0, transparent 100%),
+    radial-gradient(ellipse at 100% 65%, #a8d9d2aa, transparent 62%),
+    radial-gradient(ellipse at 38% 72%, #a5dfbeaa, transparent 66%),
+    linear-gradient(155deg, #fff 18%, #f2faf5 50%, #deeee5);
+}
+
+:global([data-theme='dark']) .surface.surface {
+  --wallet-selection: #244c3d;
+  --wallet-selection-border: #81ad98;
+  border-color: #83b6a32b;
+  background:
+    radial-gradient(ellipse at 100% 65%, #376f7366, transparent 62%),
+    radial-gradient(ellipse at 38% 72%, #32805c66, transparent 66%),
+    linear-gradient(155deg, #111d19 18%, #142e25 65%, #1b3b32);
+}
+
+.surface.dialog {
+  width: min(392px, calc(100vw - 32px));
+  padding: 20px;
+  border-radius: 26px;
+}

@@ -12,7 +12,7 @@ import { Button } from '@/shared/ui/Button';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { Field } from '@/shared/ui/Field';
 import { Money } from '@/shared/ui/Money';
-import { Dialog } from '@/shared/ui/Dialog';
+import { WalletDialog } from './WalletSurface';
 import { Text } from '@/shared/ui/Text';
 import { timestamp } from '@/shared/ui/format-date';
 import { PayoutBeneficiarySummary } from './PayoutBeneficiarySummary';
@@ -138,7 +138,7 @@ export function WithdrawalRequestSheet({
                 : statusLabels[view.request.status];
 
   return (
-    <Dialog open={open} onClose={onClose} title="ถอนเงิน">
+    <WalletDialog open={open} onClose={onClose} title="ถอนเงิน" className={styles.walletSheet}>
       <div className={styles.sheetContent} ref={content}>
         <h3 className={styles.sheetStage} tabIndex={-1} ref={stageHeading}>
           {heading}
@@ -151,7 +151,7 @@ export function WithdrawalRequestSheet({
               if (view.state === 'editing' && view.canReview) onReview?.();
             }}
           >
-            <dl className={styles.sheetAmounts}>
+            <dl className={styles.sheetBalance}>
               <div>
                 <dt>ยอดพร้อมถอน</dt>
                 <dd>
@@ -437,6 +437,6 @@ export function WithdrawalRequestSheet({
           </LinkButton>
         )}
       </div>
-    </Dialog>
+    </WalletDialog>
   );
 }

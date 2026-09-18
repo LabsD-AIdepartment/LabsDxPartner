@@ -2,7 +2,7 @@ import type { WithdrawalSummaryValue } from '@/contracts/withdrawal-journey';
 import type { BlockingReasonValue } from '@/contracts/withdrawal-readiness';
 import { ArrowDownRight, ArrowUpRight, Landmark, Wallet } from 'lucide-react';
 import { Button } from '@/shared/ui/Button';
-import { Card } from '@/shared/ui/Card';
+import { WalletCard } from './WalletSurface';
 import { DataState } from '@/shared/ui/DataState';
 import { Money } from '@/shared/ui/Money';
 import { dateLabel } from '@/shared/ui/format-date';
@@ -68,7 +68,8 @@ export function WithdrawalSummary({
     !compact || !!(balance && (balance.held.minor !== '0' || balance.deficit.minor !== '0'));
 
   return (
-    <Card
+    <WalletCard
+      compact={compact}
       title="ยอดพร้อมถอน"
       className={`${styles.summary} ${!compact ? styles.summaryWallet : ''} ${className}`}
       action={
@@ -211,6 +212,6 @@ export function WithdrawalSummary({
           {action.label ?? (action.kind === 'request' ? 'ถอนเงิน' : 'ตรวจสอบคำขอ')}
         </Button>
       )}
-    </Card>
+    </WalletCard>
   );
 }

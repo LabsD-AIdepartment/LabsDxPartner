@@ -190,6 +190,88 @@
   line-height: var(--leading-heading);
 }
 
+/* Compact wallet flow: dialog width is owned by WalletDialog, fields by this content band. */
+.walletSheet .sheetContent {
+  container: withdrawal-form / inline-size;
+  width: 100%;
+  gap: 16px;
+}
+.walletSheet .sheetForm {
+  gap: 16px;
+}
+.walletSheet .sheetStage {
+  font-size: var(--text-body-size);
+  color: var(--muted);
+}
+.sheetBalance {
+  margin: 0;
+  padding: 4px 0 18px;
+  text-align: center;
+}
+.sheetBalance dt {
+  color: var(--muted);
+  font-size: var(--text-caption-size);
+}
+.sheetBalance dd {
+  margin: 8px 0 0;
+  font-size: var(--text-withdrawal-balance);
+  letter-spacing: -1px;
+}
+.walletSheet .sheetChoices {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 8px;
+}
+.walletSheet .sheetChoices label {
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 8px;
+  background: var(--wallet-panel);
+}
+.walletSheet .sheetChoices label:has(input:checked) {
+  background: var(--wallet-selection);
+  border-color: var(--wallet-selection-border);
+}
+.walletSheet .sheetChoices input {
+  accent-color: var(--wallet-selection-border);
+}
+.walletSheet .sheetForm input[type='text'] {
+  background: var(--wallet-panel);
+  border-radius: 14px;
+}
+.walletSheet .beneficiary {
+  padding: 14px;
+  background: var(--wallet-panel);
+  border-color: color-mix(in srgb, var(--card-solid) 90%, transparent);
+  border-radius: 18px;
+}
+.walletSheet .beneficiaryHeading {
+  margin-bottom: 10px;
+}
+.walletSheet .beneficiaryDetails {
+  gap: 8px;
+}
+.walletSheet .beneficiaryDetails > div:not(:last-child) {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+.walletSheet .beneficiaryDetails dd {
+  margin-top: 0;
+}
+.walletSheet .sheetActions {
+  grid-template-columns: minmax(0, 1fr);
+}
+.walletSheet .sheetAmounts dt {
+  flex-basis: 150px;
+}
+@container withdrawal-form (max-width: 290px) {
+  .walletSheet .beneficiaryDetails > div:not(:last-child) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
 .sheetModes {
   margin: 0;
   padding: 0;
@@ -567,22 +649,6 @@
 .summary.summaryWallet {
   display: flex;
   flex-direction: column;
-  border: 1px solid #ffffffa6;
-  background:
-    radial-gradient(ellipse 30% 42% at 0% 76%, #ffffffd6, transparent 100%),
-    radial-gradient(ellipse 25% 32% at 100% 88%, #ffffffa6, transparent 100%),
-    radial-gradient(ellipse 68% 28% at 40% 108%, #fffffff0, transparent 100%),
-    radial-gradient(ellipse at 100% 65%, #a8d9d2aa, transparent 62%),
-    radial-gradient(ellipse at 38% 72%, #a5dfbeaa, transparent 66%),
-    linear-gradient(155deg, #fff 18%, #f2faf5 50%, #deeee5);
-}
-
-:global([data-theme='dark']) .summary.summaryWallet {
-  border-color: #83b6a32b;
-  background:
-    radial-gradient(ellipse at 100% 65%, #376f7366, transparent 62%),
-    radial-gradient(ellipse at 38% 72%, #32805c66, transparent 66%),
-    linear-gradient(155deg, #111d19 18%, #142e25 65%, #1b3b32);
 }
 
 .summaryWalletIcon {
