@@ -134,7 +134,7 @@ describe('content thumbnail media and real external identifiers', () => {
     expect(player).toHaveAttribute('autoplay');
     fireEvent.click(screen.getByRole('button', { name: 'ปิดหน้าต่าง' }));
   });
-  it('retries failed media and bounds indefinitely loading media', () => {
+  it('retries failed video and keeps controls available when mobile defers metadata', () => {
     vi.useFakeTimers();
     render(
       <ContentCard
@@ -151,8 +151,25 @@ describe('content thumbnail media and real external identifiers', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'ลองอีกครั้ง' }));
     expect(dialog.querySelector('video')).not.toBe(original);
     act(() => vi.advanceTimersByTime(15_000));
-    expect(within(dialog).getByRole('alert')).toBeVisible();
-    expect(dialog.querySelector('video')).toBeNull();
+    expect(within(dialog).queryByRole('alert')).toBeNull();
+    const retried = dialog.querySelector('video')!;
+    expect(retried).toHaveAttribute('controls');
+    fireEvent.loadedMetadata(retried);
+    expect(within(dialog).queryByRole('status')).toBeNull();
+  });
+  it('still bounds indefinitely loading images', () => {
+    vi.useFakeTimers();
+    render(
+      <ContentCard
+        clip={{ ...base, media: { kind: 'image', src: '/media/stalled.jpg' } }}
+        href={href}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: `ขยายภาพ ${base.title}` }));
+    act(() => vi.advanceTimersByTime(15_000));
+    expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent(
+      'โหลดภาพไม่สำเร็จ',
+    );
   });
   it('never plays removed media and keeps historic detail/earnings accessible', () => {
     render(

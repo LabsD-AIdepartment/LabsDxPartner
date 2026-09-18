@@ -577,6 +577,7 @@ button.coverWrap:disabled {
 }
 dialog.mediaDialog {
   width: fit-content;
+  min-width: min(360px, calc(100vw - 32px));
   max-width: min(960px, calc(100vw - 32px));
 }
 /* The media sets the dialog width; the title wraps within that width. */
