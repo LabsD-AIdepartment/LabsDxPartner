@@ -1,6 +1,8 @@
 import type { SessionValue } from '@/contracts/session';
 export function pitchModeEnabled(env: NodeJS.ProcessEnv = process.env) {
-  return env.NODE_ENV === 'development' && env.LABSD_PRESENTATION_MODE === 'pitch';
+  return env.LABSD_PRESENTATION_MODE === 'pitch' && (env.NODE_ENV === 'development' ||
+    (env.NODE_ENV === 'production' && process.env.LABSD_HOSTED_DEMO_ARTIFACT === '1' &&
+      env.LABSD_HOSTED_DEMO_ENABLED === '1'));
 }
 /** Presentation switch only; it does not enable provider access or change financial data. */
 export function pitchConnectedAdNoticesVisible(env: NodeJS.ProcessEnv = process.env) {

@@ -1,14 +1,16 @@
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 export default function config(phase: string): NextConfig {
+  const hostedDemo = process.env.LABSD_BUILD_TARGET === 'hosted-demo';
   return {
+    env: { LABSD_HOSTED_DEMO_ARTIFACT: hostedDemo ? '1' : '0' },
     agentRules: false,
     devIndicators: false,
     poweredByHeader: false,
     reactStrictMode: true,
     turbopack: {
       resolveAlias: {
-        '@partner-pitch': phase === PHASE_DEVELOPMENT_SERVER ? './dev/PitchApplication.tsx' : './src/features/pitch/UnavailablePitch.tsx',
+        '@partner-pitch': (phase === PHASE_DEVELOPMENT_SERVER || hostedDemo) ? './dev/PitchApplication.tsx' : './src/features/pitch/UnavailablePitch.tsx',
         '@marketing-ads-preview':
           phase === PHASE_DEVELOPMENT_SERVER
             ? './dev/AdRegistrationPreview.tsx'
@@ -50,13 +52,13 @@ export default function config(phase: string): NextConfig {
         '@demo-dataset-handler':
           phase === PHASE_DEVELOPMENT_SERVER
             ? './dev/demo-dataset/handler.ts'
-            : './dev/demo-dataset/handler.unavailable.ts',
+            : hostedDemo ? './src/server/hosted-demo/dataset.ts' : './dev/demo-dataset/handler.unavailable.ts',
         // Development-only ad-performance snapshot handler. Outside the dev server this resolves to a
         // 404 stub, so the node:fs snapshot read path (and its fixture marker) never ships to production.
         '@ad-performance-handler':
           phase === PHASE_DEVELOPMENT_SERVER
             ? './dev/ad-performance/handler.ts'
-            : './dev/ad-performance/handler.unavailable.ts',
+            : hostedDemo ? './src/server/hosted-demo/ad-performance.ts' : './dev/ad-performance/handler.unavailable.ts',
       },
     },
     async headers() {
