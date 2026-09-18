@@ -50,6 +50,29 @@
   grid-column: 1 / -1;
   margin: 0;
 }
+.creatorInsights {
+  padding: 14px 0;
+  font-size: var(--text-caption-size);
+  line-height: 1.5;
+}
+.creatorInsights h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: inherit;
+  font-weight: var(--weight-medium);
+}
+.creatorInsights h3 svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.creatorInsights p {
+  margin: 0;
+}
+.creatorInsights p + p {
+  margin-top: 8px;
+}
 .scheduled {
   border-top: 1px solid var(--line);
   padding-top: 18px;

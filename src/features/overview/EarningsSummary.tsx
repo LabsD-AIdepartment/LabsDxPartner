@@ -1,7 +1,6 @@
 'use client';
-import { useApplicationPresentation } from '@/shared/routing/ApplicationPresentation';
 import { ActionArrow } from '@/shared/ui/ActionArrow';
-import { Wallet } from 'lucide-react';
+import { Sparkles, Wallet } from 'lucide-react';
 import type { OverviewValue } from '@/contracts/overview';
 import type { FilterValue } from '@/shared/ui/FilterBar';
 import { Card } from '@/shared/ui/Card';
@@ -9,6 +8,7 @@ import { Money } from '@/shared/ui/Money';
 import { PartnerIdentity } from './PartnerIdentity';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { earningsHref } from './model';
+import { earningsHighlights, pendingEarningsDisplay } from './earnings-highlights';
 import styles from './overview.module.css';
 export type PartnerPresentation = {
   name: string;
@@ -28,8 +28,9 @@ export function EarningsSummary({
   partner?: PartnerPresentation;
   contentBasePath?: string;
 }) {
-  const { showConnectedAdNotices = true } = useApplicationPresentation();
   const channels = data.earnings.channelBreakdown;
+  const pending = pendingEarningsDisplay(data.earnings);
+  const highlights = earningsHighlights(data.earnings);
   return (
     <Card className={styles.earnings} aria-label="โปรไฟล์และคอมมิชชัน">
       <PartnerIdentity partner={partner} />
@@ -73,34 +74,28 @@ export function EarningsSummary({
             <span>รายได้ประเภทอื่น</span> <Money value={channels.other} />
           </p>
         )}
-        {(data.earnings.estimated === null || data.earnings.estimated.minor !== '0') && (
+        {(pending.partial || pending.amount === null || pending.amount.minor !== '0') && (
           <div className={styles.estimate}>
             <span>คอมมิชชันรอยืนยัน</span>
-            <Money value={data.earnings.estimated} />
+            <Money value={pending.amount} />
             <p className="small muted">
-              {data.earnings.estimated === null
-                ? 'ยังไม่มีข้อมูลยอดประมาณการ'
-                : 'ยอดนี้ยังถอนไม่ได้'}
+              {pending.partial
+                ? 'เฉพาะรายการที่มีข้อมูลแล้ว · ยังไม่ใช่ยอดรวมทั้งหมดและยังถอนไม่ได้'
+                : pending.amount === null
+                  ? 'ยังไม่มีข้อมูลยอดประมาณการ'
+                  : 'ยอดนี้ยังถอนไม่ได้'}
             </p>
           </div>
         )}
-        {!!data.earnings.connectedAdEarnings?.length && (
-          <div className={styles.estimate}>
-            <span>ค่าคอมจากโฆษณาที่เชื่อมต่อ · รวมในยอดรอยืนยัน</span>
-            {data.earnings.connectedAdEarnings.map((entry) => (
-              <p key={entry.clipId} className="small">
-                {entry.title} · <Money value={entry.amount} reason={entry.reason ?? undefined} />
-                {entry.ratePpm !== null && ` (${entry.ratePpm / 10000}%)`}
-                {showConnectedAdNotices && entry.reason && (
-                  <small className="muted" role="status">
-                    <br />
-                    {entry.reason}
-                  </small>
-                )}
-              </p>
-            ))}
-          </div>
-        )}
+        <section className={styles.creatorInsights} aria-label="ไอเดียสำหรับคลิปถัดไป">
+          <h3>
+            <Sparkles size={16} aria-hidden />
+            ไอเดียสำหรับคลิปถัดไป
+          </h3>
+          {highlights.map((text) => (
+            <p key={text}>{text}</p>
+          ))}
+        </section>
         <div className={styles.earningsFooter}>
           <LinkButton href={earningsHref(contentBasePath, data, filters)}>
             ดูรายละเอียดของรายได้ <ActionArrow />

@@ -74,18 +74,20 @@ describe('pitch ad notices only', () => {
       reasons: [reason],
     });
   });
-  it('toggles ONLY the local notice and keeps all earnings sections and amounts', () => {
+  it('keeps overview insights and pending data stable across the ad notice flag', () => {
     const data = overview(),
       before = JSON.stringify(data);
     const child = <EarningsSummary data={data} filters={filters} />;
     const view = render(wrap(false, child));
     const original = view.container.innerHTML;
     expect(screen.getByText('คอมมิชชันรอยืนยัน')).toBeVisible();
-    expect(screen.getByText(/ค่าคอมจากโฆษณาที่เชื่อมต่อ/)).toBeVisible();
-    expect(screen.getByText(/Linked clip/)).toBeVisible();
+    expect(screen.getByRole('region', { name: 'ไอเดียสำหรับคลิปถัดไป' })).toBeVisible();
+    expect(screen.queryByText(/ค่าคอมจากโฆษณาที่เชื่อมต่อ/)).toBeNull();
+    expect(screen.queryByText(/Linked clip/)).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
     view.rerender(wrap(true, child));
-    expect(screen.getByRole('status')).toHaveTextContent(reason);
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(view.container.innerHTML).toBe(original);
     view.rerender(wrap(false, child));
     expect(view.container.innerHTML).toBe(original);
     expect(JSON.stringify(data)).toBe(before);
