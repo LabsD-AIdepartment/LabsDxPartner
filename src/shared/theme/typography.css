@@ -40,6 +40,10 @@
   --text-metric-responsive: clamp(26px, 2.8vw, 38px);
   --text-metric-compact: clamp(20px, 6cqi, 26px);
   --text-withdrawal-balance: clamp(var(--font-size-26), 11cqi, var(--font-size-38));
+  --text-overview-pending: clamp(16px, 5.7cqi, 24px);
+  --text-overview-pending-tablet: clamp(14px, 5.7cqi, 24px);
+  --text-overview-tablet-body: 14px;
+  --text-overview-tablet-title: 16px;
   --text-earnings-mix-percent: clamp(var(--font-size-28), 9cqw, 48px);
   --leading-symbol: 1;
   --leading-tight: 1.1;

@@ -179,6 +179,7 @@ export function PitchApplication({
         ) : (
           <PartnerApplication
             initialSession={session}
+            avatar="/media/celebrity-avatar.png"
             screen={screen}
             initialContext={readReportContext(new URLSearchParams(search))}
             payoutAccount={<EmbeddedPayoutAccount search={search} />}

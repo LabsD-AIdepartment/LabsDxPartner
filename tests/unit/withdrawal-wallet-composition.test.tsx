@@ -67,6 +67,29 @@ beforeEach(() => {
 const returnTo =
   '/withdrawal-preview?scenario=partner-demo&identity=b&from=2026-07-01&toExclusive=2026-10-01&brand=Axtion';
 describe('partner Wallet preview composition', () => {
+  it('opens withdrawal details without the Wallet summary and retains the way back', async () => {
+    render(
+      <TransactionsPreview
+        search={new URLSearchParams({
+          scenario: 'partner-demo',
+          identity: 'b',
+          view: 'withdrawals',
+          request: datasets.b.withdrawals.find((row) => row.status === 'paid')!.requestRef,
+          returnTo,
+        }).toString()}
+      />,
+    );
+    expect(await screen.findByRole('heading', { name: 'รายละเอียดการถอนเงิน' })).toBeVisible();
+    expect(screen.queryByRole('article', { name: 'สรุปยอดพร้อมถอน' })).not.toBeInTheDocument();
+    const back = within(
+      screen.getByRole('navigation', { name: 'กลับรายการคำขอถอนเงิน' }),
+    ).getByRole('link', { name: 'กลับ Wallet' });
+    expect(back).toBeVisible();
+    expect(
+      new URL(back.getAttribute('href')!, 'http://localhost').searchParams.has('request'),
+    ).toBe(false);
+    expect(screen.getByRole('heading', { name: 'หลักฐานการโอน' })).toBeVisible();
+  });
   it('filters database-backed credits and withdrawals inclusively on canonical routes and preserves report context', async () => {
     const report = '/overview?from=2026-07-08&toExclusive=2026-08-25&origin=overview';
     const search = pitchSearch({

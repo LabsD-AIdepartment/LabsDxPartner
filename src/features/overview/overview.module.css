@@ -34,8 +34,8 @@
   letter-spacing: -1px;
 }
 .estimate {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 6px 12px;
   padding: 12px 0;
@@ -43,11 +43,13 @@
   font-size: var(--text-caption-size);
 }
 .estimate > span:nth-child(2) {
-  font-size: var(--font-size-24);
+  font-size: var(--text-overview-pending);
+  margin-inline-start: auto;
+  white-space: nowrap;
   text-align: right;
 }
 .estimate p {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
   margin: 0;
 }
 .creatorInsights {
@@ -437,7 +439,7 @@
   font-size: var(--text-caption-size);
   margin: 6px 0 16px;
 }
-@container overview (min-width: 1080px) {
+@container overview (min-width: 740px) {
   .earnings {
     container: earnings-card / inline-size;
     display: flex;
@@ -455,7 +457,66 @@
     flex: none;
   }
 }
-@container overview (max-width: 1079px) {
+/* Three readable columns fit from 740px of content; narrower tablets retain two. */
+@container overview (740px <= width < 1080px) {
+  .grid,
+  .lower {
+    --text-body-size: var(--text-overview-tablet-body);
+    --text-caption-size: var(--text-overview-tablet-body);
+    --text-card-title-size: var(--text-overview-tablet-title);
+    --text-overview-pending: var(--text-overview-pending-tablet);
+    gap: 10px;
+  }
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .grid > .sales,
+  .grid > .payout,
+  .grid > .trend,
+  .lower > article {
+    padding: 16px;
+  }
+  .earningPane {
+    padding: 16px;
+    gap: 10px;
+  }
+  .portrait {
+    flex-basis: 200px;
+    height: 200px;
+    max-height: max(200px, calc(100cqi * 1109 / 885));
+  }
+  .identity {
+    left: 10px;
+    right: 10px;
+    bottom: 12px;
+    padding: 10px;
+    gap: 8px;
+  }
+  .identity > :first-child {
+    width: 28px;
+    height: 28px;
+  }
+  .cardLabel h2 {
+    font-size: var(--text-overview-tablet-title);
+  }
+  .heroMoney,
+  .largeMoney {
+    font-size: var(--font-size-26);
+  }
+  .estimate > span:nth-child(2) {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+    text-align: left;
+  }
+  .clip {
+    grid-template-columns: 32px minmax(0, 1fr) auto 16px;
+    gap: 8px;
+  }
+  .coverFrame {
+    width: 32px;
+  }
+}
+@container overview (max-width: 739px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -503,6 +564,11 @@
   }
   .earningPane {
     padding: 22px;
+  }
+  .estimate > span:nth-child(2) {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+    text-align: left;
   }
 }
 

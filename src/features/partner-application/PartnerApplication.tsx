@@ -40,11 +40,13 @@ export function PartnerApplication({
   screen,
   initialContext,
   payoutAccount,
+  avatar,
 }: {
   initialSession: SessionValue;
   screen: PartnerScreen;
   initialContext: ReportContext;
   payoutAccount?: ReactNode;
+  avatar?: string;
 }) {
   const [session, setSession] = useState(initialSession);
   const [state, setState] = useState<'ready' | 'checking' | 'changing' | 'error'>('checking');
@@ -183,6 +185,7 @@ export function PartnerApplication({
         accountMenu={
           <ProfileMenu
             accountHref="/account"
+            avatar={avatar}
             onLogout={() => void logout()}
             busy={state === 'changing'}
           >

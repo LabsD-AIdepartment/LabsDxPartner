@@ -64,6 +64,7 @@ function ContactForm({ scope, transport }: Props) {
   const dirty =
     snapshot &&
     (email !== (snapshot.contact.email ?? '') || phone !== (snapshot.contact.phone ?? ''));
+  const saveDisabled = !dirty || saving || needsReload;
   return (
     <Card title="ข้อมูลติดต่อ" description="อีเมลและเบอร์โทรสำหรับติดต่อเรื่องบัญชีพาร์ตเนอร์">
       <div className={forms.stack}>
@@ -166,7 +167,11 @@ function ContactForm({ scope, transport }: Props) {
               อีเมลและการส่งลิงก์ยังไม่เปิดใช้งาน
             </Text>
             <div className={styles.actions}>
-              <Button type="submit" variant="primary" disabled={!dirty || saving || needsReload}>
+              <Button
+                type="submit"
+                variant={saveDisabled ? 'secondary' : 'primary'}
+                disabled={saveDisabled}
+              >
                 {saving ? 'กำลังบันทึก…' : 'บันทึกข้อมูลติดต่อ'}
               </Button>
               {needsReload && (

@@ -175,7 +175,7 @@ function ScopedWallet({
     >
       {({ renderSummary, persistenceWarning }) => (
         <div className={styles.wallet}>
-          {renderSummary(styles.balance)}
+          {!requestRef && renderSummary(styles.balance)}
           {persistenceWarning && <p role="status">{persistenceWarning}</p>}
           {requestRef ? (
             <WithdrawalHistoryExperience

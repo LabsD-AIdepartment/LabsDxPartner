@@ -121,14 +121,16 @@ function AccountContent({
           {' '}
           <Card title="ความช่วยเหลือ">
             <Text>ติดต่อผู้ดูแล Labs D ผ่านช่องทางที่ใช้อยู่ หากต้องตรวจสอบบัญชีหรือข้อตกลง</Text>
-            <Button onClick={() => setAction({ action: 'recover' })}>
-              ลืมรหัสผ่านหรือเข้าใช้งานไม่ได้
-            </Button>
-            {data.supportUrl && (
-              <LinkButton href={data.supportUrl} target="_blank" rel="noopener noreferrer">
-                ติดต่อผู้ดูแล
-              </LinkButton>
-            )}
+            <div className={styles.actions}>
+              <Button onClick={() => setAction({ action: 'recover' })}>
+                ลืมรหัสผ่านหรือเข้าใช้งานไม่ได้
+              </Button>
+              {data.supportUrl && (
+                <LinkButton href={data.supportUrl} target="_blank" rel="noopener noreferrer">
+                  ติดต่อผู้ดูแล
+                </LinkButton>
+              )}
+            </div>
           </Card>
           <Button onClick={() => setAction({ action: 'logout' })}>ออกจากระบบ</Button>
           {action && (

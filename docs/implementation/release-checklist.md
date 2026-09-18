@@ -1,6 +1,70 @@
 # Controlled pilot release checklist
 
-Status: preparation only, 11 September 2026. Production is not authorized or verified by this file. Current work is a dirty local foundation; see [remaining-work audit](remaining-work-audit.md). Record secret references only, never secret values.
+Status: preparation only, updated 18 September 2026. Production is not authorized or verified by this file. The accepted local application is being consolidated onto local `main`; the repository has no configured remote or production deployment. See [local runtime](local-runtime.md) for the current source and data boundaries. The [remaining-work audit](remaining-work-audit.md) is historical. Record secret references only, never secret values.
+
+## Current 4443 baseline and release boundary
+
+The current local application uses Node24 / Next development HTTPS on the current checkout,
+with `LABSD_PRESENTATION_MODE=pitch`. Native authentication and contact/account updates use
+PostgreSQL. Sample accounting uses the existing private SQLite dataset. Sample withdrawal
+state is stored in browser storage scoped to native user and partner; it does not transfer money.
+Connected ad reports are persisted in PostgreSQL and refreshed by the supervised local worker.
+Changing a Git branch does not migrate or copy these stores.
+
+The presentation currently accepted by the owner includes the responsive Overview and content
+library, Wallet summary/history/detail, native account editors and contact form. Preserve the
+existing origin, configuration, database, private media and browser namespace during local
+integration. An account-media upload experiment is not part of this release: its UI is unfinished
+and migration0031 has not been applied. Do not require it in the release migration manifest.
+
+**Default production builds are not visually or behaviorally equivalent to this pitch runtime.**
+`pitchModeEnabled` requires development mode; production aliases replace the pitch composition
+and demo handlers with unavailable implementations. A successful production build and a ready
+closed deployment do not prove the sample presentation will be visible. Do not deploy `next dev`
+or remove these guards as a shortcut.
+
+Two release scopes need different acceptance:
+
+- **Hosted demonstration:** explicitly package the approved demonstration presentation for a
+  production build; retain native authentication, exact user/partner allowlists, sample labeling,
+  isolated sample accounting and simulated withdrawals. Define persistence for the SQLite sample,
+  private assets and demonstration browser state, and verify real versus sample data provenance.
+- **Live partner service:** bind the approved UI to authoritative native financial/content/payout
+  transports, validate the actual agreement and data reconciliation, finish payment and recipient
+  delivery capabilities, and verify scoped production identity. Never seed sample balances as
+  real withdrawable funds or infer payment readiness from the current Wallet.
+
+The owner must choose the release scope and hosting/domain. Preparation may freeze source,
+back up local data, validate the build and document this procedure while that choice is pending.
+This checklist does not authorize public exposure or external messages.
+
+## Concrete cutover preparation
+
+1. Record the full reviewed main SHA, lockfile, required migration checksums, Node version and
+   independent review. Configure a central remote and protected main before hosted CI/CD.
+2. Select the scope above, deployment target, HTTPS origin, allowed audience and operator.
+   Record an environment-variable **name** inventory and provision secret references on target.
+   Existing credential binding includes origin/secret identity: copying the local DB and changing
+   its origin is not a verified account migration. Design and test that transition before cutover.
+3. Back up each authoritative store and private asset root, plus the configuration references
+   needed to recover it. Prove an isolated restore. Keep dumps, sessions, TLS keys and local
+   configuration out of Git, images and public assets. Record storage volume and backup retention.
+   Browser-only demo requests do not become shared server records merely by deploying.
+4. Build from the clean reviewed SHA in the selected production mode; record artifact digest and
+   deployment ID. Compare Overview, content library/detail, Wallet history/detail and account at
+   phone, tablet portrait/landscape and desktop sizes in both themes, against the accepted local
+   presentation. Verify amounts and request references with the intended store, not screenshots alone.
+5. Review the target ledger before applying only approved migrations. Start with exposure disabled;
+   check `/api/health` and `/api/ready`, scoped login/access/logout, account save/reload, report
+   filters, exports, worker freshness and errors. Exercise writes on the approved isolated target.
+6. Install worker/process supervision, sanitized log retention, monitoring and backup schedules.
+   Set pool limits for web/worker overlap. Confirm the operator can disable affected capabilities
+   and roll back to the previous schema-compatible artifact without restoring data in place.
+7. Present the exact deployment/audience/flags and verification receipt for the owner's final
+   exposure decision. Keep SMS/email/invitation delivery and real payment execution off until their
+   respective provider, recipient and business acceptance is complete.
+
+## Required release record
 
 | Required record | Current state / acceptance |
 |---|---|

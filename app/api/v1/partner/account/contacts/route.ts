@@ -15,5 +15,7 @@ async function handle(request: Request) {
       : null;
   });
 }
-export const GET = observeApi('/api/v1/partner/account/contacts', handle);
-export const PUT = observeApi('/api/v1/partner/account/contacts', handle);
+const handleGET = handle;
+const handlePUT = handle;
+export const GET = observeApi('/api/v1/partner/account/contacts', handleGET);
+export const PUT = observeApi('/api/v1/partner/account/contacts', handlePUT);
