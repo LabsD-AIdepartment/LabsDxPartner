@@ -114,5 +114,9 @@
   {
     "id": "0029_account_contacts.sql",
     "checksum": "4fc15e9215ec6c17e3b19d915ee43faa43e279b589da6a6fe1e83813a1ab54be"
+  },
+  {
+    "id": "0030_account_identity_audit.sql",
+    "checksum": "e8855314f74a0cf9fe5d3794bb81ce1159fd380b69e7aa313d7f2d6f134094a5"
   }
 ]

@@ -51,6 +51,46 @@ export function PayoutAccountPreview({ search = '' }: { search?: string }) {
   );
 }
 
+/** Account-page composition of the same scoped beneficiary runtime and editor. */
+export function EmbeddedPayoutAccount({ search = '' }: { search?: string }) {
+  const lane = readPayoutLane(search);
+  const content = <EmbeddedPayoutContent search={search} />;
+  return lane.scenario === 'partner-demo' ? (
+    <DatasetBoundary key={lane.identity} identities={[lane.identity]}>
+      {content}
+    </DatasetBoundary>
+  ) : (
+    content
+  );
+}
+function EmbeddedPayoutContent({ search }: { search: string }) {
+  const lane = readPayoutLane(search);
+  const session = useOptionalDemoSession(lane.identity, lane.scenario === 'partner-demo');
+  const scope = useMemo(
+    () => session?.scope ?? previewScopeFor(lane.scenario, lane.identity),
+    [lane.scenario, lane.identity, session],
+  );
+  const { runtime, version } = useWithdrawalRuntime(scope, session?.runtime);
+  return (
+    <IsolatedQueryProvider identity={withdrawalScopeKey(scope)}>
+      <DatasetQueryRefresh session={session} />
+      {runtime?.controller.view().persistenceWarning && (
+        <p role="status">{runtime.controller.view().persistenceWarning}</p>
+      )}
+      {runtime ? (
+        <PayoutBeneficiaryExperience
+          scope={scope}
+          transport={runtime.transport}
+          refreshKey={version}
+          resetKey={runtime.controller.epoch()}
+        />
+      ) : (
+        <DataState state="loading" />
+      )}
+    </IsolatedQueryProvider>
+  );
+}
+
 function PayoutAccountPreviewContent({
   location,
 }: {

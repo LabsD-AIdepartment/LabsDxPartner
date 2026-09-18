@@ -14,17 +14,23 @@ export function CredentialAccount({
   name,
   onChanged,
   showIdentity = true,
+  embedded = false,
+  disabled = false,
+  onBusyChange,
 }: {
   name: string;
   onChanged: () => void;
   showIdentity?: boolean;
+  embedded?: boolean;
+  disabled?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const { request } = useCredentialEnvironment();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (busy) return;
+    if (busy || disabled) return;
     const values = new FormData(e.currentTarget);
     const input = ChangePassword.safeParse({
       currentPassword: values.get('currentPassword'),
@@ -39,6 +45,7 @@ export function CredentialAccount({
       return;
     }
     setBusy(true);
+    onBusyChange?.(true);
     setError('');
     try {
       await request('/api/access/passwords/change', input.data, PasswordChanged);
@@ -46,8 +53,46 @@ export function CredentialAccount({
     } catch (e) {
       setError(credentialErrorText(e));
       setBusy(false);
+      onBusyChange?.(false);
     }
   }
+  const passwordForm = (
+    <form onSubmit={submit} className={forms.form} aria-busy={busy}>
+      <PasswordField
+        label="รหัสผ่านปัจจุบัน"
+        name="currentPassword"
+        autoComplete="current-password"
+        required
+        maxLength={passwordPolicy.maxLength}
+        disabled={busy || disabled}
+      />
+      <PasswordField
+        label="รหัสผ่านใหม่"
+        showStrength
+        name="password"
+        autoComplete="new-password"
+        hint={`อย่างน้อย ${passwordPolicy.minLength} ตัวอักษร`}
+        required
+        minLength={passwordPolicy.minLength}
+        maxLength={passwordPolicy.maxLength}
+        disabled={busy || disabled}
+      />
+      <PasswordField
+        label="ยืนยันรหัสผ่านใหม่"
+        name="passwordConfirmation"
+        autoComplete="new-password"
+        required
+        minLength={passwordPolicy.minLength}
+        maxLength={passwordPolicy.maxLength}
+        disabled={busy || disabled}
+      />
+      {error && <Text role="alert">{error}</Text>}
+      <Button type="submit" variant="primary" disabled={busy || disabled}>
+        {busy ? 'กำลังบันทึก…' : 'เปลี่ยนรหัสผ่าน'}
+      </Button>
+    </form>
+  );
+  if (embedded) return passwordForm;
   return (
     <div className={forms.stack}>
       {showIdentity && (
@@ -62,40 +107,7 @@ export function CredentialAccount({
         title="เปลี่ยนรหัสผ่าน"
         description="เปลี่ยนสำเร็จแล้ว คุณจะต้องเข้าสู่ระบบใหม่ทุกอุปกรณ์"
       >
-        <form onSubmit={submit} className={forms.form} aria-busy={busy}>
-          <PasswordField
-            label="รหัสผ่านปัจจุบัน"
-            name="currentPassword"
-            autoComplete="current-password"
-            required
-            maxLength={passwordPolicy.maxLength}
-            disabled={busy}
-          />
-          <PasswordField
-            label="รหัสผ่านใหม่"
-            showStrength
-            name="password"
-            autoComplete="new-password"
-            hint={`อย่างน้อย ${passwordPolicy.minLength} ตัวอักษร`}
-            required
-            minLength={passwordPolicy.minLength}
-            maxLength={passwordPolicy.maxLength}
-            disabled={busy}
-          />
-          <PasswordField
-            label="ยืนยันรหัสผ่านใหม่"
-            name="passwordConfirmation"
-            autoComplete="new-password"
-            required
-            minLength={passwordPolicy.minLength}
-            maxLength={passwordPolicy.maxLength}
-            disabled={busy}
-          />
-          {error && <Text role="alert">{error}</Text>}
-          <Button type="submit" variant="primary" disabled={busy}>
-            {busy ? 'กำลังบันทึก…' : 'เปลี่ยนรหัสผ่าน'}
-          </Button>
-        </form>
+        {passwordForm}
       </Card>
     </div>
   );

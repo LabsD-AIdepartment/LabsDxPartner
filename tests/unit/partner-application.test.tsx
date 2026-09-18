@@ -74,7 +74,9 @@ describe('authenticated partner application', () => {
         initialContext={initialReportContext}
       />,
     );
-    expect(await screen.findByText('ชื่อผู้ใช้: celeb_native')).toBeVisible();
+    expect(await screen.findByText('celeb_native')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'แก้ไขบัญชีของคุณ' }));
+    fireEvent.click(screen.getByText('เปลี่ยนรหัสผ่าน', { selector: 'summary' }));
     expect(screen.getByRole('heading', { name: 'ข้อตกลงของคุณ' })).toBeVisible();
     expect(screen.getAllByLabelText('รหัสผ่านปัจจุบัน')).toHaveLength(1);
     expect(
@@ -217,7 +219,7 @@ describe('authenticated partner application', () => {
         initialContext={initialReportContext}
       />,
     );
-    await screen.findByLabelText('รหัสผ่านปัจจุบัน');
+    await screen.findByRole('heading', { name: 'บัญชีของคุณ' });
     let finish: (value: unknown) => void = () => {};
     fetcher.mockReturnValue(
       new Promise((resolve) => {
@@ -225,10 +227,10 @@ describe('authenticated partner application', () => {
       }),
     );
     fireEvent(document, new Event('visibilitychange'));
-    expect(screen.queryByLabelText('รหัสผ่านปัจจุบัน')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'บัญชีของคุณ' })).not.toBeInTheDocument();
     finish(response({}, 503));
     expect(await screen.findByRole('alert')).toHaveTextContent('ตรวจสอบการเข้าถึงไม่สำเร็จ');
-    expect(screen.queryByLabelText('รหัสผ่านปัจจุบัน')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'บัญชีของคุณ' })).not.toBeInTheDocument();
   });
   it('does not redirect a signed-in account lacking menu permissions back to login', async () => {
     fetcher.mockResolvedValue(

@@ -1,5 +1,6 @@
 'use client';
 import type { ReactNode } from 'react';
+import { Pencil } from 'lucide-react';
 import type { PayoutBeneficiaryConfigValue } from '@/contracts/withdrawal-journey';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -67,7 +68,17 @@ export function PayoutBeneficiaryPanel({
     <>
       <Card
         title="บัญชีรับเงินปัจจุบัน"
-        action={action}
+        action={
+          <>
+            {action}
+            {editable && onEdit && (
+              <Button aria-label="ดู/แก้ไขบัญชีรับเงิน" onClick={onEdit}>
+                <Pencil size={16} />
+                แก้ไข
+              </Button>
+            )}
+          </>
+        }
         aria-label="บัญชีรับเงินปัจจุบัน"
         description={
           compact ? 'การตั้งค่าปัจจุบันแยกจากผู้รับเงินที่บันทึกไว้ในคำขอเดิม' : undefined
@@ -113,11 +124,6 @@ export function PayoutBeneficiaryPanel({
               <Text tone="muted">
                 โปรดตรวจสอบข้อมูลปัจจุบันก่อนแก้ไข ไม่สามารถยืนยันความพร้อมของบัญชีได้
               </Text>
-            )}
-            {editable && onEdit && (
-              <div className={styles.editAction}>
-                <Button onClick={onEdit}>ดู/แก้ไขบัญชีรับเงิน</Button>
-              </div>
             )}
           </div>
         )}

@@ -6,8 +6,8 @@ import { Username } from './credentials';
 // email/phone for transaction notifications, notification toggles, and request-only intents for
 // leaving the partnership or deleting the account). This is a SCOPED synthetic-preview surface: it
 // carries NO money totals, mutates NO native credential, and stores NO password digest/plaintext.
-// The native username stays immutable (credential-auth.ts immutableUsername:true); a username change
-// is only ever a REQUEST intent handled later by the identity service. Password changes are NOT part
+// This preview can only file a username REQUEST; it never changes native credentials. The separate
+// authenticated /api/access/account/identity workflow owns actual name/username changes. Password changes are NOT part
 // of this transport — they reuse the existing /access-preview credential lifecycle.
 
 // Full-user/partner/permission fence. Every read/save/request is bound to exactly one declared
@@ -47,14 +47,14 @@ const PHONE_DIGITS = /\d/g;
 export const ContactPhone = z
   .string()
   .trim()
-  .regex(/^[+()\-\s0-9]{5,40}$/, 'กรอกเบอร์โทรด้วยตัวเลข อาจมี + ( ) - หรือเว้นวรรค ความยาว 5–40 อักขระ')
-  .refine(
-    (value) => {
-      const digits = value.match(PHONE_DIGITS)?.length ?? 0;
-      return digits >= 6 && digits <= 15;
-    },
-    'กรอกเบอร์โทรให้มีตัวเลขจริง 6–15 หลัก (เครื่องหมายวรรคตอนอย่างเดียวใช้ไม่ได้)',
-  );
+  .regex(
+    /^[+()\-\s0-9]{5,40}$/,
+    'กรอกเบอร์โทรด้วยตัวเลข อาจมี + ( ) - หรือเว้นวรรค ความยาว 5–40 อักขระ',
+  )
+  .refine((value) => {
+    const digits = value.match(PHONE_DIGITS)?.length ?? 0;
+    return digits >= 6 && digits <= 15;
+  }, 'กรอกเบอร์โทรให้มีตัวเลขจริง 6–15 หลัก (เครื่องหมายวรรคตอนอย่างเดียวใช้ไม่ได้)');
 export const ContactChannels = z.strictObject({
   email: ContactEmail.nullable(),
   phone: ContactPhone.nullable(),
@@ -104,7 +104,7 @@ export const AccountSettingsSnapshot = z.strictObject({
   partnerId: Id,
   permissionRevision: Id,
   displayName: z.string().min(1).max(160),
-  // The CURRENT immutable native login username. Never edited by this metadata form.
+  // The current login username. Never edited by this preview metadata form.
   currentUsername: Username,
   contact: ContactChannels,
   preferences: NotificationPreferences,

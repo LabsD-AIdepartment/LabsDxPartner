@@ -14,7 +14,7 @@ import { DataState } from '@/shared/ui/DataState';
 import { WithdrawalPreview } from './WithdrawalPreview';
 import { ContentPreview } from './ContentPreview';
 import { TransactionsPreview } from './TransactionsPreview';
-import { PayoutAccountPreview } from './PayoutAccountPreview';
+import { PayoutAccountPreview, EmbeddedPayoutAccount } from './PayoutAccountPreview';
 
 export function PitchApplication({
   session,
@@ -181,7 +181,7 @@ export function PitchApplication({
             initialSession={session}
             screen={screen}
             initialContext={readReportContext(new URLSearchParams(search))}
-            payoutAccountHref="/account?view=payout"
+            payoutAccount={<EmbeddedPayoutAccount search={search} />}
           />
         )}
       </ApplicationPresentationContext.Provider>

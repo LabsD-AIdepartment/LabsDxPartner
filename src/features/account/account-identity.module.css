@@ -1,0 +1,35 @@
+.facts {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 0;
+}
+.facts > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 16px;
+}
+.facts dt {
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.password {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.password summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.password[open] > * + * {
+  margin-top: 16px;
+}
+@media (max-width: 400px) {
+  .facts > div {
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 12px;
+  }
+}

@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Session, type SessionValue } from '@/contracts/session';
 import { ScopedQueryProvider } from '@/shared/query/provider';
 import { ChangeWatcher } from '@/shared/query/ChangeWatcher';
@@ -31,6 +31,7 @@ import { AccountPage } from '@/features/account/AccountPage';
 import { accountHttp } from '@/features/account/http';
 import { AccountContacts } from '@/features/account/AccountContacts';
 import { contactHttp } from '@/features/account/contact-http';
+import { AccountIdentityCard } from '@/features/account/AccountIdentityCard';
 import type { PartnerScreen } from './types';
 import forms from '@/shared/ui/forms.module.css';
 
@@ -38,12 +39,12 @@ export function PartnerApplication({
   initialSession,
   screen,
   initialContext,
-  payoutAccountHref,
+  payoutAccount,
 }: {
   initialSession: SessionValue;
   screen: PartnerScreen;
   initialContext: ReportContext;
-  payoutAccountHref?: string;
+  payoutAccount?: ReactNode;
 }) {
   const [session, setSession] = useState(initialSession);
   const [state, setState] = useState<'ready' | 'checking' | 'changing' | 'error'>('checking');
@@ -259,19 +260,11 @@ export function PartnerApplication({
               scope={scope}
               transport={accountHttp}
               contacts={<AccountContacts scope={scope} transport={contactHttp} />}
-              onLogout={finish}
-              credentials={
-                <>
-                  {payoutAccountHref && (
-                    <LinkButton href={payoutAccountHref}>ดู/แก้ไขบัญชีรับเงิน</LinkButton>
-                  )}
-                  <CredentialAccount
-                    name={session.displayName}
-                    onChanged={finish}
-                    showIdentity={false}
-                  />
-                </>
+              identity={
+                <AccountIdentityCard scope={scope} transport={accountHttp} onChanged={finish} />
               }
+              payoutAccount={payoutAccount}
+              onLogout={finish}
             />
           ) : (
             <CredentialAccount name={session.displayName} onChanged={finish} />

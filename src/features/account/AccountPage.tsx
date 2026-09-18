@@ -20,6 +20,8 @@ type Props = {
   reauthHref?: string;
   credentials?: ReactNode;
   contacts?: ReactNode;
+  identity?: ReactNode;
+  payoutAccount?: ReactNode;
 };
 export function AccountPage(props: Props) {
   return <AccountContent key={JSON.stringify(scopeKey(props.scope))} {...props} />;
@@ -31,6 +33,8 @@ function AccountContent({
   reauthHref = '/login?next=%2Faccount',
   credentials,
   contacts,
+  identity,
+  payoutAccount,
 }: Props) {
   const client = useQueryClient();
   const [action, setAction] = useState<Action | null>(null),
@@ -44,6 +48,7 @@ function AccountContent({
   const clearReview = () => setAction(null);
   return (
     <div className={styles.stack}>
+      {identity}
       {q.isPending && <DataState state="loading" />}
       {q.error && (
         <DataState state="error" message="โหลดบัญชีไม่สำเร็จ" onRetry={() => void q.refetch()} />
@@ -56,17 +61,20 @@ function AccountContent({
       {q.data && data && !q.error && q.data.dataState !== 'unavailable' && (
         <>
           {' '}
-          <Card title="บัญชีของคุณ">
-            <TextGroup>
-              <Text variant="sectionTitle">{data.displayName}</Text>
-              <Text variant="caption" tone="muted">
-                ชื่อผู้ใช้: {data.username}
-              </Text>
-            </TextGroup>
-          </Card>
+          {!identity && (
+            <Card title="บัญชีของคุณ">
+              <TextGroup>
+                <Text variant="sectionTitle">{data.displayName}</Text>
+                <Text variant="caption" tone="muted">
+                  ชื่อผู้ใช้: {data.username}
+                </Text>
+              </TextGroup>
+            </Card>
+          )}
         </>
       )}
       {contacts}
+      {payoutAccount}
       {q.data && data && !q.error && q.data.dataState !== 'unavailable' && (
         <>
           <Card title="ข้อตกลงของคุณ">

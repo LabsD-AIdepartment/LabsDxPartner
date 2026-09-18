@@ -8,6 +8,10 @@ import {
   ActivationFailure,
 } from '@/server/modules/partners/activation';
 import { createPasswordService, PasswordFailure } from '@/server/modules/identity/passwords';
+import {
+  createAccountIdentityWriter,
+  AccountIdentityFailure,
+} from '@/server/modules/identity/account-identity';
 import type { CredentialConfig } from '@/server/modules/identity/credential-auth';
 import type { ResolvePrincipal } from '@/server/modules/identity/resolve-principal';
 import { z } from 'zod';
@@ -70,8 +74,10 @@ export function createAccessHttp(
     'invitations/revoke',
     'passwords/change',
     'passwords/issue',
+    'account/identity',
   ]);
   const actions: Record<string, (headers: Headers, input: unknown) => Promise<unknown>> = {
+    'account/identity': createAccountIdentityWriter(sql, config, resolve),
     'staff/access': createStaffAccessReader(partners),
     'memberships/change': (headers, input) => partners.changeMembership(headers, input),
     session: async (headers, input) =>
@@ -133,7 +139,8 @@ export function createAccessHttp(
       if (
         error instanceof AccessFailure ||
         error instanceof ActivationFailure ||
-        error instanceof PasswordFailure
+        error instanceof PasswordFailure ||
+        error instanceof AccountIdentityFailure
       ) {
         const code = error.code.toUpperCase();
         const status =
