@@ -75,6 +75,7 @@ export function createDemoSession(dataset: DatasetRecords, identity: PreviewIden
     }));
     const allKnown = entries.every(c => c.amount !== null);
     return Overview.parse({ ...projected, obligation: original.obligation,
+      accountingStatus: { state: projected.dataState, reasons: projected.reasons },
       dataState: allKnown ? projected.dataState : 'partial',
       reasons: [...projected.reasons, ...new Set(entries.flatMap(c => c.reason ? [c.reason] : []))],
       earnings: { ...projected.earnings, connectedAdEarnings: entries,

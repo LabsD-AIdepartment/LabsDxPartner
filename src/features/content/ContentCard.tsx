@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useApplicationPresentation } from '@/shared/routing/ApplicationPresentation';
 import { Expand, Play } from 'lucide-react';
 import { ContentMediaPreview } from './ContentMediaPreview';
 import { ContentCardInfo } from './ContentCardInfo';
@@ -10,6 +11,7 @@ import { CoverImage } from '@/shared/ui/CoverImage';
 import { Money } from '@/shared/ui/Money';
 import styles from './content.module.css';
 export function ContentCard({ clip, href }: { clip: z.infer<typeof CardContract>; href: string }) {
+  const { showConnectedAds = true } = useApplicationPresentation();
   const [open, setOpen] = useState(false);
   const media = clip.removed
     ? null
@@ -49,10 +51,15 @@ export function ContentCard({ clip, href }: { clip: z.infer<typeof CardContract>
           <span>คอมมิชชันยืนยันแล้ว</span>
           <Money value={clip.earned} reason={clip.unavailableReason ?? undefined} />
         </div>
-        {clip.adCommission && <div className={styles.earned}>
-          <span>คอมมิชชันโฆษณารอยืนยัน</span>
-          <Money value={clip.adCommission.amount} reason={clip.adCommission.reason ?? undefined} />
-        </div>}
+        {showConnectedAds && clip.adCommission && (
+          <div className={styles.earned}>
+            <span>คอมมิชชันโฆษณารอยืนยัน</span>
+            <Money
+              value={clip.adCommission.amount}
+              reason={clip.adCommission.reason ?? undefined}
+            />
+          </div>
+        )}
         {clip.earned === null && <span className={styles.meta}>{clip.unavailableReason}</span>}
       </Link>
       {open && media && (

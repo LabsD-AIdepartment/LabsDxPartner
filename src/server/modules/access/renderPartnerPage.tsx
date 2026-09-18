@@ -1,5 +1,9 @@
 import { notFound } from 'next/navigation';
-import { pitchModeEnabled, canUsePitch } from '@/server/platform/pitch-mode';
+import {
+  pitchModeEnabled,
+  canUsePitch,
+  pitchConnectedAdsVisible,
+} from '@/server/platform/pitch-mode';
 import { pitchSearch } from '@/features/pitch/routes';
 import { requirePartnerAccess } from './requirePartnerAccess';
 import { PartnerApplication } from '@/features/partner-application/PartnerApplication';
@@ -14,7 +18,14 @@ export async function renderPartnerPage(
   if (pitchModeEnabled()) {
     if (!canUsePitch(session)) notFound();
     const { PitchApplication } = await import('@partner-pitch');
-    return <PitchApplication session={session} screen={screen} search={pitchSearch(search)} />;
+    return (
+      <PitchApplication
+        session={session}
+        screen={screen}
+        search={pitchSearch(search)}
+        showConnectedAds={pitchConnectedAdsVisible()}
+      />
+    );
   }
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(search))

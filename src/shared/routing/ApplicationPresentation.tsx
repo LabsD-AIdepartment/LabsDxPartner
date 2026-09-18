@@ -6,6 +6,8 @@ export type ApplicationPresentation = {
   footerNote?: ReactNode;
   sampleData?: boolean;
   connectedAds?: boolean;
+  /** Visibility only. Source reads, amounts and access checks keep their existing ownership. */
+  showConnectedAds?: boolean;
 };
 const defaultPresentation: ApplicationPresentation = { resolveHref: (href) => href };
 export const ApplicationPresentationContext = createContext(defaultPresentation);

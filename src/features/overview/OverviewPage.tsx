@@ -11,6 +11,7 @@ import { type QueryScope, partnerKey } from '@/shared/query/keys';
 import { changeMeta } from '@/shared/query/invalidate-changes';
 import { FilterBar, type FilterValue } from '@/shared/ui/FilterBar';
 import { DataState } from '@/shared/ui/DataState';
+import { overviewPageStatus } from './overview-status';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { Dialog } from '@/shared/ui/Dialog';
@@ -93,6 +94,7 @@ export function OverviewPage({
     staleTime: 0,
   });
   const data = query.data;
+  const pageStatus = data ? overviewPageStatus(data) : null;
   const reportIdentity = JSON.stringify([scope, filters.from, filters.toExclusive, filters.brand]);
   const exportReady =
     valid &&
@@ -225,10 +227,10 @@ export function OverviewPage({
                 onRetry={() => void query.refetch()}
               />
             )}
-            {data.dataState !== 'ready' && (
+            {pageStatus!.state !== 'ready' && (
               <DataState
-                state={data.dataState}
-                message={data.reasons.join(' · ') || undefined}
+                state={pageStatus!.state}
+                message={pageStatus!.reasons.join(' · ') || undefined}
                 onRetry={() => void query.refetch()}
               />
             )}

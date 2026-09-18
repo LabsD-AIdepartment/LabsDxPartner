@@ -49,6 +49,11 @@ export const Obligation = z
     'Unknown obligation cannot establish a next payout',
   );
 export const Overview = Freshness.extend({
+  // Preserve base accounting status before connected-ad enrichment adds local issues.
+  accountingStatus: z.strictObject({
+    state: Freshness.shape.dataState,
+    reasons: Freshness.shape.reasons,
+  }).optional(),
   profile: ProfilePresentation.nullable().optional(),
   brands: z.array(Id).max(100).optional(),
   earnings: z

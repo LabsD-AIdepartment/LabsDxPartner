@@ -1,4 +1,5 @@
 'use client';
+import { useApplicationPresentation } from '@/shared/routing/ApplicationPresentation';
 import { formatExactDecimal } from '@/contracts/platform-metrics';
 import { getAdOrderSummary } from './ad-order-summary';
 import { ShopVideoPanel } from '@/features/shop-video/ShopVideoPanel';
@@ -25,6 +26,7 @@ import { Text } from '@/shared/ui/Text';
 import styles from './content.module.css';
 export function ContentDetail(props: ContentProps & { contentId: string }) {
   const { context: c, routes } = props;
+  const { showConnectedAds = true } = useApplicationPresentation();
   const mobilePlacement = useMobileHeaderActions();
   const titleTarget = useContext(PageTitleActionsTarget);
   const hasTitleBack = !!titleTarget && !mobilePlacement?.mobile;
@@ -117,58 +119,89 @@ export function ContentDetail(props: ContentProps & { contentId: string }) {
                   />
                 )}
                 <div className={styles.kpis}>
-                  <div>
-                    <span>ยอดขายจากโฆษณา</span>
-                    <strong
-                      aria-label={
-                        adSummary?.sales === null ? (adSummary.salesReason ?? undefined) : undefined
-                      }
-                    >
-                      {adSummary?.sales != null && adSummary.salesCurrency
-                        ? (adSummary.salesCurrency === 'THB'
-                            ? '฿'
-                            : adSummary.salesCurrency + ' ') +
-                          formatExactDecimal(adSummary.sales, 2)
-                        : '—'}
-                    </strong>
-                    {adSummary?.sales === null && <small>{adSummary.salesReason}</small>}
-                  </div>
-                  <div>
-                    <span>{detail.adCommission ? 'คอมมิชชันจากโฆษณา · รอยืนยัน' : 'คอมมิชชันจากยอดขาย'}</span>
-                    <Money
-                      value={detail.adCommission ? detail.adCommission.amount : mapped ? detail.content.earned : null}
-                      reason={detail.adCommission?.reason ?? detail.content.unavailableReason ?? undefined}
-                    />
-                  </div>
-                  <div>
-                    <span>ออเดอร์จากโฆษณา</span>
-                    <strong
-                      aria-label={
-                        adSummary?.orders === null
-                          ? (adSummary.ordersReason ?? undefined)
-                          : undefined
-                      }
-                    >
-                      {adSummary?.orders != null ? formatExactDecimal(adSummary.orders, 0) : '—'}
-                    </strong>
-                    {adSummary?.orders === null && <small>{adSummary.ordersReason}</small>}
-                  </div>
-                  <div>
-                    <span>AOV จากโฆษณา</span>
-                    <strong
-                      aria-label={
-                        adSummary?.aov === null ? (adSummary.aovReason ?? undefined) : undefined
-                      }
-                    >
-                      {adSummary?.aov != null && adSummary.currency
-                        ? (adSummary.currency === 'THB' ? '฿' : adSummary.currency + ' ') +
-                          formatExactDecimal(adSummary.aov, 2)
-                        : '—'}
-                    </strong>
-                    {adSummary?.aov === null && <small>{adSummary.aovReason}</small>}
-                  </div>
+                  {showConnectedAds ? (
+                    <>
+                      <div>
+                        <span>ยอดขายจากโฆษณา</span>
+                        <strong
+                          aria-label={
+                            adSummary?.sales === null
+                              ? (adSummary.salesReason ?? undefined)
+                              : undefined
+                          }
+                        >
+                          {adSummary?.sales != null && adSummary.salesCurrency
+                            ? (adSummary.salesCurrency === 'THB'
+                                ? '฿'
+                                : adSummary.salesCurrency + ' ') +
+                              formatExactDecimal(adSummary.sales, 2)
+                            : '—'}
+                        </strong>
+                        {adSummary?.sales === null && <small>{adSummary.salesReason}</small>}
+                      </div>
+                      <div>
+                        <span>
+                          {detail.adCommission
+                            ? 'คอมมิชชันจากโฆษณา · รอยืนยัน'
+                            : 'คอมมิชชันจากยอดขาย'}
+                        </span>
+                        <Money
+                          value={
+                            detail.adCommission
+                              ? detail.adCommission.amount
+                              : mapped
+                                ? detail.content.earned
+                                : null
+                          }
+                          reason={
+                            detail.adCommission?.reason ??
+                            detail.content.unavailableReason ??
+                            undefined
+                          }
+                        />
+                      </div>
+                      <div>
+                        <span>ออเดอร์จากโฆษณา</span>
+                        <strong
+                          aria-label={
+                            adSummary?.orders === null
+                              ? (adSummary.ordersReason ?? undefined)
+                              : undefined
+                          }
+                        >
+                          {adSummary?.orders != null
+                            ? formatExactDecimal(adSummary.orders, 0)
+                            : '—'}
+                        </strong>
+                        {adSummary?.orders === null && <small>{adSummary.ordersReason}</small>}
+                      </div>
+                      <div>
+                        <span>AOV จากโฆษณา</span>
+                        <strong
+                          aria-label={
+                            adSummary?.aov === null ? (adSummary.aovReason ?? undefined) : undefined
+                          }
+                        >
+                          {adSummary?.aov != null && adSummary.currency
+                            ? (adSummary.currency === 'THB' ? '฿' : adSummary.currency + ' ') +
+                              formatExactDecimal(adSummary.aov, 2)
+                            : '—'}
+                        </strong>
+                        {adSummary?.aov === null && <small>{adSummary.aovReason}</small>}
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <span>คอมมิชชันยืนยันแล้ว</span>
+                      <Money
+                        value={mapped ? detail.content.earned : null}
+                        reason={detail.content.unavailableReason ?? undefined}
+                      />
+                    </div>
+                  )}
                 </div>
-                {adSummary?.stale &&
+                {showConnectedAds &&
+                  adSummary?.stale &&
                   (adSummary.sales !== null ||
                     adSummary.orders !== null ||
                     adSummary.aov !== null) && (
@@ -196,13 +229,30 @@ export function ContentDetail(props: ContentProps & { contentId: string }) {
             >
               <summary>รายได้และวิธีคำนวณ</summary>
               {earningsOpen &&
-                (detail.adCommission ? (
+                (showConnectedAds && detail.adCommission ? (
                   <div>
-                    <p>ยอดขายจากแพลตฟอร์ม <Money value={detail.adCommission.sales} /></p>
-                    <p>อัตราคอมมิชชัน {detail.adCommission.ratePpm === null ? 'รอยืนยันอัตรา' : `${detail.adCommission.ratePpm / 10000}%`}</p>
-                    <p>คอมมิชชันรอยืนยัน <Money value={detail.adCommission.amount} reason={detail.adCommission.reason ?? undefined} /></p>
-                    <p className="small muted">คำนวณจากยอดขายโฆษณาในช่วงวันที่เลือก ยอดนี้ยังไม่รวมเป็นเงินพร้อมถอน</p>
-                    <p>คอมมิชชันที่ยืนยันแล้ว <Money value={detail.content.earned} /></p>
+                    <p>
+                      ยอดขายจากแพลตฟอร์ม <Money value={detail.adCommission.sales} />
+                    </p>
+                    <p>
+                      อัตราคอมมิชชัน{' '}
+                      {detail.adCommission.ratePpm === null
+                        ? 'รอยืนยันอัตรา'
+                        : `${detail.adCommission.ratePpm / 10000}%`}
+                    </p>
+                    <p>
+                      คอมมิชชันรอยืนยัน{' '}
+                      <Money
+                        value={detail.adCommission.amount}
+                        reason={detail.adCommission.reason ?? undefined}
+                      />
+                    </p>
+                    <p className="small muted">
+                      คำนวณจากยอดขายโฆษณาในช่วงวันที่เลือก ยอดนี้ยังไม่รวมเป็นเงินพร้อมถอน
+                    </p>
+                    <p>
+                      คอมมิชชันที่ยืนยันแล้ว <Money value={detail.content.earned} />
+                    </p>
                     <EarningsSection {...props} context={pinned} />
                   </div>
                 ) : mapped ? (
@@ -219,65 +269,69 @@ export function ContentDetail(props: ContentProps & { contentId: string }) {
                 ))}
             </details>
           </Card>
-          <Card title={detail.performance ? 'ผลโฆษณาที่ใช้คลิปนี้' : undefined}>
-            {detail.performance ? (
-              <>
-                <AdPerformance
-                  performance={detail.performance}
-                  canViewAdSpend={props.canViewAdSpend}
-                />
-                {hasVideoSource && props.shopVideoTransport && (
-                  <details
-                    className={styles.performanceDefinition}
-                    onToggle={(e) => setMetricsOpen(e.currentTarget.open)}
-                  >
-                    <summary>ผลการขายจาก TikTok Shop Video</summary>
-                    {metricsOpen && (
-                      <ShopVideoPanel
-                        scope={props.scope}
-                        clipId={props.contentId}
-                        from={c.from}
-                        toExclusive={c.toExclusive}
-                        transport={props.shopVideoTransport}
-                      />
-                    )}
-                  </details>
-                )}
-              </>
-            ) : (
+          {(showConnectedAds || !detail.performance) && (
+            <Card title={detail.performance ? 'ผลโฆษณาที่ใช้คลิปนี้' : undefined}>
+              {detail.performance ? (
+                <>
+                  <AdPerformance
+                    performance={detail.performance}
+                    canViewAdSpend={props.canViewAdSpend}
+                  />
+                  {hasVideoSource && props.shopVideoTransport && (
+                    <details
+                      className={styles.performanceDefinition}
+                      onToggle={(e) => setMetricsOpen(e.currentTarget.open)}
+                    >
+                      <summary>ผลการขายจาก TikTok Shop Video</summary>
+                      {metricsOpen && (
+                        <ShopVideoPanel
+                          scope={props.scope}
+                          clipId={props.contentId}
+                          from={c.from}
+                          toExclusive={c.toExclusive}
+                          transport={props.shopVideoTransport}
+                        />
+                      )}
+                    </details>
+                  )}
+                </>
+              ) : (
+                <details
+                  className={styles.disclosure}
+                  onToggle={(e) => setMetricsOpen(e.currentTarget.open)}
+                >
+                  <summary>ประสิทธิภาพคลิป</summary>
+                  <MetricSections
+                    metrics={detail.metrics}
+                    canViewAdSpend={props.canViewAdSpend}
+                    showEmpty={!hasVideoSource}
+                  />
+                  {metricsOpen && hasVideoSource && props.shopVideoTransport && (
+                    <ShopVideoPanel
+                      scope={props.scope}
+                      clipId={props.contentId}
+                      from={c.from}
+                      toExclusive={c.toExclusive}
+                      transport={props.shopVideoTransport}
+                    />
+                  )}
+                </details>
+              )}
+            </Card>
+          )}
+          {showConnectedAds && (
+            <Card>
               <details
                 className={styles.disclosure}
-                onToggle={(e) => setMetricsOpen(e.currentTarget.open)}
+                onToggle={(e) => setAdsOpen(e.currentTarget.open)}
               >
-                <summary>ประสิทธิภาพคลิป</summary>
-                <MetricSections
-                  metrics={detail.metrics}
-                  canViewAdSpend={props.canViewAdSpend}
-                  showEmpty={!hasVideoSource}
-                />
-                {metricsOpen && hasVideoSource && props.shopVideoTransport && (
-                  <ShopVideoPanel
-                    scope={props.scope}
-                    clipId={props.contentId}
-                    from={c.from}
-                    toExclusive={c.toExclusive}
-                    transport={props.shopVideoTransport}
-                  />
-                )}
+                <summary>
+                  โฆษณาที่ใช้คลิปนี้{detail.adCount === null ? '' : ` (${detail.adCount})`}
+                </summary>
+                {adsOpen && <AdList {...props} context={pinned} />}
               </details>
-            )}
-          </Card>
-          <Card>
-            <details
-              className={styles.disclosure}
-              onToggle={(e) => setAdsOpen(e.currentTarget.open)}
-            >
-              <summary>
-                โฆษณาที่ใช้คลิปนี้{detail.adCount === null ? '' : ` (${detail.adCount})`}
-              </summary>
-              {adsOpen && <AdList {...props} context={pinned} />}
-            </details>
-          </Card>
+            </Card>
+          )}
         </DataEnvelope>
       )}
     </div>

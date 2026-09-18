@@ -81,6 +81,8 @@ describe('connected platform commissions', () => {
     const overview = Overview.parse(await session.overview({ ...base, filters }));
     expect(overview.earnings.estimated).toBeNull();
     expect(overview.dataState).toBe('partial');
+    expect(overview.accountingStatus?.state).toBe('ready');
+    expect(overview.accountingStatus?.reasons).toEqual([]);
   });
   it('rejects wrong-window responses and network errors instead of showing unrelated sample finance', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 503 })));

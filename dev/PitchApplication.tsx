@@ -18,10 +18,12 @@ export function PitchApplication({
   session,
   screen,
   search,
+  showConnectedAds = false,
 }: {
   session: SessionValue;
   screen: PartnerScreen;
   search: string;
+  showConnectedAds?: boolean;
 }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
@@ -131,6 +133,7 @@ export function PitchApplication({
         resolveHref: pitchHref,
         sampleData: true,
         connectedAds: true,
+        showConnectedAds,
         accountMenu: (
           <ProfileMenu
             accountHref="/account"

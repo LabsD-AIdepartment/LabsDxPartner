@@ -48,3 +48,23 @@ still exclude development datasets and this pitch composition. A hosted pitch bu
 explicit packaging/deployment task; do not deploy the default build expecting sample pages.
 Source regressions in `dev/` remain test support, not extra running applications. Inactive
 mockup copies and historical builds are archived under ignored `.agent-work/`.
+
+### Connected-ad presentation flag
+
+`LABSD_PITCH_SHOW_CONNECTED_ADS` defaults to OFF (unset or `0`). Set it to `1` in
+local runtime configuration and restart the canonical server to show linked-ad
+commission details, IDs and performance sections in Overview and My content.
+This flag is resolved on the server for the local pitch composition only; URL
+parameters cannot enable it. Production presentation is unaffected.
+
+This is a visibility switch, not an integration or authorization switch: existing
+source reads, accounting projections, confirmed earnings, wallet amounts, exports
+and native access checks remain unchanged. No fallback amounts are added. When
+visible, linked-ad pending reasons appear next to their earnings entries rather
+than as a whole-page Overview warning. Unrelated missing-data and stale/error
+notices remain visible. Set `0` (or remove the key) and restart to return to pitch
+presentation; no data migration is needed.
+Known aggregate pending earnings remain visible; the switch hides connected-ad
+breakdowns, not financial totals. The additive `accountingStatus` metadata keeps
+accounting warnings distinct from ad enrichment warnings, even with identical
+wording. Older responses without this metadata retain their original notices.

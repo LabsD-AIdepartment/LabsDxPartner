@@ -1,4 +1,5 @@
 'use client';
+import { useApplicationPresentation } from '@/shared/routing/ApplicationPresentation';
 import { Card } from '@/shared/ui/Card';
 import { BackLink } from '@/shared/ui/BackLink';
 import { DataState } from '@/shared/ui/DataState';
@@ -20,6 +21,7 @@ export function AdDetail(props: ContentProps & { contentId: string; adId: string
     adId: props.adId,
   });
   const data = query.data;
+  const { showConnectedAds = true } = useApplicationPresentation();
   return (
     <div className={styles.page}>
       <BackLink
@@ -29,7 +31,9 @@ export function AdDetail(props: ContentProps & { contentId: string; adId: string
           props.context,
         )}
       />
-      {!validContentFilters(props.context) ? (
+      {!showConnectedAds ? (
+        <p>รายละเอียดโฆษณายังไม่เปิดแสดง</p>
+      ) : !validContentFilters(props.context) ? (
         <DataState state="error" message="ช่วงเวลาหรือรุ่นข้อมูลไม่ถูกต้อง" />
       ) : (
         <ContentState
@@ -39,7 +43,7 @@ export function AdDetail(props: ContentProps & { contentId: string; adId: string
           latestHref={reportHref(props.routes.overview, { ...props.context, generation: null })}
         />
       )}
-      {data && !query.error && (
+      {showConnectedAds && data && !query.error && (
         <DataEnvelope data={data} periodLabel="ช่วงข้อมูลโฆษณา">
           <Card
             title={data.data.title}
