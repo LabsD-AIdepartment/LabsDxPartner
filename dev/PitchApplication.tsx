@@ -15,17 +15,22 @@ import { WithdrawalPreview } from './WithdrawalPreview';
 import { ContentPreview } from './ContentPreview';
 import { TransactionsPreview } from './TransactionsPreview';
 import { PayoutAccountPreview, EmbeddedPayoutAccount } from './PayoutAccountPreview';
+import type { PitchTransferValue } from '@/contracts/pitch-transfer';
+import { importPitchTransfer } from './pitch-transfer';
+import { PitchTransferPanel } from './PitchTransferPanel';
 
 export function PitchApplication({
   session,
   screen,
   search,
   showConnectedAdNotices = false,
+  initialPitchState,
 }: {
   session: SessionValue;
   screen: PartnerScreen;
   search: string;
   showConnectedAdNotices?: boolean;
+  initialPitchState?: PitchTransferValue;
 }) {
   const router = useRouter();
   const membershipKey = JSON.stringify(session.memberships);
@@ -80,6 +85,7 @@ export function PitchApplication({
         }
         if (!disposed && !request.signal.aborted) {
           bindPitchStorage(session.userId, session.activePartnerId!);
+          if (initialPitchState) importPitchTransfer(window.sessionStorage, initialPitchState, session.userId, session.activePartnerId!);
           setReady(true);
           setError(false);
         }
@@ -109,7 +115,7 @@ export function PitchApplication({
       document.removeEventListener('visibilitychange', visibility);
       window.removeEventListener('pageshow', visibility);
     };
-  }, [session.userId, session.activePartnerId, membershipKey, clearNavigationQueries, router]);
+  }, [session.userId, session.activePartnerId, membershipKey, clearNavigationQueries, router, initialPitchState]);
   async function logout() {
     if (busy) return;
     setBusy(true);
@@ -165,7 +171,9 @@ export function PitchApplication({
           footerNote: 'ข้อมูลตัวอย่างสำหรับนำเสนอ · ไม่มีการโอนเงินจริง',
         }}
       >
-        {screen.kind === 'overview' ? (
+        {screen.kind === 'account' && new URLSearchParams(search).get('view') === 'transfer' ? (
+          <PitchTransferPanel userId={session.userId} partnerId={session.activePartnerId!} />
+        ) : screen.kind === 'overview' ? (
           <WithdrawalPreview search={search} />
         ) : ['content', 'clip', 'ad'].includes(screen.kind) ? (
           <ContentPreview search={search} segments={['partner-demo', 'a', ...segments]} />
