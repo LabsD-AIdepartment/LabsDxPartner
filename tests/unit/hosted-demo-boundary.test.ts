@@ -39,3 +39,11 @@ it('fails closed on an unprovisioned sample dataset rather than returning invent
   vi.stubEnv('LABSD_HOSTED_DATA_DIR','');
   expect((await handleDemoDatasetRequest(request())).status).toBe(503);
 });
+
+it.each(['LABSD_IDENTITY_ENABLED','LABSD_AD_SNAPSHOT_DATABASE','LABSD_AD_SNAPSHOT_ENABLED'])(
+  'startup refuses missing required %s before any file/database access', async flag => {
+    const {validateHostedDemoEnvironment} = await import('../../scripts/validate-hosted-demo');
+    const env={NODE_ENV:'production' as const,LABSD_IDENTITY_ENABLED:'1',LABSD_AD_SNAPSHOT_DATABASE:'1',LABSD_AD_SNAPSHOT_ENABLED:'1', [flag]:'0'};
+    expect(()=>validateHostedDemoEnvironment(env)).toThrow();
+  },
+);

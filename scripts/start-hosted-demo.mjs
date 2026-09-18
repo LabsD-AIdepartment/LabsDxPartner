@@ -1,16 +1,17 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { superviseWorker } from '../src/server/modules/marketing-ads/worker-supervisor.mjs';
 const root = resolve(import.meta.dirname, '..');
 const config = JSON.parse(readFileSync(resolve(root, '.next/required-server-files.json'), 'utf8'));
 if (config.config.env.LABSD_HOSTED_DEMO_ARTIFACT !== '1') throw new Error('Hosted demonstration artifact required');
 if (process.env.LABSD_HOSTED_DEMO_ENABLED === '1') {
-  const dir = process.env.LABSD_HOSTED_DATA_DIR;
-  if (!dir || !['demo-dataset.sqlite', 'media/tendrix-video.mp4', 'media/tendrix-video-poster.jpg', 'media/tendrix-graphic.jpg'].every(file => existsSync(resolve(dir, file))))
-    throw new Error('Hosted demonstration data is not provisioned');
+  const check = spawnSync(process.execPath, ['--import','tsx',resolve(root,'scripts/validate-hosted-demo.ts')], {
+    cwd:root, env:{...process.env,NODE_ENV:'production'}, stdio:'inherit',
+  });
+  if (check.status !== 0) process.exit(1);
 }
-const env = {...process.env, NODE_ENV:'production'};
+const env = {...process.env, NODE_ENV:'production', LABSD_BUILD_TARGET:'hosted-demo'};
 for (const profile of JSON.parse(env.LABSD_FACEBOOK_PROFILES || '[]')) {
   delete env[profile.tokenEnv];
   if (profile.appSecretEnv) delete env[profile.appSecretEnv];
