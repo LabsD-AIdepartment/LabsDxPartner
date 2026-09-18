@@ -6,10 +6,12 @@ import { LoginPage } from '@/features/login/LoginPage';
 import { renderToString } from 'react-dom/server';
 
 let reduced: EventTarget & { matches: boolean };
+let lightweight: EventTarget & { matches: boolean };
 let callbacks: Map<number, FrameRequestCallback>;
 let nextFrame: number;
 beforeEach(() => {
   reduced = Object.assign(new EventTarget(), { matches: false });
+  lightweight = Object.assign(new EventTarget(), { matches: false });
   callbacks = new Map();
   nextFrame = 0;
   vi.stubGlobal(
@@ -17,7 +19,9 @@ beforeEach(() => {
     vi.fn((query: string) =>
       query.includes('reduced-motion')
         ? reduced
-        : Object.assign(new EventTarget(), { matches: true }),
+        : query.includes('max-width')
+          ? lightweight
+          : Object.assign(new EventTarget(), { matches: true }),
     ),
   );
   vi.stubGlobal(
@@ -36,6 +40,39 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('login fluid presentation', () => {
+  it('keeps mobile SVG geometry static and switches safely when the media query changes', () => {
+    lightweight.matches = true;
+    const { container, unmount } = render(<FluidBackdrop />);
+    const path = container.querySelector('[data-fluid-field] > path')!;
+    const opening = path.getAttribute('d');
+    expect(callbacks.size).toBe(0);
+    fireEvent.pointerMove(window, { clientX: 900, clientY: 800, pointerType: 'mouse' });
+    expect(path.getAttribute('d')).toBe(opening);
+    lightweight.matches = false;
+    lightweight.dispatchEvent(new Event('change'));
+    expect(callbacks.size).toBe(1);
+    for (const time of [100, 150]) {
+      const [id, callback] = callbacks.entries().next().value!;
+      callbacks.delete(id);
+      callback(time);
+    }
+    expect(path.getAttribute('d')).not.toBe(opening);
+    lightweight.matches = true;
+    lightweight.dispatchEvent(new Event('change'));
+    expect(callbacks.size).toBe(0);
+    expect(path.getAttribute('d')).toBe(opening);
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(container.querySelector('[data-fluid-backdrop]')).toHaveAttribute(
+      'data-motion-paused',
+      'true',
+    );
+    unmount();
+    lightweight.matches = false;
+    lightweight.dispatchEvent(new Event('change'));
+    expect(callbacks.size).toBe(0);
+  });
+
   it('ships the opening shape before hydration and continues from it without a first-frame jump', () => {
     const server = new DOMParser().parseFromString(renderToString(<FluidBackdrop />), 'text/html');
     const serverPaths = [...server.querySelectorAll('[data-fluid-field] > path')].map((path) =>

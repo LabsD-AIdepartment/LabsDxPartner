@@ -222,6 +222,16 @@
   }
 }
 
+@media (max-width: 800px), (pointer: coarse) {
+  .canvas .panel {
+    /* Avoid re-blurring the moving background underneath the form. */
+    backdrop-filter: none;
+  }
+  .canvas:focus-within :global([data-fluid-backdrop]) svg {
+    animation-play-state: paused;
+  }
+}
+
 @media (max-width: 480px) {
   .canvas .panel {
     grid-template-columns: minmax(0, 1fr);

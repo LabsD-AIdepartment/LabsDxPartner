@@ -29,3 +29,30 @@
     margin-left: -30%;
   }
 }
+
+/* Only transform a stable surface on mobile; no path/gradient updates per frame. */
+@media (max-width: 800px), (pointer: coarse) {
+  .backdrop svg {
+    animation: surface-drift 22s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  .backdrop[data-motion-paused='true'] svg {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes surface-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(2%, -2%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop svg {
+    animation: none;
+    will-change: auto;
+  }
+}

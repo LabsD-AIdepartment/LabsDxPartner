@@ -32,6 +32,7 @@ const openingSurface = surfaceAt(OPENING_PHASE);
 /** Decorative only: pointer input bends the light, never the form or its hit targets. */
 export function FluidBackdrop() {
   const id = useId().replace(/:/g, '');
+  const backdrop = useRef<HTMLDivElement>(null);
   const field = useRef<SVGGElement>(null);
   const ribbon = useRef<SVGPathElement>(null);
   const glow = useRef<SVGPathElement>(null);
@@ -40,6 +41,9 @@ export function FluidBackdrop() {
   useEffect(() => {
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
+    // Keep the expensive filtered SVG geometry static on touch/narrow screens.
+    // CSS moves the already-painted surface instead of repainting it every frame.
+    const lightweight = matchMedia('(max-width: 800px), (pointer: coarse)');
     let frame = 0,
       last = 0,
       phase = OPENING_PHASE,
@@ -69,14 +73,21 @@ export function FluidBackdrop() {
     const start = () => {
       cancelAnimationFrame(frame);
       last = 0;
-      if (reduced.matches) {
+      backdrop.current?.setAttribute('data-motion-paused', String(document.hidden));
+      if (reduced.matches || lightweight.matches) {
         x = y = targetX = targetY = 0;
         phase = OPENING_PHASE;
         render();
       } else if (!document.hidden) frame = requestAnimationFrame(tick);
     };
     const move = (event: PointerEvent) => {
-      if (reduced.matches || !finePointer.matches || event.pointerType === 'touch') return;
+      if (
+        reduced.matches ||
+        lightweight.matches ||
+        !finePointer.matches ||
+        event.pointerType === 'touch'
+      )
+        return;
       targetX = Math.max(-1, Math.min(1, (event.clientX / innerWidth) * 2 - 1));
       targetY = Math.max(-1, Math.min(1, (event.clientY / innerHeight) * 2 - 1));
     };
@@ -89,17 +100,19 @@ export function FluidBackdrop() {
     document.documentElement.addEventListener('pointerleave', leave);
     document.addEventListener('visibilitychange', start);
     reduced.addEventListener('change', start);
+    lightweight.addEventListener('change', start);
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('pointermove', move);
       document.documentElement.removeEventListener('pointerleave', leave);
       document.removeEventListener('visibilitychange', start);
       reduced.removeEventListener('change', start);
+      lightweight.removeEventListener('change', start);
     };
   }, []);
 
   return (
-    <div className={styles.backdrop} aria-hidden="true" data-fluid-backdrop>
+    <div ref={backdrop} className={styles.backdrop} aria-hidden="true" data-fluid-backdrop>
       <svg viewBox="0 0 1600 1200" preserveAspectRatio="xMidYMid slice" focusable="false">
         <defs>
           <linearGradient
