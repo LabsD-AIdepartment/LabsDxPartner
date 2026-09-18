@@ -12,7 +12,7 @@
   --input-text: var(--text);
   --input-border: #838880;
   --input-border-focus: #4d5649;
-  --hover: #e2f0e9;
+  --hover: #ebebeb;
   --accent: #62695b;
   --feedback-caution: #b7791f;
   --green: linear-gradient(120deg, #a3ef89, #68df60 35%, #32c96b);
@@ -60,7 +60,7 @@
   --input-fill: var(--control);
   --input-border: var(--border);
   --input-border-focus: var(--accent);
-  --hover: #19372d;
+  --hover: #202020;
   --accent: #7ee5a1;
   --feedback-caution: #e9b75f;
   --primary: linear-gradient(120deg, #9aef82, #31cf6e);
