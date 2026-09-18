@@ -59,17 +59,12 @@ function ScopedWallet({
   const [defaults] = useState(() => defaultWalletDateRange(new Date()));
   const [local, setLocal] = useState<WithdrawalHistoryFilters>({
     status: 'all',
-    from: defaults.displayedFromDate,
-    toExclusive: defaults.toExclusive.slice(0, 10),
+    from: '',
+    toExclusive: '',
   });
-  const filters = controlled
-    ? {
-        ...controlled,
-        from: controlled.from || local.from,
-        toExclusive: controlled.toExclusive || local.toExclusive,
-      }
-    : local;
-  const valid = validDateRange(filters.from, addDays(filters.toExclusive, -1));
+  const filters = controlled ?? local;
+  const allDates = !filters.from && !filters.toExclusive;
+  const valid = allDates || validDateRange(filters.from, addDays(filters.toExclusive, -1));
   const version = String(refreshKey);
   const list = useQuery({
     queryKey: withdrawalKeys.list(scope, version),
@@ -86,12 +81,14 @@ function ScopedWallet({
   const withdrawals = !list.isError ? list.data?.items : undefined;
   const released = !periods.isError ? periods.data?.released : undefined;
   const ledger = buildWalletLedger({ withdrawals, released });
-  const entries = valid
-    ? filterWalletLedgerByRange(ledger.dated, {
-        from: `${filters.from}T00:00:00+07:00`,
-        toExclusive: `${filters.toExclusive}T00:00:00+07:00`,
-      })
-    : [];
+  const entries = allDates
+    ? ledger.dated
+    : valid
+      ? filterWalletLedgerByRange(ledger.dated, {
+          from: `${filters.from}T00:00:00+07:00`,
+          toExclusive: `${filters.toExclusive}T00:00:00+07:00`,
+        })
+      : [];
   const [selectedRelease, setSelectedRelease] = useState<string | null>(null);
   const release = [...ledger.dated, ...ledger.undatedReleases].find(
     (entry): entry is WalletReleaseEntry =>
@@ -124,7 +121,9 @@ function ScopedWallet({
           </span>
         </div>
         <div className={styles.rowAmount}>
-          <span className={styles.amountDirection}>{credit ? 'เงินเข้า' : 'ยอดถอน'}</span>
+          <span className={styles.amountDirection}>
+            {credit ? 'เงินเข้า' : entry.request.status === 'paid' ? 'เงินออก' : 'ยอดขอถอน'}
+          </span>
           <Money
             value={credit ? entry.releasedAmount : entry.request.gross}
             reason="ยังไม่มีข้อมูลยอดที่ปล่อย"
@@ -192,14 +191,30 @@ function ScopedWallet({
             <Card title="รายการเงินเข้า–ออก" className={styles.history}>
               <div className={styles.range} role="group" aria-label="ช่วงวันที่แสดงรายการ">
                 <span>
-                  {valid
-                    ? `${dateLabel(filters.from)} – ${dateLabel(addDays(filters.toExclusive, -1))}`
-                    : 'ช่วงวันที่ไม่ถูกต้อง'}
+                  {allDates
+                    ? 'ทั้งหมด'
+                    : valid
+                      ? `${dateLabel(filters.from)} – ${dateLabel(addDays(filters.toExclusive, -1))}`
+                      : 'ช่วงวันที่ไม่ถูกต้อง'}
                 </span>
-                <DateRangePicker
-                  value={{ from: filters.from, toExclusive: filters.toExclusive }}
-                  onApply={changeRange}
-                />
+                <div className={styles.rangeActions}>
+                  {!allDates && (
+                    <Button onClick={() => changeRange({ from: '', toExclusive: '' })}>
+                      ดูทั้งหมด
+                    </Button>
+                  )}
+                  <DateRangePicker
+                    value={
+                      allDates
+                        ? {
+                            from: defaults.displayedFromDate,
+                            toExclusive: defaults.toExclusive.slice(0, 10),
+                          }
+                        : { from: filters.from, toExclusive: filters.toExclusive }
+                    }
+                    onApply={changeRange}
+                  />
+                </div>
               </div>
               {!valid && <p role="alert">กรุณาเลือกช่วงวันที่ให้ถูกต้อง</p>}
               {loading && <DataState state="loading" message="กำลังโหลดรายการเงินเข้า–ออก" />}
@@ -226,7 +241,10 @@ function ScopedWallet({
                 </ul>
               )}
               {valid && !loading && !partial && entries.length === 0 && (
-                <DataState state="empty" message="ไม่มีรายการในช่วงวันที่นี้" />
+                <DataState
+                  state="empty"
+                  message={allDates ? 'ยังไม่มีรายการเงินเข้า–ออก' : 'ไม่มีรายการในช่วงวันที่นี้'}
+                />
               )}
               {ledger.undatedReleases.length > 0 && (
                 <section className={styles.undated}>

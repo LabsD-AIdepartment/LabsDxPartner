@@ -126,6 +126,12 @@ describe('partner Wallet preview composition', () => {
     expect(
       within(screen.getByRole('article', { name: 'สรุปยอดพร้อมถอน' })).getByText('฿248,600'),
     ).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'ดูทั้งหมด' }));
+    const all = await screen.findByRole('list', { name: 'รายการเงินเข้า–ออก' });
+    expect(within(all).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(all).getByText('คอมมิชชันเข้ายอดพร้อมถอน')).toBeVisible();
+    expect(new URLSearchParams(window.location.search).has('requestedFrom')).toBe(false);
+    expect(new URLSearchParams(window.location.search).has('requestedToExclusive')).toBe(false);
   });
   it.each([
     { segments: ['statement-1'], view: 'withdrawals' },

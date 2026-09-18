@@ -7,8 +7,6 @@ import type { WithdrawalScopeValue } from '@/contracts/withdrawal-journey';
 import type { WithdrawalStaffTransport } from '@/features/withdrawals/model';
 import { createWithdrawalScenario } from '../../dev/withdrawals/transport';
 import { memoryStorage } from '../../dev/withdrawals/store';
-import { dateLabel } from '@/shared/ui/format-date';
-import { defaultWalletDateRange } from '@/features/withdrawals/wallet-ledger';
 const { download } = vi.hoisted(() => ({ download: vi.fn() }));
 vi.mock('@/features/withdrawals/withdrawal-proof', () => ({ downloadWithdrawalProof: download }));
 const show = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal');
@@ -113,19 +111,26 @@ describe('wallet financial history and withdrawal flow', () => {
     expect(within(dialog).queryByRole('link')).toBeNull();
     expect(screen.queryByText('ใบสรุปงวดเดิม')).toBeNull();
   });
-  it('defaults to today minus seven through today inclusive, independently of the balance', async () => {
-    const current = fixture();
-    mount(current.transport, null);
-    const range = defaultWalletDateRange(new Date());
-    expect(screen.getByRole('group', { name: 'ช่วงวันที่แสดงรายการ' })).toHaveTextContent(
-      `${dateLabel(range.displayedFromDate)} – ${dateLabel(range.displayedToInclusiveDate)}`,
-    );
-    await waitFor(() =>
-      expect(
-        within(screen.getByRole('article', { name: 'สรุปยอดพร้อมถอน' })).getByText('฿20,000'),
-      ).toBeVisible(),
-    );
-  });
+  it.each([null, { status: 'all' as const, from: '', toExclusive: '' }])(
+    'shows all historical credits and paid withdrawals when no date range is selected: %j',
+    async (filters) => {
+      const current = fixture();
+      seed(current, true);
+      mount(current.transport, filters);
+      expect(screen.getByRole('group', { name: 'ช่วงวันที่แสดงรายการ' })).toHaveTextContent(
+        'ทั้งหมด',
+      );
+      const list = await screen.findByRole('list', { name: 'รายการเงินเข้า–ออก' });
+      expect(within(list).getAllByText('คอมมิชชันเข้ายอดพร้อมถอน')).toHaveLength(2);
+      expect(within(list).getByText('เงินออก')).toBeVisible();
+      expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+      await waitFor(() =>
+        expect(
+          within(screen.getByRole('article', { name: 'สรุปยอดพร้อมถอน' })).getByText('฿15,000'),
+        ).toBeVisible(),
+      );
+    },
+  );
   it('date filters do not change balance and invalid dates cannot masquerade as empty history', async () => {
     const current = fixture();
     seed(current);
@@ -152,6 +157,8 @@ describe('wallet financial history and withdrawal flow', () => {
     expect(
       await screen.findByRole('link', { name: `ดูรายการถอน ${request.requestRef}` }),
     ).toBeVisible();
+    expect(screen.getByText('ยอดขอถอน')).toBeVisible();
+    expect(screen.queryByText('เงินออก')).toBeNull();
     expect(screen.getByText('รายการยังไม่ครบ: โหลดเงินเข้าไม่สำเร็จ')).toBeVisible();
     expect(screen.queryByText('ไม่มีรายการในช่วงวันที่นี้')).toBeNull();
   });

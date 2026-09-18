@@ -13,6 +13,7 @@
 }
 .range {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -22,6 +23,12 @@
 .range > span {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+.rangeActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
 }
 .transactions {
   list-style: none;
