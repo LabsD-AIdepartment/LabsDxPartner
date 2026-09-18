@@ -59,7 +59,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 8px;
+  margin: 0 0 14px;
   font-size: inherit;
   font-weight: var(--weight-medium);
 }
@@ -70,8 +70,45 @@
 .creatorInsights p {
   margin: 0;
 }
-.creatorInsights p + p {
-  margin-top: 8px;
+.insightList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.insightItem {
+  min-width: 0;
+}
+.insightItem + .insightItem {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.insightLabel,
+.insightDescription {
+  color: var(--muted);
+  text-wrap: pretty;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+.insightMetric {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 4px;
+}
+.insightMetric > * {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.insightMetric strong {
+  font-weight: var(--weight-medium);
+}
+.creatorInsights .insightDescription {
+  margin-top: 6px;
 }
 .scheduled {
   border-top: 1px solid var(--line);

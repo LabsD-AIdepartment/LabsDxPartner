@@ -62,14 +62,20 @@ describe('overview pending subtotal and creator insights', () => {
     ];
     earnings.topContent = [];
     const before = JSON.stringify(earnings);
-    expect(earningsHighlights(earnings)[0]).toBe(
-      'LabsD Online ทำยอดขายสูงสุด ฿80 ในข้อมูลช่วงที่เลือก',
-    );
-    expect(earningsHighlights(earnings).join(' ')).not.toMatch(/เติบโต|โตขึ้น|%/);
+    expect(earningsHighlights(earnings)[0]).toEqual({
+      id: 'platform',
+      label: 'ยอดขายสูงสุดในช่วงที่เลือก',
+      subject: 'LabsD Online',
+      amount: money('8000'),
+    });
+    expect(JSON.stringify(earningsHighlights(earnings))).not.toMatch(/เติบโต|โตขึ้น|%/);
     expect(JSON.stringify(earnings)).toBe(before);
     earnings.trend[0].salesByPlatform![0].sales = money('9000');
     earnings.trend[0].salesByPlatform![1].sales = money('1000');
-    expect(earningsHighlights(earnings)[0]).toContain('Facebook ทำยอดขายสูงสุด ฿90');
+    expect(earningsHighlights(earnings)[0]).toMatchObject({
+      subject: 'Facebook',
+      amount: money('9000'),
+    });
   });
   it('avoids highest-sales claims for incomplete attribution or tied leaders', () => {
     const { earnings } = overviewFixture(filters);
@@ -82,18 +88,25 @@ describe('overview pending subtotal and creator insights', () => {
         salesByPlatform: [{ platform: 'facebook', sales: money('1000') }],
       },
     ];
-    expect(earningsHighlights(earnings)[0]).toContain('Facebook ทำยอดขายได้');
+    expect(earningsHighlights(earnings)[0]).toMatchObject({
+      subject: 'Facebook',
+      label: 'ยอดขายในข้อมูลช่วงที่เลือก',
+    });
     earnings.eligibleSales = money('2000');
     earnings.trend[0].sales = money('2000');
     earnings.trend[0].salesByPlatform!.push({ platform: 'web', sales: money('1000') });
-    expect(earningsHighlights(earnings)[0]).not.toContain('สูงสุด');
+    expect(earningsHighlights(earnings)[0].label).not.toContain('สูงสุด');
   });
   it('offers a neutral idea for missing data and never recommends removed clips', () => {
     const { earnings } = overviewFixture(filters);
     earnings.eligibleSales = null;
     earnings.topContent = earnings.topContent.map((clip) => ({ ...clip, removed: true }));
     expect(earningsHighlights(earnings)).toEqual([
-      'ลองเล่าประสบการณ์ใช้สินค้าในมุมใหม่ แล้วกลับมาดูผลของคลิปในช่วงถัดไป',
+      {
+        id: 'idea',
+        label: 'ลองมุมใหม่ให้คลิปถัดไป',
+        description: 'เล่าประสบการณ์ใช้สินค้า แล้วกลับมาดูผลในช่วงถัดไป',
+      },
     ]);
   });
 });

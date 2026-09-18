@@ -1,6 +1,6 @@
 'use client';
 import { ActionArrow } from '@/shared/ui/ActionArrow';
-import { Sparkles, Wallet } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import type { OverviewValue } from '@/contracts/overview';
 import type { FilterValue } from '@/shared/ui/FilterBar';
 import { Card } from '@/shared/ui/Card';
@@ -9,6 +9,7 @@ import { PartnerIdentity } from './PartnerIdentity';
 import { LinkButton } from '@/shared/ui/LinkButton';
 import { earningsHref } from './model';
 import { earningsHighlights, pendingEarningsDisplay } from './earnings-highlights';
+import { CreatorInsights } from './CreatorInsights';
 import styles from './overview.module.css';
 export type PartnerPresentation = {
   name: string;
@@ -87,15 +88,7 @@ export function EarningsSummary({
             </p>
           </div>
         )}
-        <section className={styles.creatorInsights} aria-label="ไอเดียสำหรับคลิปถัดไป">
-          <h3>
-            <Sparkles size={16} aria-hidden />
-            ไอเดียสำหรับคลิปถัดไป
-          </h3>
-          {highlights.map((text) => (
-            <p key={text}>{text}</p>
-          ))}
-        </section>
+        <CreatorInsights items={highlights} />
         <div className={styles.earningsFooter}>
           <LinkButton href={earningsHref(contentBasePath, data, filters)}>
             ดูรายละเอียดของรายได้ <ActionArrow />

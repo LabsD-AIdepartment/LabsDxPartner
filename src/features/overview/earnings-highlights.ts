@@ -1,7 +1,6 @@
 import type { OverviewValue } from '@/contracts/overview';
 import type { MoneyValue } from '@/contracts/common';
 import { platformSalesItems } from './platform-sales';
-import { formatMinor } from '@/shared/ui/format-money';
 
 /** Presentation subtotal only: never replaces the authoritative (possibly unknown) total. */
 export function pendingEarningsDisplay(earnings: OverviewValue['earnings']): {
@@ -24,8 +23,16 @@ export function pendingEarningsDisplay(earnings: OverviewValue['earnings']): {
 }
 
 /** Read-only ideas from the selected period. No invented growth rate or content classification. */
-export function earningsHighlights(earnings: OverviewValue['earnings']): string[] {
-  const highlights: string[] = [];
+export type EarningsHighlight = {
+  id: 'platform' | 'content' | 'idea';
+  label: string;
+  subject?: string;
+  amount?: MoneyValue;
+  description?: string;
+};
+
+export function earningsHighlights(earnings: OverviewValue['earnings']): EarningsHighlight[] {
+  const highlights: EarningsHighlight[] = [];
   const items = platformSalesItems(earnings);
   const ranked = items
     ?.filter((item) => item.label !== 'ยังไม่ระบุแพลตฟอร์ม' && BigInt(item.value.minor) > 0n)
@@ -45,9 +52,12 @@ export function earningsHighlights(earnings: OverviewValue['earnings']): string[
         (item) => item.label !== 'ยังไม่ระบุแพลตฟอร์ม' && BigInt(item.value.minor) >= 0n,
       );
     const tied = ranked![1]?.value.minor === leading.value.minor;
-    highlights.push(
-      `${label} ${complete && !tied ? 'ทำยอดขายสูงสุด' : 'ทำยอดขายได้'} ${formatMinor(leading.value.minor, true)} ในข้อมูลช่วงที่เลือก`,
-    );
+    highlights.push({
+      id: 'platform',
+      label: complete && !tied ? 'ยอดขายสูงสุดในช่วงที่เลือก' : 'ยอดขายในข้อมูลช่วงที่เลือก',
+      subject: label,
+      amount: leading.value,
+    });
   }
   const top = earnings.topContent
     .filter((clip) => !clip.removed && clip.earned !== null && BigInt(clip.earned.minor) > 0n)
@@ -59,11 +69,19 @@ export function earningsHighlights(earnings: OverviewValue['earnings']): string[
           : 0,
     )[0];
   if (top) {
-    highlights.push(
-      `คลิปแบรนด์ ${top.brand} สร้างคอมมิชชัน ${formatMinor(top.earned!.minor, true)} ลองต่อยอดเป็นคลิปใหม่ในมุมที่ต่างออกไป`,
-    );
+    highlights.push({
+      id: 'content',
+      label: 'คอมมิชชันจากคลิป',
+      subject: top.brand,
+      amount: top.earned!,
+      description: 'ลองต่อยอดเป็นคลิปใหม่ในมุมที่ต่างออกไป',
+    });
   }
   if (!highlights.length)
-    highlights.push('ลองเล่าประสบการณ์ใช้สินค้าในมุมใหม่ แล้วกลับมาดูผลของคลิปในช่วงถัดไป');
+    highlights.push({
+      id: 'idea',
+      label: 'ลองมุมใหม่ให้คลิปถัดไป',
+      description: 'เล่าประสบการณ์ใช้สินค้า แล้วกลับมาดูผลในช่วงถัดไป',
+    });
   return highlights;
 }
