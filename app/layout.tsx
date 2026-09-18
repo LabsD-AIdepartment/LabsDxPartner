@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { PageMotion } from '@/shared/motion/PageMotion';
+import { NavigationQueryCache } from '@/shared/query/NavigationQueryCache';
 import { ThemeProvider } from '@/shared/theme/ThemeProvider';
 import { restoreTheme } from '@/shared/theme/restore-theme';
 import '@fontsource-variable/inter';
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: `(${restoreTheme.toString()})();` }} />
       </head>
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <NavigationQueryCache>
+          <ThemeProvider>{children}</ThemeProvider>
+        </NavigationQueryCache>
         <Suspense fallback={null}>
           <PageMotion />
         </Suspense>

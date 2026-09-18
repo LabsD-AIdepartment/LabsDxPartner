@@ -193,11 +193,21 @@
   background: #272925;
   color: #fff;
 }
-.earned > span:first-child {
+.earningLine {
+  display: grid;
+  gap: 6px;
+}
+.earningLine + .earningLine {
+  border-top: 1px solid currentColor;
+  padding-top: 8px;
+  margin-top: 2px;
+  opacity: 0.75;
+}
+.earningLine > span:first-child {
   font-size: var(--text-caption-size);
   overflow-wrap: anywhere;
 }
-.earned > span:last-child {
+.earningLine > span:last-child {
   font-size: var(--font-size-22);
   color: inherit;
 }
@@ -684,7 +694,7 @@ dialog.mediaDialog > :first-child {
     padding: 8px;
     gap: 4px;
   }
-  .earned > span:last-child {
+  .earningLine > span:last-child {
     font-size: var(--font-size-20);
   }
 }

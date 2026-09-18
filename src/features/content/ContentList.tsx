@@ -166,6 +166,11 @@ export function ContentList(
             latestHref={reportHref(routes.overview, { ...c, generation: null })}
           />
         )}
+        {data && query.isFetching && !query.isFetchingNextPage && !query.error && (
+          <p className="small muted" role="status">
+            กำลังอัปเดตข้อมูล…
+          </p>
+        )}
         {data && !query.error && (
           <DataEnvelope data={data} showFreshness={false}>
             {clips.length ? (

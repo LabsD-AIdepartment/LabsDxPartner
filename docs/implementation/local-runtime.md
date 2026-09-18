@@ -65,3 +65,17 @@ Overview retains base accounting status separately from ad enrichment status, so
 ad-specific messages appear in their earnings context rather than a whole-page
 banner. Unrelated accounting warnings remain visible, even if wording matches an
 ad message. Older payloads without provenance retain their original notices.
+
+### Navigation read cache
+
+Verified pitch pages retain query results in root-layout memory across navigation.
+The cache owner includes the native user, active partner and membership revisions;
+existing query keys still separate dates, generation and preview scope. Visits
+continue to refetch. A previously opened page can show its last result during the
+new read; a first visit or a new filter still waits for data. The content library
+shows a small update status while refreshing.
+
+Logout, public access routes, verification failure and native scope changes clear
+retained clients. A live permission revision change hides the report and refreshes
+server authorization before reuse. Nothing is written to browser persistent storage;
+non-pitch query providers retain their original isolation and disposal behavior.

@@ -1,6 +1,7 @@
 'use client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useMemo, useEffect, type ReactNode } from 'react';
+import { useContext, useMemo, useEffect, type ReactNode } from 'react';
+import { RetainedQueryScopeContext } from './NavigationQueryCache';
 import { scopeKey, type QueryScope } from './keys';
 export function createQueryClient() {
   return new QueryClient({
@@ -28,13 +29,18 @@ export function IsolatedQueryProvider({
 }) {
   const key = JSON.stringify(identity);
   // Each access scope gets a distinct client: old amounts cannot render in a new identity's cache.
-  const client = useMemo(() => createQueryClient(), [key]);
+  const retained = useContext(RetainedQueryScopeContext);
+  const client = useMemo(
+    () => retained?.get(key, createQueryClient) ?? createQueryClient(),
+    [key, retained],
+  );
   useEffect(
     () => () => {
+      if (retained) return;
       void client.cancelQueries();
       client.clear();
     },
-    [client],
+    [client, retained],
   );
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

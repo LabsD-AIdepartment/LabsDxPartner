@@ -46,13 +46,20 @@ export function ContentCard({ clip, href }: { clip: z.infer<typeof CardContract>
       <Link className={styles.clipDetails} href={href}>
         <ContentCardInfo clip={clip} />
         <div className={styles.earned}>
-          <span>คอมมิชชันยืนยันแล้ว</span>
-          <Money value={clip.earned} reason={clip.unavailableReason ?? undefined} />
+          <div className={styles.earningLine}>
+            <span>คอมมิชชันยืนยันแล้ว</span>
+            <Money value={clip.earned} reason={clip.unavailableReason ?? undefined} />
+          </div>
+          {clip.adCommission && (
+            <div className={styles.earningLine}>
+              <span>คอมมิชชันโฆษณารอยืนยัน</span>
+              <Money
+                value={clip.adCommission.amount}
+                reason={clip.adCommission.reason ?? undefined}
+              />
+            </div>
+          )}
         </div>
-        {clip.adCommission && <div className={styles.earned}>
-          <span>คอมมิชชันโฆษณารอยืนยัน</span>
-          <Money value={clip.adCommission.amount} reason={clip.adCommission.reason ?? undefined} />
-        </div>}
         {clip.earned === null && <span className={styles.meta}>{clip.unavailableReason}</span>}
       </Link>
       {open && media && (

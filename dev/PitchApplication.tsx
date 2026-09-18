@@ -1,4 +1,6 @@
 'use client';
+import { RetainQuerySession, useClearNavigationQueries } from '@/shared/query/NavigationQueryCache';
+import { useRouter } from 'next/navigation';
 import { bindPitchStorage } from './pitch-storage';
 import { useEffect, useState } from 'react';
 import { Session, type SessionValue } from '@/contracts/session';
@@ -25,6 +27,9 @@ export function PitchApplication({
   search: string;
   showConnectedAdNotices?: boolean;
 }) {
+  const router = useRouter();
+  const membershipKey = JSON.stringify(session.memberships);
+  const clearNavigationQueries = useClearNavigationQueries();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -43,6 +48,7 @@ export function PitchApplication({
         });
         if (response.status === 401) {
           if (!disposed && !request.signal.aborted) {
+            clearNavigationQueries();
             setReady(false);
             window.location.replace('/login');
           }
@@ -50,6 +56,7 @@ export function PitchApplication({
         }
         if (!response.ok) throw new Error('Session unavailable');
         const next = Session.parse(await response.json());
+        if (disposed || request.signal.aborted) return;
         const member = next.memberships.find((m) => m.partnerId === session.activePartnerId);
         if (
           next.access !== 'active' ||
@@ -60,7 +67,15 @@ export function PitchApplication({
             member.capabilities.includes(c as 'view_earnings'),
           )
         ) {
+          clearNavigationQueries();
           window.location.replace('/login');
+          return;
+        }
+        const expected = session.memberships.find((m) => m.partnerId === session.activePartnerId);
+        if (member.permissionRevision !== expected?.permissionRevision) {
+          clearNavigationQueries();
+          setReady(false);
+          router.refresh();
           return;
         }
         if (!disposed && !request.signal.aborted) {
@@ -70,6 +85,7 @@ export function PitchApplication({
         }
       } catch {
         if (!disposed && !request.signal.aborted) {
+          clearNavigationQueries();
           setReady(false);
           setError(true);
         }
@@ -93,7 +109,7 @@ export function PitchApplication({
       document.removeEventListener('visibilitychange', visibility);
       window.removeEventListener('pageshow', visibility);
     };
-  }, [session.userId, session.activePartnerId]);
+  }, [session.userId, session.activePartnerId, membershipKey, clearNavigationQueries, router]);
   async function logout() {
     if (busy) return;
     setBusy(true);
@@ -105,6 +121,7 @@ export function PitchApplication({
         body: '{}',
       });
       if (!response.ok) throw new Error('Logout failed');
+      clearNavigationQueries();
       window.location.assign('/login');
     } catch {
       setError(true);
@@ -128,42 +145,46 @@ export function PitchApplication({
         ? [screen.contentId, 'ads', screen.adId]
         : [];
   return (
-    <ApplicationPresentationContext.Provider
-      value={{
-        resolveHref: pitchHref,
-        sampleData: true,
-        connectedAds: true,
-        showConnectedAdNotices,
-        accountMenu: (
-          <ProfileMenu
-            accountHref="/account"
-            avatar="/media/celebrity-avatar.png"
-            onLogout={() => void logout()}
-            busy={busy}
-          />
-        ),
-        footerNote: 'ข้อมูลตัวอย่างสำหรับนำเสนอ · ไม่มีการโอนเงินจริง',
-      }}
+    <RetainQuerySession
+      identity={JSON.stringify([session.userId, session.activePartnerId, session.memberships])}
     >
-      {screen.kind === 'overview' ? (
-        <WithdrawalPreview search={search} />
-      ) : ['content', 'clip', 'ad'].includes(screen.kind) ? (
-        <ContentPreview search={search} segments={['partner-demo', 'a', ...segments]} />
-      ) : ['transactions', 'statement'].includes(screen.kind) ? (
-        <TransactionsPreview
-          search={search}
-          segments={screen.kind === 'statement' ? [screen.statementId] : []}
-        />
-      ) : new URLSearchParams(search).get('view') === 'payout' ? (
-        <PayoutAccountPreview search={search} />
-      ) : (
-        <PartnerApplication
-          initialSession={session}
-          screen={screen}
-          initialContext={readReportContext(new URLSearchParams(search))}
-          payoutAccountHref="/account?view=payout"
-        />
-      )}
-    </ApplicationPresentationContext.Provider>
+      <ApplicationPresentationContext.Provider
+        value={{
+          resolveHref: pitchHref,
+          sampleData: true,
+          connectedAds: true,
+          showConnectedAdNotices,
+          accountMenu: (
+            <ProfileMenu
+              accountHref="/account"
+              avatar="/media/celebrity-avatar.png"
+              onLogout={() => void logout()}
+              busy={busy}
+            />
+          ),
+          footerNote: 'ข้อมูลตัวอย่างสำหรับนำเสนอ · ไม่มีการโอนเงินจริง',
+        }}
+      >
+        {screen.kind === 'overview' ? (
+          <WithdrawalPreview search={search} />
+        ) : ['content', 'clip', 'ad'].includes(screen.kind) ? (
+          <ContentPreview search={search} segments={['partner-demo', 'a', ...segments]} />
+        ) : ['transactions', 'statement'].includes(screen.kind) ? (
+          <TransactionsPreview
+            search={search}
+            segments={screen.kind === 'statement' ? [screen.statementId] : []}
+          />
+        ) : new URLSearchParams(search).get('view') === 'payout' ? (
+          <PayoutAccountPreview search={search} />
+        ) : (
+          <PartnerApplication
+            initialSession={session}
+            screen={screen}
+            initialContext={readReportContext(new URLSearchParams(search))}
+            payoutAccountHref="/account?view=payout"
+          />
+        )}
+      </ApplicationPresentationContext.Provider>
+    </RetainQuerySession>
   );
 }
