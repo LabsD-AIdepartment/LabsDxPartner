@@ -731,6 +731,39 @@
   background: color-mix(in srgb, var(--card-solid) 86%, transparent);
 }
 
+/* Bright glass tiles on the Overview wallet; the wide Wallet layout has its own finish. */
+.summaryWallet:not(.summaryWide) .summaryTile {
+  border-color: transparent;
+  background:
+    radial-gradient(ellipse at 8% 0%, #fff, transparent 68%),
+    linear-gradient(135deg, #fffffff0, #ffffff9e 58%, #ffffffd9);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 0 0 1px #ffffff85,
+    0 6px 18px #306b5310;
+}
+
+:global([data-theme='dark']) .summaryWallet:not(.summaryWide) .summaryTile {
+  background:
+    radial-gradient(ellipse at 8% 0%, #ffffff26, transparent 68%),
+    linear-gradient(135deg, #ffffff1f, #ffffff0d 58%, #ffffff17);
+  box-shadow:
+    inset 0 1px 0 #ffffff40,
+    inset 0 0 0 1px #ffffff14,
+    0 6px 18px #00000014;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .summaryWallet:not(.summaryWide) .summaryTile,
+  :global([data-theme='dark']) .summaryWallet:not(.summaryWide) .summaryTile {
+    background: var(--card-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 .summaryTile dt,
 .summaryTile dt.summaryPendingLabel {
   flex: none;
