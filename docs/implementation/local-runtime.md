@@ -104,7 +104,8 @@ active. Other requested exact windows stay active for seven days after last use.
 successful report is refreshed after one hour; failures retry after one hour and retain
 last-good data. New valid date windows register a bounded database job and initially
 show unavailable ad values; the worker polls every 15 seconds and fills the window
-independently of the page request. At most128 active windows per binding are admitted.
+independently of the page request. At most128 active windows per binding are admitted. Worker-owned default windows take
+priority by retiring the least-recent arbitrary demand when full; saved reports remain readable.
 Dates remain exact; overlapping full-period reports are never added or averaged.
 Reload/normal query refresh reads newly stored results. Saved reports are retained after
 retirement; there is no automatic deletion. This preserves provider-defined ratios.

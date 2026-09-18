@@ -155,4 +155,23 @@ describe('PostgreSQL external report authority', () => {
       }),
     ).toBeNull();
   });
+  it('admits rolling defaults at capacity without deleting reports or exceeding the cap', async () => {
+    const defaults = [
+      { from: binding.from, toExclusive: binding.toExclusive },
+      { from: '2026-09-01', toExclusive: '2026-09-20' },
+      { from: '2026-09-13', toExclusive: '2026-09-20' },
+    ];
+    for (const window of defaults) await store.request({ ...binding, ...window }, defaults);
+    const [count] =
+      await sql`select count(*) filter(where requested_at>clock_timestamp()-interval '7 days')::int as active,
+      count(*) filter(where snapshot is not null)::int as saved from portal_marketing.external_ad_snapshots where namespace_digest=${namespace}`;
+    expect(count.active).toBe(128);
+    expect(count.saved).toBe(1);
+    for (const window of defaults) {
+      const [row] =
+        await sql`select requested_at>clock_timestamp()-interval '7 days' as active from portal_marketing.external_ad_snapshots
+        where namespace_digest=${namespace} and period_from=${window.from}::date and period_to=${window.toExclusive}::date`;
+      expect(row.active).toBe(true);
+    }
+  });
 });

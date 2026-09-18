@@ -30,13 +30,14 @@ export async function runSnapshotWorkerCycle(options: {
   await assertBinding();
   for (const b of bindings) {
     signal.throwIfAborted();
-    for (const [from, to] of [
+    const defaults = [
       [b.from, b.toExclusive],
       [today.slice(0, 8) + '01', date(1)],
       [date(-6), date(1)],
-    ]) {
+    ].map(([from, toExclusive]) => ({ from, toExclusive }));
+    for (const { from, toExclusive } of defaults) {
       try {
-        await store.request(deriveRequestedWindowBinding(b, from, to));
+        await store.request(deriveRequestedWindowBinding(b, from, toExclusive), defaults);
       } catch (error) {
         // A full demand queue must not stop already-admitted hourly work at day rollover.
         if (!(error instanceof SnapshotAdmissionLimit)) throw error;

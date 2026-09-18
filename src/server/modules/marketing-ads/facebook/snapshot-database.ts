@@ -50,8 +50,15 @@ export function createSnapshotDatabase(sql: Sql, namespace: string) {
   };
   return {
     /** Bounded, idempotent demand registration. A page never performs source I/O. */
-    async request(b: AdSnapshotBindingConfigValue) {
+    async request(
+      b: AdSnapshotBindingConfigValue,
+      defaults: readonly { from: string; toExclusive: string }[] = [],
+    ) {
       const bindingKey = key(b);
+      const protectedWindows = defaults.map((window) => {
+        const parsed = AdSnapshotBindingConfig.parse({ ...b, ...window });
+        return { from: parsed.from, to: parsed.toExclusive };
+      });
       await sql.begin(async (tx) => {
         await tx`set local lock_timeout='2s'`;
         await tx`set local statement_timeout='3s'`;
@@ -63,7 +70,28 @@ export function createSnapshotDatabase(sql: Sql, namespace: string) {
           const [count] =
             await tx`select count(*)::int as n from portal_marketing.external_ad_snapshots
             where namespace_digest=${namespace} and binding_key=${bindingKey} and requested_at>clock_timestamp()-interval '7 days'`;
-          if (count.n >= 128) throw new SnapshotAdmissionLimit('Report window limit reached');
+          if (count.n >= 128) {
+            if (
+              !protectedWindows.some(
+                (window) => window.from === b.from && window.to === b.toExclusive,
+              )
+            )
+              throw new SnapshotAdmissionLimit('Report window limit reached');
+            // Only the worker supplies server-owned default windows. Retire least-recent
+            // arbitrary demand (never its saved report) so current reporting cannot starve.
+            const retired = await tx`with victim as (
+              select period_from,period_to from portal_marketing.external_ad_snapshots s
+              where namespace_digest=${namespace} and binding_key=${bindingKey}
+                and requested_at>clock_timestamp()-interval '7 days'
+                and (lease_until is null or lease_until<=clock_timestamp())
+                and not exists(select 1 from jsonb_to_recordset(${tx.json(protectedWindows)}::jsonb) as p("from" date,"to" date)
+                  where p."from"=s.period_from and p."to"=s.period_to)
+              order by requested_at,period_from for update skip locked limit 1
+            ) update portal_marketing.external_ad_snapshots s set requested_at=clock_timestamp()-interval '8 days'
+              from victim v where s.namespace_digest=${namespace} and s.binding_key=${bindingKey}
+                and s.period_from=v.period_from and s.period_to=v.period_to returning s.binding_key`;
+            if (!retired.length) throw new SnapshotAdmissionLimit('Report window limit reached');
+          }
         }
         await tx`insert into portal_marketing.external_ad_snapshots(namespace_digest,binding_key,period_from,period_to)
           values(${namespace},${bindingKey},${b.from}::date,${b.toExclusive}::date)
