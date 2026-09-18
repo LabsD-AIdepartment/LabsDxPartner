@@ -1,4 +1,4 @@
-/* Shared wallet surface, with a neutral variation for the withdrawal dialog. */
+/* Shared wallet surface, with a neutral Day and teal Dark withdrawal dialog. */
 .surface.surface {
   --wallet-panel: color-mix(in srgb, var(--card-solid) 86%, transparent);
   --wallet-selection: #e0f0e8;
@@ -45,19 +45,23 @@
 }
 
 :global([data-theme='dark']) .surface.dialog {
-  --wallet-panel: #2b2b2b;
-  --wallet-selection-border: #b8b8b8;
-  --text: #f5f5f5;
-  --muted: #bdbdbd;
-  --primary: #ededed;
-  --primary-text: #202020;
-  --button-primary-hover: #fff;
-  --button-primary-hover-text: #202020;
-  --button-secondary-hover: #363636;
-  --button-secondary-hover-text: #f5f5f5;
-  border-color: #ffffff1f;
+  --wallet-panel: #294e44;
+  --wallet-input: #c7e4d8;
+  --wallet-input-text: #163d30;
+  --wallet-choice-selected: #a9d8c3;
+  --wallet-choice-selected-text: #163d30;
+  --wallet-selection-border: #75bca1;
+  --text: #f1faf6;
+  --muted: #bad1c8;
+  --primary: #c7ead9;
+  --primary-text: #12392b;
+  --button-primary-hover: #e1f5eb;
+  --button-primary-hover-text: #12392b;
+  --button-secondary-hover: #376457;
+  --button-secondary-hover-text: #f1faf6;
+  border-color: #92c7b333;
   background:
-    radial-gradient(ellipse at 0% 0%, #ffffff0d, transparent 65%),
-    radial-gradient(ellipse at 100% 100%, #ffffff08, transparent 60%),
-    linear-gradient(155deg, #191919 10%, #262626 62%, #303030);
+    radial-gradient(ellipse at 100% 70%, #27636c66, transparent 65%),
+    radial-gradient(ellipse at 20% 85%, #28644866, transparent 62%),
+    linear-gradient(155deg, #111f1a 12%, #153b2f 62%, #173f43);
 }

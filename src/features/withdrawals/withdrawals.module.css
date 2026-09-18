@@ -229,14 +229,16 @@
   border: 0;
 }
 .walletSheet .sheetChoices label:has(input:checked) {
-  background: var(--wallet-panel);
+  background: var(--wallet-choice-selected, var(--wallet-panel));
+  color: var(--wallet-choice-selected-text, var(--text));
   font-weight: var(--weight-semibold);
 }
 .walletSheet .sheetChoices input {
   accent-color: var(--wallet-selection-border);
 }
 .walletSheet .sheetForm input[type='text'] {
-  background: var(--wallet-panel);
+  background: var(--wallet-input, var(--wallet-panel));
+  color: var(--wallet-input-text, var(--text));
   border: 0;
   border-radius: 14px;
 }
