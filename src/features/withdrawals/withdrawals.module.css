@@ -563,6 +563,115 @@
   white-space: nowrap;
 }
 
+/* Wallet summary: the source amounts remain separate, read-only facts. */
+.summaryWallet {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--muted) 12%, transparent);
+  background-image:
+    radial-gradient(
+      ellipse at 100% 0%,
+      color-mix(in srgb, #8fae95 16%, transparent),
+      transparent 65%
+    ),
+    var(--payout);
+}
+
+.summaryWalletIcon {
+  color: var(--muted);
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.summaryWallet .summaryAmount {
+  margin-block: 22px 26px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.summaryWallet .summaryRows {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: auto 0 18px;
+  padding-block: 16px 0;
+  border: 0;
+}
+
+.summaryRows > .summaryTile {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--muted) 10%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+}
+
+.summaryTile dt,
+.summaryTile dt.summaryPendingLabel {
+  flex: none;
+  white-space: normal;
+  font-size: var(--text-caption-size);
+  line-height: 1.65;
+}
+
+.summaryTile dt > .summaryFlowIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  color: var(--flow-ink);
+  background: var(--flow-surface);
+}
+
+.summaryIncoming {
+  --flow-ink: #496e59;
+  --flow-surface: #e3ece4;
+}
+
+.summaryOutgoing {
+  --flow-ink: #95605c;
+  --flow-surface: #f1e5e2;
+}
+
+:global([data-theme='dark']) .summaryIncoming {
+  --flow-ink: #b0d0b8;
+  --flow-surface: #263d30;
+}
+
+:global([data-theme='dark']) .summaryOutgoing {
+  --flow-ink: #dfb4ab;
+  --flow-surface: #43302f;
+}
+
+.summaryTile dd {
+  font-size: var(--text-metric-compact);
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+
+.summaryTile dd > span:only-child:not([class]) {
+  font-size: var(--text-caption-size);
+  letter-spacing: normal;
+}
+
+.summaryWallet .summaryRows > div:not(.summaryTile) {
+  grid-column: 1 / -1;
+}
+
+@container withdrawal-summary (max-width: 290px) {
+  .summaryRows > .summaryTile {
+    padding: 12px 10px;
+    border-radius: 14px;
+  }
+}
+
 .detailCard {
   container: withdrawal-detail-card / inline-size;
 }

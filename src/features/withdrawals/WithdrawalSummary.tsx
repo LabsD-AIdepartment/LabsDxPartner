@@ -1,5 +1,6 @@
 import type { WithdrawalSummaryValue } from '@/contracts/withdrawal-journey';
 import type { BlockingReasonValue } from '@/contracts/withdrawal-readiness';
+import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { DataState } from '@/shared/ui/DataState';
@@ -78,7 +79,10 @@ export function WithdrawalSummary({
   return (
     <Card
       title="ยอดพร้อมถอน"
-      className={`${styles.summary} ${className}`}
+      className={`${styles.summary} ${!compact ? styles.summaryWallet : ''} ${className}`}
+      action={
+        !compact && <Wallet className={styles.summaryWalletIcon} size={22} aria-hidden="true" />
+      }
       aria-label="สรุปยอดพร้อมถอน"
       aria-busy={state === 'loading'}
     >
@@ -124,9 +128,12 @@ export function WithdrawalSummary({
             <dl className={styles.summaryRows}>
               {!compact && (
                 <>
-                  <div>
+                  <div className={`${styles.summaryTile} ${styles.summaryIncoming}`}>
                     <dt className={styles.summaryPendingLabel}>
-                      {pendingLabel(visible?.currentPeriod)}
+                      <span className={styles.summaryFlowIcon}>
+                        <ArrowDownLeft size={18} aria-hidden="true" />
+                      </span>
+                      <span>{pendingLabel(visible?.currentPeriod)}</span>
                     </dt>
                     <dd>
                       <Money
@@ -136,12 +143,17 @@ export function WithdrawalSummary({
                       {visible?.currentPeriodPending == null && <span>ยังไม่มีข้อมูล</span>}
                     </dd>
                   </div>
-                  <div>
+                  <div className={`${styles.summaryTile} ${styles.summaryOutgoing}`}>
                     <dt>
-                      ถอนล่าสุด
-                      {visible?.lastWithdrawal
-                        ? ` · ${dateLabel(visible.lastWithdrawal.paidAt)}`
-                        : ''}
+                      <span className={styles.summaryFlowIcon}>
+                        <ArrowUpRight size={18} aria-hidden="true" />
+                      </span>
+                      <span>
+                        ถอนล่าสุด
+                        {visible?.lastWithdrawal
+                          ? ` · ${dateLabel(visible.lastWithdrawal.paidAt)}`
+                          : ''}
+                      </span>
                     </dt>
                     <dd>
                       {visible?.lastWithdrawal === null ? (
