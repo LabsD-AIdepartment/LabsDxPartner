@@ -285,12 +285,14 @@ describe('responsive weekly chart', () => {
       expect(screen.getByLabelText('28 August 2026')).toBeInTheDocument();
       expect(screen.getByText('12.8k')).toBeVisible();
       expect(screen.getByText('2026-08-28: ฿12,800.00')).toBeInTheDocument();
-      const badges = [...view.container.querySelectorAll('[data-trend-point] rect')].map((rect) => ({
-        x: Number(rect.getAttribute('x')),
-        y: Number(rect.getAttribute('y')),
-        width: Number(rect.getAttribute('width')),
-        height: Number(rect.getAttribute('height')),
-      }));
+      const badges = [...view.container.querySelectorAll('[data-trend-point] rect')].map(
+        (rect) => ({
+          x: Number(rect.getAttribute('x')),
+          y: Number(rect.getAttribute('y')),
+          width: Number(rect.getAttribute('width')),
+          height: Number(rect.getAttribute('height')),
+        }),
+      );
       for (const [i, badge] of badges.entries()) {
         expect(badge.x).toBeGreaterThanOrEqual(0);
         expect(badge.x + badge.width).toBeLessThanOrEqual(width);
@@ -397,12 +399,14 @@ describe('responsive weekly chart', () => {
       expect(chartDates(view.container)).toHaveLength(7);
       expect(view.container.querySelectorAll('circle title')).toHaveLength(7);
       expect(view.container.textContent).toContain('9,007,199,254,740,993.01');
-      const badges = [...view.container.querySelectorAll('[data-trend-point] rect')].map((rect) => ({
-        x: Number(rect.getAttribute('x')),
-        y: Number(rect.getAttribute('y')),
-        w: Number(rect.getAttribute('width')),
-        h: Number(rect.getAttribute('height')),
-      }));
+      const badges = [...view.container.querySelectorAll('[data-trend-point] rect')].map(
+        (rect) => ({
+          x: Number(rect.getAttribute('x')),
+          y: Number(rect.getAttribute('y')),
+          w: Number(rect.getAttribute('width')),
+          h: Number(rect.getAttribute('height')),
+        }),
+      );
       for (const [i, badge] of badges.entries()) {
         expect(badge.x).toBeGreaterThanOrEqual(0);
         expect(badge.x + badge.w).toBeLessThanOrEqual(width);
@@ -468,4 +472,55 @@ describe('responsive weekly chart', () => {
   ])('abbreviates %s as %s using BigInt', (minor, label) => {
     expect(compactMoney(minor)).toBe(label);
   });
+});
+
+it('starts report and weekly reads together, then reveals both in one render without a second loading phase', async () => {
+  const requests = new Map<
+    string,
+    { resolve: (data: unknown) => void; filters: Parameters<OverviewTransport>[0]['filters'] }
+  >();
+  const transport = vi.fn<OverviewTransport>(
+    (request) =>
+      new Promise((resolve) => {
+        requests.set(request.filters.from, { resolve, filters: request.filters });
+      }),
+  );
+  render(wrap(<OverviewPage scope={scope} transport={transport} brands={[]} />));
+  await waitFor(() => expect(requests.size).toBe(2));
+  expect(requests.has('2026-07-01')).toBe(true);
+  expect(requests.has('2026-09-10')).toBe(true);
+  await act(async () => {
+    const report = requests.get('2026-07-01')!;
+    report.resolve(overviewFixture(report.filters));
+  });
+  expect(screen.queryByRole('heading', { name: 'Clip Driven Sales' })).toBeNull();
+  expect(screen.queryByRole('heading', { name: 'Daily Clip Earnings' })).toBeNull();
+  await act(async () => {
+    const weekly = requests.get('2026-09-10')!;
+    weekly.resolve(response(weekly.filters));
+  });
+  expect(await screen.findByRole('heading', { name: 'Clip Driven Sales' })).toBeVisible();
+  expect(screen.getByRole('img', { name: 'คอมมิชชันตามวันที่เกิดรายได้' })).toBeVisible();
+  expect(screen.queryByText('กำลังโหลดคอมมิชชันรายวัน')).toBeNull();
+  expect(transport).toHaveBeenCalledTimes(2);
+  fireEvent.click(screen.getByRole('button', { name: '7 วันก่อนหน้า' }));
+  await waitFor(() => expect(requests.has('2026-09-03')).toBe(true));
+  expect(screen.getByRole('heading', { name: 'Clip Driven Sales' })).toBeVisible();
+  expect(screen.getByText('กำลังโหลดคอมมิชชันรายวัน')).toBeVisible();
+  await act(async () => {
+    const weekly = requests.get('2026-09-03')!;
+    weekly.resolve(response(weekly.filters));
+  });
+  expect(await screen.findByText('2026-09-03: ฿100.00')).toBeInTheDocument();
+});
+
+it('releases the initial page if the independent weekly read fails', async () => {
+  const transport = vi.fn<OverviewTransport>(async ({ filters }) => {
+    if (filters.from !== '2026-07-01') throw new Error('weekly offline');
+    return overviewFixture(filters);
+  });
+  render(wrap(<OverviewPage scope={scope} transport={transport} brands={[]} />));
+  expect(await screen.findByRole('heading', { name: 'Clip Driven Sales' })).toBeVisible();
+  expect(screen.getByText('โหลดคอมมิชชันรายวันไม่สำเร็จ')).toBeVisible();
+  expect(screen.queryByText('กำลังโหลดข้อมูล')).toBeNull();
 });

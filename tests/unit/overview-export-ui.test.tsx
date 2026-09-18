@@ -129,6 +129,11 @@ describe('overview report UI authorization and snapshot', () => {
       const refreshResponse = deferred<unknown>();
       let reads = 0;
       const view = mount(async ({ filters }) => {
+        if (
+          filters.from !== defaultOverviewFilters.from ||
+          filters.toExclusive !== defaultOverviewFilters.toExclusive
+        )
+          return overviewFixture(filters);
         reads += 1;
         return change === 'refresh' && reads > 1
           ? refreshResponse.promise

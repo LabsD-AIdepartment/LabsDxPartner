@@ -77,16 +77,39 @@ function WeeklyHeader({ children }: { children?: ReactNode }) {
     </div>
   );
 }
-export function WeeklyEarningsChart(props: Props) {
+/** Begin this read alongside the page read, before cards mount. */
+export function useWeeklyEarnings({ scope, transport, brand, override }: Props, enabled = true) {
   const today = useBangkokToday();
+  const identity = JSON.stringify([scope, brand, override?.cacheKey ?? null, today]);
+  const [selection, setSelection] = useState({ identity, weeksBack: 0 });
+  const weeksBack = selection.identity === identity ? selection.weeksBack : 0;
+  const week = earningsWeekRange(today ?? '0001-01-01', weeksBack);
+  const filters = partnerFilters({ from: week.from, toExclusive: week.toExclusive, brand });
+  const source = override?.transport ?? transport;
+  const baseKey = partnerKey(scope, 'earnings', 'overview', filters);
+  const query = useQuery({
+    meta: changeMeta('earnings', 'settlements', 'metrics'),
+    queryKey: override ? [...baseKey, 'weekly-sample', override.cacheKey] : baseKey,
+    queryFn: ({ signal }) => loadOverview(source, { scope, filters, signal }),
+    enabled: enabled && today !== null,
+  });
+  return {
+    today,
+    week,
+    query,
+    override,
+    setWeeksBack: (value: number) => setSelection({ identity, weeksBack: value }),
+  };
+}
+export function WeeklyEarningsChart(props: Props) {
+  const model = useWeeklyEarnings(props);
+  return <WeeklyEarningsView model={model} />;
+}
+export function WeeklyEarningsView({ model }: { model: ReturnType<typeof useWeeklyEarnings> }) {
   return (
     <div className={styles.weekly}>
-      {today ? (
-        <Week
-          key={JSON.stringify([props.scope, props.brand, props.override?.cacheKey ?? null, today])}
-          {...props}
-          today={today}
-        />
+      {model.today ? (
+        <Week model={model} />
       ) : (
         <>
           <WeeklyHeader />
@@ -96,17 +119,8 @@ export function WeeklyEarningsChart(props: Props) {
     </div>
   );
 }
-function Week({ scope, transport, brand, override, today }: Props & { today: string }) {
-  const [weeksBack, setWeeksBack] = useState(0);
-  const week = earningsWeekRange(today, weeksBack);
-  const filters = partnerFilters({ from: week.from, toExclusive: week.toExclusive, brand });
-  const source = override?.transport ?? transport;
-  const baseKey = partnerKey(scope, 'earnings', 'overview', filters);
-  const query = useQuery({
-    meta: changeMeta('earnings', 'settlements', 'metrics'),
-    queryKey: override ? [...baseKey, 'weekly-sample', override.cacheKey] : baseKey,
-    queryFn: ({ signal }) => loadOverview(source, { scope, filters, signal }),
-  });
+function Week({ model }: { model: ReturnType<typeof useWeeklyEarnings> }) {
+  const { week, query, override, setWeeksBack } = model;
   const data = query.data;
   const label = new Intl.DateTimeFormat('th-TH', {
     day: 'numeric',

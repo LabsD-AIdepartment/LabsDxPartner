@@ -199,16 +199,21 @@ describe('F08 scoped projection invalidation', () => {
         client.clear();
       }
     });
-  it('cannot render a late response from the previously selected partner', async () => {
-    let resolve!: (v: unknown) => void;
-    const old = vi.fn(() => new Promise((r) => (resolve = r))),
-      next = vi.fn(async () => overviewFixture(filters, 'empty'));
+  it('cannot render late report or weekly responses from the previously selected partner', async () => {
+    const pending: {
+      filters: Parameters<OverviewTransport>[0]['filters'];
+      resolve: (value: unknown) => void;
+    }[] = [];
+    const old = vi.fn<OverviewTransport>(
+      (request) => new Promise((resolve) => pending.push({ filters: request.filters, resolve })),
+    );
+    const next = vi.fn<OverviewTransport>(async ({ filters }) => overviewFixture(filters, 'empty'));
     const r = render(
       <ScopedQueryProvider scope={scope}>
         <OverviewPage scope={scope} transport={old} brands={[]} />
       </ScopedQueryProvider>,
     );
-    await waitFor(() => expect(old).toHaveBeenCalledOnce());
+    await waitFor(() => expect(old).toHaveBeenCalledTimes(2));
     const other = { ...scope, partnerId: 'other' };
     r.rerender(
       <ScopedQueryProvider scope={other}>
@@ -216,7 +221,10 @@ describe('F08 scoped projection invalidation', () => {
       </ScopedQueryProvider>,
     );
     await screen.findAllByText('฿0');
-    await act(async () => resolve(overviewFixture(filters)));
+    await act(async () => {
+      pending.forEach(({ filters, resolve }) => resolve(overviewFixture(filters)));
+    });
     expect(screen.queryByText('฿37,360')).toBeNull();
+    expect(next.mock.calls.every(([request]) => request.scope.partnerId === 'other')).toBe(true);
   });
 });

@@ -13,6 +13,7 @@ import {
 import { OverviewPage } from '@/features/overview/OverviewPage';
 import { ScopedQueryProvider, createQueryClient } from '@/shared/query/provider';
 import { OverviewPreview } from '../../dev/OverviewPreview';
+import { bangkokDate, earningsWeekRange } from '@/features/overview/weekly-earnings';
 import { TrendChart } from '@/shared/charts/TrendChart';
 import { AccessLost } from '@/shared/query/revision-watcher';
 import { celebrityCatalogue } from '../../dev/financial/celebrity-catalogue';
@@ -30,9 +31,18 @@ afterEach(() => vi.unstubAllGlobals());
 const scope = { userId: 'test-user', partnerId: 'test-partner', permissionRevision: '1' };
 const renderPage = (transport: Parameters<typeof OverviewPage>[0]['transport']) => {
   const client = createQueryClient();
+  // These tests control the report response. The independent weekly request is
+  // fulfilled separately now that it starts concurrently; concurrency is tested
+  // with deferred responses in weekly-earnings.test.tsx.
+  const reportTransport: typeof transport = (request) => {
+    const week = earningsWeekRange(bangkokDate(new Date()), 0);
+    return request.filters.from === week.from && request.filters.toExclusive === week.toExclusive
+      ? Promise.resolve(overviewFixture(request.filters, 'unavailable'))
+      : transport(request);
+  };
   const view = render(
     <QueryClientProvider client={client}>
-      <OverviewPage scope={scope} transport={transport} brands={['Axtion', 'Tendrix']} />
+      <OverviewPage scope={scope} transport={reportTransport} brands={['Axtion', 'Tendrix']} />
     </QueryClientProvider>,
   );
   return { ...view, client };
@@ -279,7 +289,9 @@ describe('Overview loading, errors and exact display', () => {
     expect(screen.queryByText('฿0')).toBeNull();
     expect(screen.queryByText('ยังไม่มีกำหนดจ่ายรอบถัดไป')).toBeNull();
     expect(screen.getByText('ยังไม่มีข้อมูลสถานะการจ่าย')).toBeVisible();
-    expect(screen.queryByRole('img', { name: 'คอมมิชชันตามวันที่เกิดรายได้' })).toBeNull();
+    const weeklyChart = screen.getByRole('img', { name: 'คอมมิชชันตามวันที่เกิดรายได้' });
+    expect(weeklyChart.querySelectorAll('circle')).toHaveLength(0);
+    expect(weeklyChart.querySelectorAll('text[data-date]')).toHaveLength(7);
   });
   it('shows confirmed money without guessing an estimate', async () => {
     renderPage(async () => overviewFixture(filters, 'confirmed-only'));

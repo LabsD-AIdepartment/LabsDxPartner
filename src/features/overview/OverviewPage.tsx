@@ -3,7 +3,7 @@ import { partnerFilters } from '@/shared/config/partner-features';
 import { PlatformSalesChart } from './PlatformSalesChart';
 import { PageTitleActions } from '@/shared/ui/PageTitleActions';
 import { ActionArrow } from '@/shared/ui/ActionArrow';
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { OverviewReportInput } from './report-export';
 import forms from '@/shared/ui/forms.module.css';
 import { useQuery } from '@tanstack/react-query';
@@ -17,7 +17,7 @@ import { Card } from '@/shared/ui/Card';
 import { Dialog } from '@/shared/ui/Dialog';
 import { DialogActions } from '@/shared/ui/DialogActions';
 import { Money } from '@/shared/ui/Money';
-import { WeeklyEarningsChart } from './WeeklyEarningsChart';
+import { useWeeklyEarnings, WeeklyEarningsView } from './WeeklyEarningsChart';
 import { EarningsSummary, type PartnerPresentation } from './EarningsSummary';
 import { EarningMix } from './EarningMix';
 import { PayoutSummary } from './PayoutSummary';
@@ -93,7 +93,18 @@ export function OverviewPage({
     refetchOnMount: 'always',
     staleTime: 0,
   });
+  const weekly = useWeeklyEarnings(
+    { scope, transport, brand: filters.brand, override: weeklyEarningsOverride },
+    valid,
+  );
+  const revealed = useRef(false);
   const data = query.data;
+  // On initial entry, cards/charts arrive together after concurrent reads settle.
+  // Later week navigation stays inside its own card, without blanking the page.
+  const waitingForCharts = !!data && !revealed.current && weekly.query.isPending;
+  useEffect(() => {
+    if (data && !weekly.query.isPending) revealed.current = true;
+  }, [data, weekly.query.isPending]);
   const pageStatus = data ? overviewPageStatus(data) : null;
   const reportIdentity = JSON.stringify([scope, filters.from, filters.toExclusive, filters.brand]);
   const exportReady =
@@ -206,7 +217,7 @@ export function OverviewPage({
           state="error"
           message="เลือกช่วงวันที่ 1–366 วัน โดยวันสิ้นสุดต้องอยู่หลังวันเริ่มต้น"
         />
-      ) : query.isPending ? (
+      ) : query.isPending || waitingForCharts ? (
         <DataState state="loading" />
       ) : query.error instanceof SourceUnavailableError && !data ? (
         <UnavailableOverview partner={presentation} />
@@ -263,12 +274,7 @@ export function OverviewPage({
                     />
                   )}
                   <Card className={styles.trend}>
-                    <WeeklyEarningsChart
-                      scope={scope}
-                      transport={transport}
-                      brand={filters.brand}
-                      override={weeklyEarningsOverride}
-                    />
+                    <WeeklyEarningsView model={weekly} />
                   </Card>
                 </div>
                 <div className={styles.lower}>
