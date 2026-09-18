@@ -1,6 +1,6 @@
 import type { WithdrawalSummaryValue } from '@/contracts/withdrawal-journey';
 import type { BlockingReasonValue } from '@/contracts/withdrawal-readiness';
-import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Landmark, Wallet } from 'lucide-react';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { DataState } from '@/shared/ui/DataState';
@@ -12,7 +12,8 @@ import styles from './withdrawals.module.css';
 export type WithdrawalSummaryData = Pick<
   WithdrawalSummaryValue,
   'balance' | 'currentPeriodPending' | 'currentPeriod' | 'readiness' | 'lastWithdrawal'
->;
+> &
+  Partial<Pick<WithdrawalSummaryValue, 'beneficiary'>>;
 
 export type WithdrawalSummaryAction = {
   kind: 'request' | 'recovery';
@@ -101,6 +102,17 @@ export function WithdrawalSummary({
             reason="ยังไม่มีข้อมูลยอดพร้อมถอน"
             className={styles.summaryAmount}
           />
+          {!compact && visible?.beneficiary?.state === 'known' && (
+            <section className={styles.summaryBank} aria-label="บัญชีรับเงินที่ผูกไว้">
+              <Landmark size={20} aria-hidden="true" />
+              <div>
+                <span>{visible.beneficiary.bankName}</span>
+                <span className={styles.summaryBankAccount}>
+                  {visible.beneficiary.maskedAccount}
+                </span>
+              </div>
+            </section>
+          )}
           {state === 'stale' && (
             <div className={styles.summaryFeedback}>
               <DataState
@@ -131,7 +143,7 @@ export function WithdrawalSummary({
                   <div className={`${styles.summaryTile} ${styles.summaryIncoming}`}>
                     <dt className={styles.summaryPendingLabel}>
                       <span className={styles.summaryFlowIcon}>
-                        <ArrowDownLeft size={18} aria-hidden="true" />
+                        <ArrowUpRight size={22} aria-hidden="true" />
                       </span>
                       <span>{pendingLabel(visible?.currentPeriod)}</span>
                     </dt>
@@ -146,7 +158,7 @@ export function WithdrawalSummary({
                   <div className={`${styles.summaryTile} ${styles.summaryOutgoing}`}>
                     <dt>
                       <span className={styles.summaryFlowIcon}>
-                        <ArrowUpRight size={18} aria-hidden="true" />
+                        <ArrowDownRight size={22} aria-hidden="true" />
                       </span>
                       <span>
                         ถอนล่าสุด

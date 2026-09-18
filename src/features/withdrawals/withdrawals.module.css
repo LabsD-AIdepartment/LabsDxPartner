@@ -564,17 +564,22 @@
 }
 
 /* Wallet summary: the source amounts remain separate, read-only facts. */
-.summaryWallet {
+.summary.summaryWallet {
   display: flex;
   flex-direction: column;
-  border: 1px solid color-mix(in srgb, var(--muted) 12%, transparent);
-  background-image:
-    radial-gradient(
-      ellipse at 100% 0%,
-      color-mix(in srgb, #8fae95 16%, transparent),
-      transparent 65%
-    ),
-    var(--payout);
+  border: 1px solid #ffffffa6;
+  background:
+    radial-gradient(ellipse at 100% 65%, #cbb4efaa, transparent 62%),
+    radial-gradient(ellipse at 38% 72%, #f4b5c1aa, transparent 66%),
+    linear-gradient(155deg, #fff 18%, #fcf7fb 50%, #eee7f6);
+}
+
+:global([data-theme='dark']) .summary.summaryWallet {
+  border-color: #ad94c32b;
+  background:
+    radial-gradient(ellipse at 100% 65%, #70519166, transparent 62%),
+    radial-gradient(ellipse at 38% 72%, #8a4e6666, transparent 66%),
+    linear-gradient(155deg, #14191b 18%, #22202c 65%, #2e253c);
 }
 
 .summaryWalletIcon {
@@ -584,72 +589,103 @@
 }
 
 .summaryWallet .summaryAmount {
-  margin-block: 22px 26px;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  margin-block: 18px 16px;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
+.summaryBank {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-block: 0 24px;
+  color: var(--muted);
+  font-size: var(--text-caption-size);
+  line-height: 1.45;
+}
+
+.summaryBank > svg {
+  flex-shrink: 0;
+}
+
+.summaryBank > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.summaryBankAccount {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.6px;
+}
+
 .summaryWallet .summaryRows {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: auto 0 18px;
-  padding-block: 16px 0;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 0;
   border: 0;
 }
 
 .summaryRows > .summaryTile {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--muted) 10%, transparent);
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 144px;
+  padding: 18px 16px;
+  border: 1px solid color-mix(in srgb, var(--card-solid) 90%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--card) 72%, transparent);
+  background: color-mix(in srgb, var(--card-solid) 86%, transparent);
 }
 
 .summaryTile dt,
 .summaryTile dt.summaryPendingLabel {
   flex: none;
+  padding-inline-end: 24px;
   white-space: normal;
   font-size: var(--text-caption-size);
-  line-height: 1.65;
+  line-height: 1.45;
+  text-wrap: balance;
 }
 
 .summaryTile dt > .summaryFlowIcon {
+  position: absolute;
+  right: 12px;
+  bottom: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  margin-bottom: 10px;
-  border-radius: 10px;
+  width: 24px;
+  height: 24px;
   color: var(--flow-ink);
-  background: var(--flow-surface);
 }
 
 .summaryIncoming {
   --flow-ink: #496e59;
-  --flow-surface: #e3ece4;
 }
 
 .summaryOutgoing {
   --flow-ink: #95605c;
-  --flow-surface: #f1e5e2;
 }
 
 :global([data-theme='dark']) .summaryIncoming {
   --flow-ink: #b0d0b8;
-  --flow-surface: #263d30;
 }
 
 :global([data-theme='dark']) .summaryOutgoing {
   --flow-ink: #dfb4ab;
-  --flow-surface: #43302f;
 }
 
 .summaryTile dd {
+  order: -1;
   font-size: var(--text-metric-compact);
   line-height: 1.25;
   letter-spacing: -0.5px;
@@ -667,7 +703,7 @@
 
 @container withdrawal-summary (max-width: 290px) {
   .summaryRows > .summaryTile {
-    padding: 12px 10px;
+    padding: 16px 10px;
     border-radius: 14px;
   }
 }

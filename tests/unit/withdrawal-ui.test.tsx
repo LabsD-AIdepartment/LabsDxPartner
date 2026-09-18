@@ -84,6 +84,52 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Withdrawal summary presentation', () => {
+  it('shows only the current known masked payout account on the full wallet card', () => {
+    const beneficiary = {
+      state: 'known' as const,
+      displayName: 'SYNTH recipient',
+      bankName: 'SYNTH bank',
+      maskedAccount: 'XXX-X-X4321-0',
+      version: 'SYNTH-beneficiary-1',
+    };
+    const view = render(<WithdrawalSummary data={summary({ beneficiary })} />);
+    const account = screen.getByRole('region', { name: 'บัญชีรับเงินที่ผูกไว้' });
+    expect(account).toHaveTextContent('SYNTH bank');
+    expect(account).toHaveTextContent('XXX-X-X4321-0');
+    view.rerender(<WithdrawalSummary data={summary({ beneficiary })} compact />);
+    expect(screen.queryByRole('region', { name: 'บัญชีรับเงินที่ผูกไว้' })).toBeNull();
+    view.rerender(<WithdrawalSummary data={summary({ beneficiary })} state="error" />);
+    expect(screen.queryByText('XXX-X-X4321-0')).toBeNull();
+    view.rerender(
+      <WithdrawalSummary
+        data={summary({
+          beneficiary: {
+            state: 'pending',
+            version: 'SYNTH-beneficiary-2',
+            reasons: ['ตรวจสอบบัญชี'],
+          },
+        })}
+      />,
+    );
+    expect(screen.queryByText('XXX-X-X4321-0')).toBeNull();
+    view.rerender(
+      <WithdrawalSummary
+        data={summary({
+          beneficiary: {
+            ...beneficiary,
+            bankName: 'SYNTH new bank',
+            maskedAccount: 'XXX-X-X9876-0',
+            version: 'SYNTH-beneficiary-3',
+          },
+        })}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'บัญชีรับเงินที่ผูกไว้' })).toHaveTextContent(
+      'SYNTH new bank',
+    );
+    expect(screen.queryByText('XXX-X-X4321-0')).toBeNull();
+  });
+
   it('distinguishes unknown history from a verified absence of successful withdrawals', () => {
     const view = render(<WithdrawalSummary data={summary()} />);
     expect(screen.getByLabelText('ยังไม่มีข้อมูลการถอนล่าสุด')).toHaveTextContent('—');
