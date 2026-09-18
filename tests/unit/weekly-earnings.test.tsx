@@ -285,7 +285,7 @@ describe('responsive weekly chart', () => {
       expect(screen.getByLabelText('28 August 2026')).toBeInTheDocument();
       expect(screen.getByText('12.8k')).toBeVisible();
       expect(screen.getByText('2026-08-28: ฿12,800.00')).toBeInTheDocument();
-      const badges = [...view.container.querySelectorAll('rect')].map((rect) => ({
+      const badges = [...view.container.querySelectorAll('[data-trend-point] rect')].map((rect) => ({
         x: Number(rect.getAttribute('x')),
         y: Number(rect.getAttribute('y')),
         width: Number(rect.getAttribute('width')),
@@ -326,7 +326,7 @@ describe('responsive weekly chart', () => {
     const view = render(<TrendChart points={dense} compactAmounts showEveryDate />);
     const svg = screen.getByRole('img');
     expect(svg).toHaveStyle({ width: '198px' });
-    const badges = [...view.container.querySelectorAll('rect')].map((badge) => ({
+    const badges = [...view.container.querySelectorAll('[data-trend-point] rect')].map((badge) => ({
       x: Number(badge.getAttribute('x')),
       y: Number(badge.getAttribute('y')),
       w: Number(badge.getAttribute('width')),
@@ -397,7 +397,7 @@ describe('responsive weekly chart', () => {
       expect(chartDates(view.container)).toHaveLength(7);
       expect(view.container.querySelectorAll('circle title')).toHaveLength(7);
       expect(view.container.textContent).toContain('9,007,199,254,740,993.01');
-      const badges = [...view.container.querySelectorAll('rect')].map((rect) => ({
+      const badges = [...view.container.querySelectorAll('[data-trend-point] rect')].map((rect) => ({
         x: Number(rect.getAttribute('x')),
         y: Number(rect.getAttribute('y')),
         w: Number(rect.getAttribute('width')),
@@ -426,7 +426,7 @@ describe('responsive weekly chart', () => {
     expect(screen.getByText('28 Aug')).toBeVisible();
     expect(chartDates(view.container)).toHaveLength(7);
     expect(
-      [...view.container.querySelectorAll('rect')].every(
+      [...view.container.querySelectorAll('[data-trend-point] rect')].every(
         (rect) => rect.getAttribute('height') === '28',
       ),
     ).toBe(true);

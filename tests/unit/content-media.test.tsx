@@ -100,7 +100,7 @@ describe('content thumbnail media and real external identifiers', () => {
     expect(video).toHaveAttribute('tabindex', '0');
     expect(video).toHaveAttribute('playsinline');
     expect(video).toHaveAttribute('preload', 'metadata');
-    expect(video).not.toHaveAttribute('autoplay');
+    expect(video).toHaveAttribute('autoplay');
     fireEvent.loadedMetadata(video);
     expect(within(dialog).queryByRole('status')).toBeNull();
     fireEvent(dialog, new Event('cancel', { bubbles: true, cancelable: true }));
@@ -131,7 +131,7 @@ describe('content thumbnail media and real external identifiers', () => {
     fireEvent(player, new Event('resize'));
     expect(player).toHaveStyle({ aspectRatio: '1920 / 1080' });
     expect(player).toHaveAttribute('src', '/media/owned.mp4');
-    expect(player).not.toHaveAttribute('autoplay');
+    expect(player).toHaveAttribute('autoplay');
     fireEvent.click(screen.getByRole('button', { name: 'ปิดหน้าต่าง' }));
   });
   it('retries failed media and bounds indefinitely loading media', () => {

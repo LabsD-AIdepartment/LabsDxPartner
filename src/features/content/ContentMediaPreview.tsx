@@ -114,6 +114,7 @@ function VideoAsset({
       poster={media.poster}
       style={aspectRatio ? { aspectRatio } : undefined}
       controls
+      autoPlay
       tabIndex={0}
       playsInline
       preload="metadata"

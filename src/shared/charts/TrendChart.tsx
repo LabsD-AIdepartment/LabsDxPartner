@@ -1,5 +1,6 @@
 'use client';
-import { useId, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useId, useEffect, useRef, useState, useCallback, type CSSProperties } from 'react';
+import { useDataEntrance } from '@/shared/motion/useDataEntrance';
 import type { MoneyValue } from '@/contracts/common';
 import { coverageSegmentForDay, type PeriodCoverageValue } from '@/contracts/coverage';
 import { formatMinor } from '@/shared/ui/format-money';
@@ -26,6 +27,32 @@ export function TrendChart({
   const useCompactAmounts = compactAmounts && width <= 480;
   const splitDates = showEveryDate && width <= 480;
   const hasPoints = points.length > 0;
+  const motionKey = JSON.stringify([points, coverage]);
+  const draw = useCallback(
+    (progress: number) => {
+      const root = ref.current;
+      if (!root) return;
+      const elapsed = progress * 2000;
+      const reveal = root.querySelector<SVGRectElement>('[data-trend-reveal]');
+      if (reveal) {
+        const start = Number(reveal.dataset.start);
+        const end = Number(reveal.dataset.end);
+        reveal.setAttribute('width', String(start + (end - start) * Math.min(1, elapsed / 1600)));
+      }
+      root.querySelectorAll<SVGGElement>('[data-trend-point]').forEach((point) => {
+        const reached = Math.min(
+          1,
+          Math.max(0, (elapsed - Number(point.dataset.trendPoint) * 1600) / 320),
+        );
+        const pop = 1 + 2.2 * (reached - 1) ** 3 + 1.2 * (reached - 1) ** 2;
+        point.style.opacity = String(Math.min(1, reached * 3));
+        point.style.transform = `translateY(${(1 - reached) * 8}px) scale(${0.8 + 0.2 * pop})`;
+      });
+      // Same data responses do not restart the animation; new geometry/data does.
+    },
+    [motionKey, width],
+  );
+  useDataEntrance(ref, draw, 2000);
   useEffect(() => {
     if (!ref.current) return;
     const observer = new ResizeObserver(([entry]) =>
@@ -165,6 +192,17 @@ export function TrendChart({
         >
           <title>คอมมิชชันตามวันที่เกิดรายได้</title>
           <defs>
+            <clipPath id={`${id}-reveal`}>
+              <rect
+                data-trend-reveal
+                data-start={x(0)}
+                data-end={x(points.length - 1) + 3}
+                x="0"
+                y={-topInset}
+                width={plotWidth}
+                height={height}
+              />
+            </clipPath>
             <linearGradient
               id={`${id}-line`}
               gradientUnits="userSpaceOnUse"
@@ -201,7 +239,7 @@ export function TrendChart({
               />
             ))}
             {paths.map(({ group, path }) => (
-              <g key={group[0]}>
+              <g key={group[0]} clipPath={`url(#${id}-reveal)`}>
                 <path
                   d={`${path} L${x(group.at(-1)!)},${zeroY} L${x(group[0])},${zeroY} Z`}
                   fill={`url(#${id}-area)`}
@@ -212,7 +250,10 @@ export function TrendChart({
             {points.map((point, i) => (
               <g key={`${point.date}-${i}`}>
                 {point.amount !== null && callouts[i] ? (
-                  <>
+                  <g
+                    data-trend-point={points.length === 1 ? 0 : i / (points.length - 1)}
+                    style={{ transformBox: 'fill-box', transformOrigin: 'center bottom' }}
+                  >
                     <line
                       x1={x(i)}
                       x2={x(i)}
@@ -241,7 +282,7 @@ export function TrendChart({
                     <circle cx={x(i)} cy={y(values[i]!)} r="3" fill="var(--chart-dot)">
                       <title>{`${point.date}: ${formatMinor(point.amount.minor)}`}</title>
                     </circle>
-                  </>
+                  </g>
                 ) : (
                   <text x={x(i)} y="136" textAnchor="middle">
                     <title>{`${point.date}: ยังไม่มีข้อมูล`}</title>—

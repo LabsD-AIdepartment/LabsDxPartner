@@ -1,5 +1,6 @@
 'use client';
-import { useId } from 'react';
+import { useId, useRef, useCallback } from 'react';
+import { easeOut, useDataEntrance } from '@/shared/motion/useDataEntrance';
 import { displayRatio } from './display-ratio';
 import styles from './chart.module.css';
 export function DonutChart({
@@ -20,10 +21,24 @@ export function DonutChart({
     t = BigInt(total);
   const ratio = t > 0n ? Math.min(1, Math.max(0, displayRatio(p, t))) : 0;
   const circumference = 2 * Math.PI * 48;
+  const ref = useRef<HTMLDivElement>(null);
+  const draw = useCallback(
+    (progress: number) => {
+      const amount = easeOut(progress);
+      const arc = ref.current?.querySelector('[data-donut-arc]');
+      arc?.setAttribute('stroke-dasharray', `${ratio * circumference * amount} ${circumference}`);
+      arc?.setAttribute('transform', `rotate(${-90 - 100 * (1 - amount)} 60 60)`);
+      const text = ref.current?.querySelector('[data-donut-percent]')?.firstChild;
+      if (text instanceof Text)
+        text.nodeValue = t === 0n ? '—' : `${Math.round(ratio * 100 * amount)}%`;
+    },
+    [ratio, circumference, t],
+  );
+  useDataEntrance(ref, draw, 1800);
   return (
     <>
       <div className={`${styles.mix} ${showMarketingCopy ? '' : styles.centeredMix}`}>
-        <div className={styles.ring}>
+        <div ref={ref} className={styles.ring}>
           <svg
             viewBox="0 0 120 120"
             role="img"
@@ -51,6 +66,7 @@ export function DonutChart({
               cy="60"
               r="48"
               fill="none"
+              data-donut-arc
               stroke={`url(#${id})`}
               strokeWidth="14"
               strokeDasharray={`${ratio * circumference} ${circumference}`}
@@ -58,7 +74,9 @@ export function DonutChart({
             />
           </svg>
           <div className={styles.center}>
-            {t === 0n ? '—' : `${Math.round(ratio * 100)}%`}
+            <span data-donut-percent aria-hidden="true">
+              {t === 0n ? '—' : `${Math.round(ratio * 100)}%`}
+            </span>
             <small>{primaryLabel}</small>
           </div>
         </div>

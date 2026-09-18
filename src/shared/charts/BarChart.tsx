@@ -1,4 +1,6 @@
-import type { CSSProperties } from 'react';
+'use client';
+import { useCallback, useRef, type CSSProperties } from 'react';
+import { easeOut, useDataEntrance } from '@/shared/motion/useDataEntrance';
 import type { MoneyValue } from '@/contracts/common';
 import { formatMinor } from '@/shared/ui/format-money';
 import { displayRatio } from './display-ratio';
@@ -22,10 +24,25 @@ function compactAmount(minor: string) {
 }
 
 export function BarChart({ items }: { items: readonly { label: string; value: MoneyValue }[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const motionKey = JSON.stringify(items);
+  const draw = useCallback(
+    (progress: number) => {
+      ref.current?.querySelectorAll<HTMLElement>('[data-sales-bar]').forEach((bar, index) => {
+        const local =
+          progress === 1
+            ? 1
+            : Math.min(1, Math.max(0, (progress * 1600 - Math.min(index * 70, 350)) / 1150));
+        bar.style.transform = `scaleX(${easeOut(local)})`;
+      });
+    },
+    [motionKey],
+  );
+  useDataEntrance(ref, draw);
   if (!items.length) return <DataState state="empty" />;
   const max = items.reduce((a, x) => (BigInt(x.value.minor) > a ? BigInt(x.value.minor) : a), 1n);
   return (
-    <div className={styles.barContainer}>
+    <div ref={ref} className={styles.barContainer}>
       <div
         className={styles.bars}
         role="img"
@@ -42,8 +59,10 @@ export function BarChart({ items }: { items: readonly { label: string; value: Mo
             <div className={styles.barTrack}>
               <div
                 className={styles.bar}
+                data-sales-bar
                 style={
                   {
+                    transformOrigin: 'left',
                     '--bar-size': `${Math.max(0, displayRatio(BigInt(item.value.minor), max)) * 100}%`,
                   } as CSSProperties
                 }

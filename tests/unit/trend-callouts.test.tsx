@@ -33,7 +33,7 @@ it.each([227, 301, 470, 900])(
     points.forEach((p) =>
       expect(screen.getByText(formatMinor(p.amount.minor, true))).toBeInTheDocument(),
     );
-    const rects = [...container.querySelectorAll('rect')].map((r) => ({
+    const rects = [...container.querySelectorAll('[data-trend-point] rect')].map((r) => ({
       x: Number(r.getAttribute('x')),
       y: Number(r.getAttribute('y')),
       w: Number(r.getAttribute('width')),
@@ -61,7 +61,7 @@ it('preserves exact signed satang and keeps a dense series scrollable with keybo
   const { container } = render(<TrendChart points={points} />);
   expect(screen.getByText('฿9,007,199,254,740,993.01')).toBeInTheDocument();
   expect(screen.getByText('-฿5.01')).toBeInTheDocument();
-  expect(container.querySelectorAll('rect')).toHaveLength(31);
+  expect(container.querySelectorAll('[data-trend-point] rect')).toHaveLength(31);
   expect(screen.getByRole('region', { name: 'กราฟคอมมิชชันรายวัน' })).toHaveAttribute(
     'tabindex',
     '0',
