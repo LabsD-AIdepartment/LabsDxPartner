@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runSnapshotWorkerCycle } from '@/server/modules/marketing-ads/facebook/snapshot-worker';
 import {
+  SnapshotAdmissionLimit,
   snapshotBindingKey,
   type createSnapshotDatabase,
 } from '@/server/modules/marketing-ads/facebook/snapshot-database';
@@ -81,5 +82,17 @@ describe('hourly external snapshot worker cycle', () => {
       'namespace changed',
     );
     expect(blocked.store.request).not.toHaveBeenCalled();
+  });
+  it('continues due work when a new rolling window reaches admission capacity', async () => {
+    const f = fixture();
+    f.store.request.mockRejectedValue(new SnapshotAdmissionLimit('capacity'));
+    f.store.claim.mockResolvedValueOnce(lease);
+    const acquire = vi
+      .fn<typeof buildAdSnapshot>()
+      .mockRejectedValue(new Error('source unavailable'));
+    const result = await runSnapshotWorkerCycle({ ...f, acquire });
+    expect(result.attempted).toBe(1);
+    expect(f.store.claim).toHaveBeenCalledTimes(2);
+    expect(f.store.fail).toHaveBeenCalledWith(lease);
   });
 });

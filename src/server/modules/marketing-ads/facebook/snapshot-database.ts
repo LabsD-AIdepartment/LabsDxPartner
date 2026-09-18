@@ -5,6 +5,7 @@ import { projectAdSnapshot } from './snapshot-projection';
 import { AdSnapshotBindingConfig, type AdSnapshotBindingConfigValue } from './snapshot-config';
 
 export const SNAPSHOT_REFRESH_MS = 60 * 60_000;
+export class SnapshotAdmissionLimit extends Error {}
 export function snapshotBindingKey(binding: AdSnapshotBindingConfigValue) {
   // Explicit fixed-order identity; dates and display permission are not source identity.
   return createHash('sha256')
@@ -62,7 +63,7 @@ export function createSnapshotDatabase(sql: Sql, namespace: string) {
           const [count] =
             await tx`select count(*)::int as n from portal_marketing.external_ad_snapshots
             where namespace_digest=${namespace} and binding_key=${bindingKey} and requested_at>clock_timestamp()-interval '7 days'`;
-          if (count.n >= 128) throw new Error('Report window limit reached');
+          if (count.n >= 128) throw new SnapshotAdmissionLimit('Report window limit reached');
         }
         await tx`insert into portal_marketing.external_ad_snapshots(namespace_digest,binding_key,period_from,period_to)
           values(${namespace},${bindingKey},${b.from}::date,${b.toExclusive}::date)

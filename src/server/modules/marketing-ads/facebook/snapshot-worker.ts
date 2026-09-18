@@ -1,6 +1,10 @@
 import { buildAdSnapshot } from './snapshot-refresh';
 import { deriveRequestedWindowBinding, readAdSnapshotBindings } from './snapshot-config';
-import { snapshotBindingKey, type createSnapshotDatabase } from './snapshot-database';
+import {
+  SnapshotAdmissionLimit,
+  snapshotBindingKey,
+  type createSnapshotDatabase,
+} from './snapshot-database';
 
 /** Only operator-configured bindings, never the unrelated native/test association catalogue. */
 export async function runSnapshotWorkerCycle(options: {
@@ -30,8 +34,14 @@ export async function runSnapshotWorkerCycle(options: {
       [b.from, b.toExclusive],
       [today.slice(0, 8) + '01', date(1)],
       [date(-6), date(1)],
-    ])
-      await store.request(deriveRequestedWindowBinding(b, from, to));
+    ]) {
+      try {
+        await store.request(deriveRequestedWindowBinding(b, from, to));
+      } catch (error) {
+        // A full demand queue must not stop already-admitted hourly work at day rollover.
+        if (!(error instanceof SnapshotAdmissionLimit)) throw error;
+      }
+    }
   }
   const result = { attempted: 0, published: 0, failed: 0 };
   for (let i = 0; i < 8; i++) {

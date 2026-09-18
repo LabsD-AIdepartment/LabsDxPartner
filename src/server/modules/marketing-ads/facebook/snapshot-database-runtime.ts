@@ -4,7 +4,7 @@ import {
   credentialBindingDigest,
   CREDENTIAL_BINDING_ID,
 } from '@/server/modules/identity/credential-auth';
-import { createSnapshotDatabase } from './snapshot-database';
+import { createSnapshotDatabase, SnapshotAdmissionLimit } from './snapshot-database';
 import type { AdSnapshotBindingConfigValue } from './snapshot-config';
 
 /** Database connection only: deliberately no provider or credential injector import. */
@@ -27,9 +27,22 @@ export function createSnapshotDatabaseRuntime(env: Record<string, string | undef
 }
 
 let runtime: ReturnType<typeof createSnapshotDatabaseRuntime> | undefined;
+export async function readStoredSnapshot(
+  store: ReturnType<typeof createSnapshotDatabase>,
+  binding: AdSnapshotBindingConfigValue,
+) {
+  const stored = await store.read(binding);
+  try {
+    await store.request(binding);
+  } catch (error) {
+    // Capacity controls new work, never access to previously stored exact-window data.
+    if (!(error instanceof SnapshotAdmissionLimit)) throw error;
+    return stored ? { ...stored, stale: true } : null;
+  }
+  return stored;
+}
 export async function readDatabaseAdSnapshot(binding: AdSnapshotBindingConfigValue) {
   runtime ??= createSnapshotDatabaseRuntime(process.env);
   await runtime.assertBinding();
-  await runtime.store.request(binding);
-  return runtime.store.read(binding);
+  return readStoredSnapshot(runtime.store, binding);
 }

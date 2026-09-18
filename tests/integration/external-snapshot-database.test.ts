@@ -6,6 +6,7 @@ import {
   snapshotBindingKey,
 } from '@/server/modules/marketing-ads/facebook/snapshot-database';
 import { AdSnapshotBindingConfig } from '@/server/modules/marketing-ads/facebook/snapshot-config';
+import { readStoredSnapshot } from '@/server/modules/marketing-ads/facebook/snapshot-database-runtime';
 import { AdPerformanceSnapshot } from '@/contracts/ad-performance-snapshot';
 
 const namespace = createHash('sha256').update(randomUUID()).digest('hex');
@@ -135,5 +136,23 @@ describe('PostgreSQL external report authority', () => {
     expect(snapshotBindingKey({ ...binding, canViewSpend: true })).toBe(
       snapshotBindingKey(binding),
     );
+  });
+  it('keeps retired exact-window reports readable when active demand is full', async () => {
+    await sql`update portal_marketing.external_ad_snapshots set requested_at=clock_timestamp()-interval '8 days'
+      where namespace_digest=${namespace}`;
+    await sql`insert into portal_marketing.external_ad_snapshots(namespace_digest,binding_key,period_from,period_to)
+      select ${namespace},${snapshotBindingKey(binding)},date '2026-01-01'+n,date '2026-01-02'+n from generate_series(0,127) n`;
+    const previous = await store.read(binding);
+    expect(previous).not.toBeNull();
+    const result = await readStoredSnapshot(store, binding);
+    expect(result?.raw).toEqual(previous?.raw);
+    expect(result?.stale).toBe(true);
+    expect(
+      await readStoredSnapshot(store, {
+        ...binding,
+        from: '2026-06-01',
+        toExclusive: '2026-07-01',
+      }),
+    ).toBeNull();
   });
 });
