@@ -569,6 +569,9 @@
   flex-direction: column;
   border: 1px solid #ffffffa6;
   background:
+    radial-gradient(ellipse 30% 42% at 0% 76%, #ffffffd6, transparent 100%),
+    radial-gradient(ellipse 25% 32% at 100% 88%, #ffffffa6, transparent 100%),
+    radial-gradient(ellipse 68% 28% at 40% 108%, #fffffff0, transparent 100%),
     radial-gradient(ellipse at 100% 65%, #a8d9d2aa, transparent 62%),
     radial-gradient(ellipse at 38% 72%, #a5dfbeaa, transparent 66%),
     linear-gradient(155deg, #fff 18%, #f2faf5 50%, #deeee5);
