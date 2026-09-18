@@ -34,7 +34,7 @@
 @media (max-width: 800px), (pointer: coarse) {
   .backdrop svg {
     /* Start mid-sweep so motion is visible immediately, including after focus. */
-    animation: surface-drift 5s ease-in-out -2.5s infinite alternate;
+    animation: surface-drift 2.5s ease-in-out -1.25s infinite alternate;
     will-change: transform;
   }
   .backdrop[data-motion-paused='true'] svg {
