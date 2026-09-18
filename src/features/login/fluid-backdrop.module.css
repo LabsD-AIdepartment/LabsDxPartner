@@ -33,7 +33,8 @@
 /* Only transform a stable surface on mobile; no path/gradient updates per frame. */
 @media (max-width: 800px), (pointer: coarse) {
   .backdrop svg {
-    animation: surface-drift 22s ease-in-out infinite alternate;
+    /* Start mid-sweep so motion is visible immediately, including after focus. */
+    animation: surface-drift 10s ease-in-out -5s infinite alternate;
     will-change: transform;
   }
   .backdrop[data-motion-paused='true'] svg {
@@ -43,10 +44,10 @@
 
 @keyframes surface-drift {
   from {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(-5%, 4%, 0) rotate(-3deg) scale(1.12);
   }
   to {
-    transform: translate3d(2%, -2%, 0);
+    transform: translate3d(5%, -4%, 0) rotate(3deg) scale(1.12);
   }
 }
 
