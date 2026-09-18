@@ -29,6 +29,8 @@ import { useReportState } from '@/shared/routing/useReportState';
 import { CredentialAccount } from './CredentialAccount';
 import { AccountPage } from '@/features/account/AccountPage';
 import { accountHttp } from '@/features/account/http';
+import { AccountContacts } from '@/features/account/AccountContacts';
+import { contactHttp } from '@/features/account/contact-http';
 import type { PartnerScreen } from './types';
 import forms from '@/shared/ui/forms.module.css';
 
@@ -256,15 +258,18 @@ export function PartnerApplication({
             <AccountPage
               scope={scope}
               transport={accountHttp}
+              contacts={<AccountContacts scope={scope} transport={contactHttp} />}
               onLogout={finish}
               credentials={
                 <>
-                {payoutAccountHref && <LinkButton href={payoutAccountHref}>ดู/แก้ไขบัญชีรับเงิน</LinkButton>}
-                <CredentialAccount
-                  name={session.displayName}
-                  onChanged={finish}
-                  showIdentity={false}
-                />
+                  {payoutAccountHref && (
+                    <LinkButton href={payoutAccountHref}>ดู/แก้ไขบัญชีรับเงิน</LinkButton>
+                  )}
+                  <CredentialAccount
+                    name={session.displayName}
+                    onChanged={finish}
+                    showIdentity={false}
+                  />
                 </>
               }
             />

@@ -110,5 +110,9 @@
   {
     "id": "0028_external_ad_snapshots.sql",
     "checksum": "c0d898c0c70796459f4a2c55f26170526b9c653e617c6c0e85b6fd3c8981c336"
+  },
+  {
+    "id": "0029_account_contacts.sql",
+    "checksum": "4fc15e9215ec6c17e3b19d915ee43faa43e279b589da6a6fe1e83813a1ab54be"
   }
 ]

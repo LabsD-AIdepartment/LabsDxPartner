@@ -19,6 +19,7 @@ type Props = {
   onLogout: () => void;
   reauthHref?: string;
   credentials?: ReactNode;
+  contacts?: ReactNode;
 };
 export function AccountPage(props: Props) {
   return <AccountContent key={JSON.stringify(scopeKey(props.scope))} {...props} />;
@@ -29,6 +30,7 @@ function AccountContent({
   onLogout,
   reauthHref = '/login?next=%2Faccount',
   credentials,
+  contacts,
 }: Props) {
   const client = useQueryClient();
   const [action, setAction] = useState<Action | null>(null),
@@ -62,6 +64,11 @@ function AccountContent({
               </Text>
             </TextGroup>
           </Card>
+        </>
+      )}
+      {contacts}
+      {q.data && data && !q.error && q.data.dataState !== 'unavailable' && (
+        <>
           <Card title="ข้อตกลงของคุณ">
             {data.agreement ? (
               <div className={styles.details}>
