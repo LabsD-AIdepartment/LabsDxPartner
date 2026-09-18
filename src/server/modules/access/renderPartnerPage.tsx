@@ -9,6 +9,7 @@ import { requirePartnerAccess } from './requirePartnerAccess';
 import { PartnerApplication } from '@/features/partner-application/PartnerApplication';
 import type { PartnerScreen } from '@/features/partner-application/types';
 import { readReportContext } from '@/shared/routing/report-context';
+import { readPitchTransfer } from '@/server/platform/pitch-transfer';
 export async function renderPartnerPage(
   destination: string,
   screen: PartnerScreen,
@@ -24,6 +25,7 @@ export async function renderPartnerPage(
         screen={screen}
         search={pitchSearch(search)}
         showConnectedAdNotices={pitchConnectedAdNoticesVisible()}
+        initialPitchState={await readPitchTransfer(session.userId, session.activePartnerId!)}
       />
     );
   }

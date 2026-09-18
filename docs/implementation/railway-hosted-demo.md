@@ -25,7 +25,7 @@ leaves native authorization in place and makes demonstration data/media unavaila
 
 Project: LabsDxPartner (`e324426f-826d-4a2b-bc78-e0675ec6063a`), production environment.
 Web service: `73e157a9-b880-4efe-b96b-190522740b00`; generated domain:
-`https://web-production-e0616.up.railway.app`. Postgres is a separate service. Web has a persistent
+`https://xpartner.up.railway.app`. Postgres is a separate service. Web has a persistent
 volume mounted at `/data`. Resource creation alone is not a successful application deployment.
 
 Provision these runtime variables by secure stdin or Railway references, never Git or build args:
@@ -77,12 +77,10 @@ unauthenticated dataset/ad/media rejection, fixed-partner scope, all report amou
 media, and accepted phone/tablet/desktop layouts. Record deployment ID, merged SHA, artifact digest,
 flag state and database comparison. Monitor worker freshness and HTTP errors after startup.
 
-The initial private GitHub repository cannot enable branch protection on the account's current
-plan (GitHub403, upgrade required). PR/check/review preparation may proceed, but merging/deploying
-under the requested protected-main discipline requires resolving that gate or an explicit owner
-exception. Do not make the repository public to work around it. No application deployment or
-production-data compatibility is claimed until its actual verification receipt is complete.
+## Pitch release decision (2026-09-18)
 
-GitHub Actions also refused to start the bootstrap job because of failed account payments or
-a spending limit (run35331725526, zero steps executed). This is a separate account gate from branch
-protection; local green checks must not be represented as hosted CI passing.
+The owner explicitly approved public GitHub, skipping exhausted hosted CI, and local checks plus independent GPT-5.5 review. Main is protected using the public free plan; Actions is disabled. PR1 merged as384098534d784cfbb55c70d1767c2241be012491 and deployed successfully. The hosted origin is https://xpartner.up.railway.app.
+
+PostgreSQL was restored into an empty target; source databases remain unchanged. Old sessions, invitation/reset/OAuth tokens and unfinished provider scan state were excluded. Target credentials and report namespace were rebound to the hosted origin. Only the selected pitch user retains a password and active partner membership; all cloned staff grants are disabled. The existing provider token is provisioned directly from Keychain to Railway through stdin, never through Git or an image. The existing external report worker is enabled for the parity rollout; its provider credential remains excluded from the web child environment.
+
+The sample withdrawal controller uses browser sessionStorage, so copying PostgreSQL and SQLite alone does not migrate manually created requests. Authenticated pitch accounts can export/import their validated wallet state at /account?view=transfer. Only the scoped withdrawal/beneficiary keys are included; credentials and other browser storage are never exported. The private /data/pitch-wallet-state.json can supply this same export as initial state to new browser sessions. It must match the authenticated native user and partner; missing seed is optional, invalid seed fails closed, and a valid seed never replaces existing browser state. Existing browser sessions can explicitly import through the same transfer page. This remains sample-wallet state, not a payment ledger.
