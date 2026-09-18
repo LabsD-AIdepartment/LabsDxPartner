@@ -25,10 +25,12 @@ function MediaAsset({ media, title }: { media: PreviewMedia; title: string }) {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   useEffect(() => {
-    if (state !== 'loading') return;
+    // Mobile browsers may defer video metadata until the user presses Play.
+    // Keep native controls available; only a media error should remove the video.
+    if (state !== 'loading' || media.kind === 'video') return;
     const timeout = setTimeout(() => setState('error'), 15_000);
     return () => clearTimeout(timeout);
-  }, [state, attempt]);
+  }, [state, attempt, media.kind]);
   const retry = () => {
     setState('loading');
     setAttempt((value) => value + 1);
@@ -56,7 +58,7 @@ function MediaAsset({ media, title }: { media: PreviewMedia; title: string }) {
         ))}
       {state === 'loading' && (
         <p className={styles.mediaStatus} role="status">
-          กำลังโหลด{media.kind === 'video' ? 'วิดีโอ' : 'ภาพ'}…
+          {media.kind === 'video' ? 'กดเล่นหากวิดีโอยังไม่เริ่ม' : 'กำลังโหลดภาพ…'}
         </p>
       )}
       {state === 'error' && (
