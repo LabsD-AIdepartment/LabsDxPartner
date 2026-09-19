@@ -1,3 +1,4 @@
+'use client';
 import type { WithdrawalSummaryValue } from '@/contracts/withdrawal-journey';
 import type { BlockingReasonValue } from '@/contracts/withdrawal-readiness';
 import { ArrowDownRight, ArrowUpRight, Landmark, Wallet } from 'lucide-react';
@@ -7,6 +8,7 @@ import { DataState } from '@/shared/ui/DataState';
 import { Money } from '@/shared/ui/Money';
 import { dateLabel } from '@/shared/ui/format-date';
 import { Text } from '@/shared/ui/Text';
+import { useMobileHeaderActions } from '@/shared/ui/MobileHeaderActions';
 import styles from './withdrawals.module.css';
 
 export type WithdrawalSummaryData = Pick<
@@ -62,13 +64,15 @@ export function WithdrawalSummary({
   compact?: boolean;
   layout?: 'card' | 'wide';
 }) {
+  const mobile = useMobileHeaderActions()?.mobile ?? false;
   const visible = state === 'loading' || state === 'error' ? null : data;
   const balance = visible?.balance.state === 'known' ? visible.balance : null;
   const cutoffDate = pendingDate(visible?.currentPeriod);
   const requestDisabled = state !== 'ready' || visible?.readiness.requestGate !== 'ready';
   const showRows =
     !compact || !!(balance && (balance.held.minor !== '0' || balance.deficit.minor !== '0'));
-  const wide = !compact && layout === 'wide';
+  // Phones share the Overview card; the wide summary is reserved for larger screens.
+  const wide = !compact && layout === 'wide' && !mobile;
   const amount = (
     <Money
       value={balance?.available ?? null}
