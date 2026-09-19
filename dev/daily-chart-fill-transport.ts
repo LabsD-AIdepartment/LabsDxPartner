@@ -11,6 +11,14 @@ export function applyDailyChartFill(
   brand: string | null,
 ) {
   const earnings = base.earnings;
+  // Samples augment an available source; they must not turn unknown totals into known values.
+  if (
+    base.dataState === 'unavailable' ||
+    earnings.confirmed === null ||
+    earnings.eligibleSales === null ||
+    earnings.unassignedAmount === null
+  )
+    return base;
   const from = earnings.period.from.slice(0, 10);
   const to = earnings.period.toExclusive.slice(0, 10);
   const existing = new Set(earnings.trend.map((point) => point.date));

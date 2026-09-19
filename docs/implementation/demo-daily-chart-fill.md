@@ -13,6 +13,7 @@ This optional feature fills missing daily points in the **Daily Clip Earnings ca
 - Values vary deterministically by date and known demo brand. No real clip identities are fabricated. A missing day's all-brand amount equals the sum of its brand amounts; eligible sales are illustrative at10x commission.
 - Original daily points, including zero, and completely covered source days always take precedence. The separate weekly query is polled every30seconds so a midnight query racing the writer recovers without a reload.
 - Source freshness, warning reasons and timestamps are preserved when adding illustrative points; generated samples cannot mark stale or partial source data as ready.
+- Unavailable source responses or unknown confirmed, eligible-sales or unassigned totals remain unchanged; samples cannot replace missing authoritative data.
 - Endpoint `GET /api/demo/daily-chart-fill?identity=a` uses the existing pitch allowlist/session guard and private/no-store responses. Flag-off/native returns404. A missing or unavailable fill file falls back to the original chart data.
 - Worker failure is isolated: supervisor retries, then reports failure; the optional fill cannot terminate the web process. Check Railway worker state logs, `/proc` process presence and file `through`/row dates for freshness. A running process alone does not prove today's fill exists.
 

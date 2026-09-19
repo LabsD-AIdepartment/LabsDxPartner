@@ -111,6 +111,20 @@ it.each(['stale', 'partial'] as const)(
     expect(result.earnings.trend.some((point) => point.date === '2026-09-19')).toBe(true);
   },
 );
+it('preserves an unavailable source unchanged instead of rendering generated points', () => {
+  const original = Overview.parse(
+    overviewFixture({ from: '2026-09-18', toExclusive: '2026-09-21', brand: null }, 'unavailable'),
+  );
+  expect(applyDailyChartFill(original, generateDailyFill('2026-09-19'), null)).toBe(original);
+});
+it.each(['confirmed', 'eligibleSales', 'unassignedAmount'] as const)(
+  'preserves unknown %s instead of substituting a demo total',
+  (field) => {
+    const original = base();
+    original.earnings[field] = null;
+    expect(applyDailyChartFill(original, generateDailyFill('2026-09-19'), null)).toBe(original);
+  },
+);
 it('preserves explicit source zeros and complete covered zero days', () => {
   const original = base();
   const fill = generateDailyFill('2026-09-19');
