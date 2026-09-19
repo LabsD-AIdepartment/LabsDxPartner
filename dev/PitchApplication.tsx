@@ -25,12 +25,14 @@ export function PitchApplication({
   search,
   showConnectedAdNotices = false,
   initialPitchState,
+  dailyChartFillEnabled = false,
 }: {
   session: SessionValue;
   screen: PartnerScreen;
   search: string;
   showConnectedAdNotices?: boolean;
   initialPitchState?: PitchTransferValue;
+  dailyChartFillEnabled?: boolean;
 }) {
   const router = useRouter();
   const membershipKey = JSON.stringify(session.memberships);
@@ -174,7 +176,7 @@ export function PitchApplication({
         {screen.kind === 'account' && new URLSearchParams(search).get('view') === 'transfer' ? (
           <PitchTransferPanel userId={session.userId} partnerId={session.activePartnerId!} />
         ) : screen.kind === 'overview' ? (
-          <WithdrawalPreview search={search} />
+          <WithdrawalPreview search={search} dailyChartFillEnabled={dailyChartFillEnabled} />
         ) : ['content', 'clip', 'ad'].includes(screen.kind) ? (
           <ContentPreview search={search} segments={['partner-demo', 'a', ...segments]} />
         ) : ['transactions', 'statement'].includes(screen.kind) ? (

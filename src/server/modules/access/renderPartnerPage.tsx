@@ -25,6 +25,7 @@ export async function renderPartnerPage(
         screen={screen}
         search={pitchSearch(search)}
         showConnectedAdNotices={pitchConnectedAdNoticesVisible()}
+        dailyChartFillEnabled={process.env.LABSD_DEMO_DAILY_CHART_FILL_ENABLED === '1'}
         initialPitchState={await readPitchTransfer(session.userId, session.activePartnerId!)}
       />
     );

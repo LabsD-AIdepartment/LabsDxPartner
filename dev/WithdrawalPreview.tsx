@@ -1,4 +1,5 @@
 'use client';
+import { createDailyChartFillTransport } from './daily-chart-fill-transport';
 import {
   DatasetBoundary,
   DatasetQueryRefresh,
@@ -35,10 +36,18 @@ import {
 import styles from './withdrawal-preview.module.css';
 
 /** Synthetic route composition only. Native Overview keeps its original payout component. */
-export function WithdrawalPreview({ search = '' }: { search?: string }) {
+export function WithdrawalPreview({
+  search = '',
+  dailyChartFillEnabled = false,
+}: {
+  search?: string;
+  dailyChartFillEnabled?: boolean;
+}) {
   const location = useWithdrawalPreviewLocation(search, '/withdrawal-preview');
   const lane = readWithdrawalLane(location.search);
-  const content = <WithdrawalPreviewContent location={location} />;
+  const content = (
+    <WithdrawalPreviewContent location={location} dailyChartFillEnabled={dailyChartFillEnabled} />
+  );
   return lane.scenario === 'partner-demo' ? (
     <DatasetBoundary key={lane.identity} identities={[lane.identity]}>
       {content}
@@ -50,8 +59,10 @@ export function WithdrawalPreview({ search = '' }: { search?: string }) {
 
 function WithdrawalPreviewContent({
   location,
+  dailyChartFillEnabled,
 }: {
   location: ReturnType<typeof useWithdrawalPreviewLocation>;
+  dailyChartFillEnabled: boolean;
 }) {
   const lane = readWithdrawalLane(location.search);
   const session = useOptionalDemoSession(lane.identity, lane.scenario === 'partner-demo');
@@ -74,6 +85,10 @@ function WithdrawalPreviewContent({
   const overviewTransport = useMemo(
     () => session?.overview ?? createOverviewTransport('ready'),
     [session],
+  );
+  const dailyFillTransport = useMemo(
+    () => createDailyChartFillTransport(overviewTransport),
+    [overviewTransport],
   );
   const contentBasePath = linkedDemo
     ? `/content-preview/partner-demo/${lane.identity}`
@@ -190,6 +205,16 @@ function WithdrawalPreviewContent({
                           );
                       },
                     }}
+                    weeklyEarningsOverride={
+                      dailyChartFillEnabled && linkedDemo && lane.identity === 'a'
+                        ? {
+                            transport: dailyFillTransport,
+                            cacheKey: 'demo-daily-fill-v1',
+                            refetchIntervalMs: 30_000,
+                            notice: 'เติมรายวันอัตโนมัติสำหรับสาธิต',
+                          }
+                        : undefined
+                    }
                     transport={overviewTransport}
                     scope={scope}
                     renderPayout={renderSummary}

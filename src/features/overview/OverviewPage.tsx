@@ -75,7 +75,7 @@ export function OverviewPage({
    * Opt-in, development-only sample feed for the Daily Clip Earnings weekly card only. Isolated by a
    * unique cache identity; it never affects the general Overview query, headline, export or payout.
    */
-  weeklyEarningsOverride?: { transport: OverviewTransport; cacheKey: string; notice: string };
+  weeklyEarningsOverride?: { transport: OverviewTransport; cacheKey: string; notice: string; refetchIntervalMs?: number };
 }) {
   const [localFilters, setLocalFilters] = useState(initialFilters);
   const filters = partnerFilters(controlledFilters?.value ?? localFilters);
