@@ -97,6 +97,20 @@ it('fills only missing eligible dates and reconciles per-brand sums without chan
   expect(applyDailyChartFill(original, fill, 'unknown')).toBe(original);
   expect(Overview.safeParse(all).success).toBe(true);
 });
+it.each(['stale', 'partial'] as const)(
+  'preserves %s source freshness when adding demo points',
+  (state) => {
+    const original = base();
+    original.dataState = state;
+    original.reasons = ['Source data needs refresh'];
+    const result = applyDailyChartFill(original, generateDailyFill('2026-09-19'), null);
+    expect(result.dataState).toBe(state);
+    expect(result.reasons).toEqual(original.reasons);
+    expect(result.generatedAt).toBe(original.generatedAt);
+    expect(result.dataThrough).toBe(original.dataThrough);
+    expect(result.earnings.trend.some((point) => point.date === '2026-09-19')).toBe(true);
+  },
+);
 it('preserves explicit source zeros and complete covered zero days', () => {
   const original = base();
   const fill = generateDailyFill('2026-09-19');

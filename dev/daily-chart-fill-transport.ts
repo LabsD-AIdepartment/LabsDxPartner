@@ -53,8 +53,6 @@ export function applyDailyChartFill(
   ]);
   return Overview.parse({
     ...base,
-    dataState: 'ready',
-    reasons: [],
     earnings: {
       ...earnings,
       generation: `${earnings.generation}-daily-fill-v1`,
