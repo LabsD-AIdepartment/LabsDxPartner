@@ -1,3 +1,4 @@
+import { startDailyChartFillWorker } from './demo-daily-chart-supervisor.mjs';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
@@ -136,3 +137,5 @@ if (databaseReads && config.LABSD_EXTERNAL_DATA_WORKER_ENABLED === '1') {
     })
     .catch(() => console.error('External data worker supervisor unavailable.'));
 }
+
+startDailyChartFillWorker({ root, env: { ...webEnv, NODE_ENV: 'development' }, signal: workerAbort.signal });

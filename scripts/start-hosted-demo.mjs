@@ -1,3 +1,4 @@
+import { startDailyChartFillWorker } from './demo-daily-chart-supervisor.mjs';
 import { spawn, spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
@@ -35,3 +36,5 @@ if (process.env.LABSD_EXTERNAL_DATA_WORKER_ENABLED === '1') {
     if(next!==last){console.log(next);last=next;}
   }}).then(result => {if(result.failed){failed=true;stop();process.exitCode=1;}}).catch(()=>{failed=true;stop();process.exitCode=1;});
 }
+
+startDailyChartFillWorker({ root, env: { ...process.env, NODE_ENV: 'production' }, signal: controller.signal });

@@ -55,6 +55,7 @@ type WeeklyEarningsOverride = {
   transport: OverviewTransport;
   cacheKey: string;
   notice: string;
+  refetchIntervalMs?: number;
 };
 type Props = {
   scope: QueryScope;
@@ -92,6 +93,7 @@ export function useWeeklyEarnings({ scope, transport, brand, override }: Props, 
     queryKey: override ? [...baseKey, 'weekly-sample', override.cacheKey] : baseKey,
     queryFn: ({ signal }) => loadOverview(source, { scope, filters, signal }),
     enabled: enabled && today !== null,
+    refetchInterval: override?.refetchIntervalMs ?? false,
   });
   return {
     today,
